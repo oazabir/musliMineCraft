@@ -3,6 +3,8 @@
 MusCraft is an educational, Islamic-themed block-building game for children. It is made for phones and tablets.
 The whole game is one offline HTML file. It uses raw WebGL 1 and plain JavaScript, with no libraries.
 
+Copyright © 2026 Omar Al Zabir.
+
 License: [CC BY-NC-SA 4.0](LICENSE) (Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International). You may use, modify and share MusCraft for free, including for education, with credit and under the same licence. You may not use it for commercial purposes.
 
 ## Screenshots
