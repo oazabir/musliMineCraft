@@ -12,10 +12,10 @@ function nextModal(){
  {const nw=performance.now();modalT=nw-modalCloseT<80?0:nw}
  $('panel').innerHTML=curModal.html;$('panel').scrollTop=0;el.classList.add('on');
  input.jx=input.jy=0;input.jump=false;
- if(document.pointerLockElement)document.exitPointerLock();
+ if(document.pointerLockElement){wantLock=true;document.exitPointerLock()}
  if(curModal.wire)curModal.wire($('panel'));
 }
-function closeModal(){curModal=null;modalCloseT=performance.now();nextModal()}
+function closeModal(){curModal=null;modalCloseT=performance.now();nextModal();if(!curModal)relock()}
 /* the synthetic click that follows a touch tap must not hit a button of the card that tap just opened */
 $('modal').addEventListener('click',e=>{
  if(e.isTrusted&&modalT>0&&performance.now()-modalT<280&&e.target.closest&&e.target.closest('button')){e.stopPropagation();e.preventDefault()}
@@ -85,8 +85,9 @@ function startPlay(){
  activeSec=SV.act||0;SV.act=0;
  for(const b of bots)if(b.on&&(Math.hypot(b.x-player.x,b.z-player.z)>26||Math.hypot(b.x-player.x,b.z-player.z)<7))botRespawn(b,player.x,player.z,10,26,undefined,b.i*1.047);
  W.on=false;$('welcome').style.opacity='0';
- const fin=()=>{$('app').classList.remove('pre');$('welcome').style.display='none';$('welcome').style.opacity='';playing=true;glide=null;applyGfx();if(!touchMode)tryLock();
-  if(resumed||SV.has){toast('Welcome back!')}else if(S.mission<MISSIONS.length){missionIntro(false)}else toast('Free building. Have fun!')};
+ const fin=()=>{$('app').classList.remove('pre');$('welcome').style.display='none';$('welcome').style.opacity='';playing=true;glide=null;applyGfx();if(!touchMode)wantLock=true;
+  if(resumed||SV.has){toast('Welcome back!')}else if(S.mission<MISSIONS.length){missionIntro(false)}else toast('Free building. Have fun!');
+  if(!curModal)relock()};
  if(Math.hypot(from[0]-to[0],from[2]-to[2])<90&&Math.abs(from[1]-to[1])<40){
   glide={t:0,from,to,fin};player.x=from[0];player.y=from[1];player.z=from[2];player.yaw=from[3];player.pitch=from[4];
  }else{fin()}
@@ -212,7 +213,25 @@ function breakReminder(){
 
 /* ===== 11. Input ===== */
 function tryLock(){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{noLock=true})}catch(e){noLock=true}}
-let noLock=false,aim=null,aimTime=0;
+let noLock=false,aim=null,aimTime=0,hintTimer=0;
+/* wantLock: the mouse should be captured whenever no card is open. Esc clears it, so the player is never forced back in. */
+let wantLock=false;
+function relock(){
+ if(!wantLock||touchMode||noLock||!playing||curModal||document.pointerLockElement)return;
+ try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}
+}
+document.addEventListener('pointerlockchange',()=>{
+ const h=$('lockhint');clearTimeout(hintTimer);
+ if(document.pointerLockElement===canvas){
+  /* a card opened while the lock request was pending: give the mouse back so its buttons can be clicked */
+  if(curModal){document.exitPointerLock();return}
+  h.classList.add('on');hintTimer=setTimeout(()=>h.classList.remove('on'),6000);
+ }else{
+  h.classList.remove('on');
+  /* released with no card open means the player pressed Esc: leave the mouse free */
+  if(!curModal)wantLock=false;
+ }
+});
 const locked=()=>document.pointerLockElement===canvas;
 function look(dx,dy){const k=.0016*S.settings.sens;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.45,1.45)}
 function act(px,py,button){
@@ -239,7 +258,7 @@ function aimAt(px,py){aim=[px,py];aimTime=performance.now()}
 canvas.addEventListener('pointerdown',e=>{
  if(e.pointerType==='mouse'&&touchMode)setTouch(false);
  if(curModal||!playing)return;
- if(e.pointerType==='mouse'&&!noLock&&!locked()){tryLock();return}
+ if(e.pointerType==='mouse'&&!noLock&&!locked()){wantLock=true;tryLock();return}
  if(locked()){act(undefined,undefined,e.button);return}
  canvas.setPointerCapture(e.pointerId);
  looks.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),moved:false,b:e.button});
