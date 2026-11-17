@@ -1,4 +1,4 @@
-# MusCraft end-to-end tests
+# musliMineCraft end-to-end tests
 
 Automated browser tests for the single-file game `dist/muscraft.html`. They drive the real game in Chromium
 (software WebGL, so no GPU is needed) with real touch, mouse and keyboard input, and check that the game and the
@@ -93,7 +93,7 @@ The game file documents this in a comment at its top. Summary:
 * `window.MusCraft.onSave = fn` is called after each save with `{stars, mission, blocks, time}`.
 * The game posts `{type:'muscraft:save', stars, mission, blocks}` to its parent window after each save.
 * A host may post `{type:'muscraft:import', json}` to the game. It is accepted only when ALL of these hold: `window.MusCraftAllowImport === true`, the message comes from `window.parent`, and its origin is listed in `window.MusCraftAllowedOrigins` (an array the host sets; there is no default and the URL hash does nothing). The save summary (`muscraft:save`) is posted only to the origins in that list, never to `*`.
-* Only one tab writes the save (Web Locks, `muscraft-writer`). A second tab shows "MusCraft is open in another tab" with a "Play here" button that makes the other tab save and give way, then reloads from the stores. Without Web Locks both tabs write, merging chunk records in one transaction.
+* Only one tab writes the save (Web Locks, `muscraft-writer`). A second tab shows "musliMineCraft is open in another tab" with a "Play here" button that makes the other tab save and give way, then reloads from the stores. Without Web Locks both tabs write, merging chunk records in one transaction.
 * `window.IslamineCraft` is an alias of `window.MusCraft`. A save written by the old IslamineCraft build is migrated once.
 * Storage: IndexedDB `muscraft` (store `c` one record per edited chunk, store `m` bot edits), `localStorage` keys
   `muscraft_prog_v1` (progress), `muscraft_jrn_v1` (journal of unconfirmed chunk writes) and `muscraft_save_v1`

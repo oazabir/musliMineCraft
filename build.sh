@@ -18,19 +18,25 @@ strip_js() {
 }
 
 join_style() {
+  # Line by line (no NUL record separator) so every awk gives the same output.
   awk '
-    BEGIN { RS = "\0" }
     {
-      s = $0; out = ""
-      while ((i = index(s, "<style>")) > 0) {
-        out = out substr(s, 1, i + 6); s = substr(s, i + 7)
-        j = index(s, "</style>")
-        if (j == 0) break
-        body = substr(s, 1, j - 1); gsub(/\n+/, "", body)
-        out = out body; s = substr(s, j)
+      line = $0; out = ""; nl = "\n"
+      while (1) {
+        if (!ins) {
+          i = index(line, "<style>")
+          if (i == 0) { out = out line; break }
+          out = out substr(line, 1, i + 6); line = substr(line, i + 7); ins = 1
+        } else {
+          j = index(line, "</style>")
+          if (j == 0) { out = out line; nl = ""; break }
+          out = out substr(line, 1, j - 1); line = substr(line, j); ins = 0
+        }
       }
-      printf "%s%s", out, s
+      printf "%s", prev; prev = out nl
     }
+    # the final newline of the part is dropped (the build has always done this)
+    END { sub(/\n$/, "", prev); printf "%s", prev }
   ' "$1"
 }
 

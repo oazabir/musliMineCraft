@@ -1,5 +1,5 @@
 """
-End-to-end tests for MusCraft (single-file WebGL1 children's voxel game).
+End-to-end tests for musliMineCraft (single-file WebGL1 children's voxel game).
 
 Run:   pytest            (see README.md for env vars: GAME_URL, HEADED, SLOW)
 
@@ -515,7 +515,7 @@ class TestStartup:
                observe="(()=>{const t=document.getElementById('wtrack');return t&&t.getBoundingClientRect().toJSON()})()")
         assert time.time() - t0 < T(5), f"Expected the welcome screen within {T(5)} s, took {time.time() - t0:.1f} s"
         title = g.ev("document.querySelector('#welcome .wtitle title').textContent")
-        assert title == "MusCraft", f"Expected the title 'MusCraft' but saw {title!r}"
+        assert title == "musliMineCraft", f"Expected the title 'musliMineCraft' but saw {title!r}"
         g.ready()
         pct = g.ev("window.__pct")
         assert len(set(pct)) >= 3, f"Expected progress to pass through at least 3 different values, observed {pct}"
@@ -2017,7 +2017,7 @@ def _frame_ok(f, phone):
 
 class TestWelcomeLive:
     def test_stage1_illustration_title_and_progress_bar_show_at_first_paint(self, game):
-        """Before WebGL is up the page already shows the sunrise illustration, the MusCraft title and the progress bar."""
+        """Before WebGL is up the page already shows the sunrise illustration, the musliMineCraft title and the progress bar."""
         g = game(PHONE)
         g.page.goto(GAME_URL, wait_until="commit")
         g.wait("document.getElementById('wscene')&&document.querySelector('.wtitle')&&document.getElementById('wtrack')", "the stage 1 scene, title and progress bar in the first paint",

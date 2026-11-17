@@ -1,11 +1,11 @@
-# MusCraft
+# musliMineCraft
 
-MusCraft is an educational, Islamic-themed block-building game for children. It is made for phones and tablets.
+musliMineCraft is an educational, Islamic-themed block-building game for children. It is made for phones and tablets.
 The whole game is one offline HTML file. It uses raw WebGL 1 and plain JavaScript, with no libraries.
 
 Copyright © 2026 Omar Al Zabir.
 
-License: [CC BY-NC-SA 4.0](LICENSE) (Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International). You may use, modify and share MusCraft for free, including for education, with credit and under the same licence. You may not use it for commercial purposes.
+License: [CC BY-NC-SA 4.0](LICENSE) (Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International). You may use, modify and share musliMineCraft for free, including for education, with credit and under the same licence. You may not use it for commercial purposes.
 
 ## Screenshots
 
@@ -93,7 +93,7 @@ Messages with the parent window (when the game is in an iframe):
 
 Other behaviour:
 
-- Only one tab writes the save (a Web Lock named `muscraft-writer`). A second tab shows "MusCraft is open in another tab" and a "Play here" button.
+- Only one tab writes the save (a Web Lock named `muscraft-writer`). A second tab shows "musliMineCraft is open in another tab" and a "Play here" button.
 - Storage: IndexedDB database `muscraft`; `localStorage` keys `muscraft_prog_v1` (progress), `muscraft_jrn_v1` (journal of unconfirmed chunk writes) and `muscraft_save_v1` (fallback, used only if IndexedDB is not available).
 - A save from the older IslamineCraft build (`islaminecraft_save_v1`) is migrated once on first start.
 

@@ -92,7 +92,7 @@ function showOther(){
  let o=document.getElementById('othertab');
  if(!o){o=document.createElement('div');o.id='othertab';
   o.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;z-index:99999;background:rgba(8,61,68,.94);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;font:700 20px/1.3 system-ui,sans-serif;padding:20px';
-  o.innerHTML='<div>MusCraft is open in another tab.</div><div style="font-weight:400;font-size:16px">Only one tab can save your world at a time.</div><button style="background:#2a9d6b;color:#fff;border:2px solid #fff;border-radius:999px;padding:10px 24px;font:800 18px system-ui;min-height:48px">Play here</button>';
+  o.innerHTML='<div>musliMineCraft is open in another tab.</div><div style="font-weight:400;font-size:16px">Only one tab can save your world at a time.</div><button style="background:#2a9d6b;color:#fff;border:2px solid #fff;border-radius:999px;padding:10px 24px;font:800 18px system-ui;min-height:48px">Play here</button>';
   o.querySelector('button').onclick=()=>{
    if(SV.bc)try{SV.bc.postMessage('take')}catch(e){}
    try{navigator.locks.request('muscraft-writer',()=>{location.reload();return new Promise(()=>{})})}catch(e){location.reload()}
@@ -234,7 +234,7 @@ function importSave(json){
   if(SV.writer===false){rej(new Error('Another tab is saving this world'));return}
   if(typeof json!=='string'||json.length>20000000){rej(new Error('Save is too big'));return}
   let d;try{d=JSON.parse(json)}catch(e){rej(new Error('Not valid JSON'));return}
-  if(!d||typeof d!=='object'||d.muscraft!==4||!d.prog||typeof d.prog!=='object'||!Array.isArray(d.ed)||!Array.isArray(d.bed)){rej(new Error('Not a MusCraft save'));return}
+  if(!d||typeof d!=='object'||d.muscraft!==4||!d.prog||typeof d.prog!=='object'||!Array.isArray(d.ed)||!Array.isArray(d.bed)){rej(new Error('Not a musliMineCraft save'));return}
   /* validate exactly like the loader: every record needs a chunk key and cell codes inside the world and the block range */
   const okCell=v=>Number.isSafeInteger(v)&&v>=0&&v<CV*64&&(v&63)<DEFS.length;
   const chk=l=>l.filter(e=>Array.isArray(e)&&Number.isInteger(e[0])&&e[0]>=0&&e[0]<NC*NC&&Array.isArray(e[1])).map(e=>[e[0],e[1].filter(okCell)]);

@@ -439,7 +439,7 @@ function boot(){
    next();
   },0));
  };
- if(!gl){$('wbar').style.display='none';const m=$('wmsg');m.style.display='block';m.textContent='Your device could not start 3D graphics. Please try another browser or device. The MusCraft sunrise is waiting for you.';return}
+ if(!gl){$('wbar').style.display='none';const m=$('wmsg');m.style.display='block';m.textContent='Your device could not start 3D graphics. Please try another browser or device. The musliMineCraft sunrise is waiting for you.';return}
  next();
 }
 /* ---- hooks for automated tests ---- */
