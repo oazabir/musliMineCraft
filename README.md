@@ -5,7 +5,17 @@ The whole game is one offline HTML file. It uses raw WebGL 1 and plain JavaScrip
 
 License: not yet chosen — all rights reserved until a licence is added.
 
-![Welcome screen with the live panorama](docs/screenshots/welcome-live-phone.png)
+## Screenshots
+
+| First view | Grand mosque | Builder friends |
+|---|---|---|
+| ![First view on a phone](docs/screenshots/first-view-phone.png) | ![The grand mosque](docs/screenshots/grand-mosque.png) | ![Builder friends at work](docs/screenshots/builder-bots-working.png) |
+
+| Museum | Exhibit card | Passport |
+|---|---|---|
+| ![Museum of Islamic Heritage from outside](docs/screenshots/museum-outside.png) | ![An exhibit card](docs/screenshots/exhibit-card.png) | ![The museum passport](docs/screenshots/passport.png) |
+
+More are in `docs/screenshots/`: the museum atrium, builder close-up, swimming, tablet layout and the skyline at sunset.
 
 ## Features
 
@@ -18,18 +28,6 @@ License: not yet chosen — all rights reserved until a licence is added.
 - Swimming in lakes, with a "Swim to shore" helper.
 - Saving and resume. Progress and every edited chunk are stored on the device.
 - Adaptive quality, so it runs on low-end Android phones.
-
-## Screenshots
-
-| First view | Grand mosque | Builder friends |
-|---|---|---|
-| ![First view on a phone](docs/screenshots/first-view-phone.png) | ![The grand mosque](docs/screenshots/grand-mosque.png) | ![Builder friends at work](docs/screenshots/builder-bots-working.png) |
-
-| Museum | Exhibit card | Passport |
-|---|---|---|
-| ![Museum of Islamic Heritage from outside](docs/screenshots/museum-outside.png) | ![An exhibit card](docs/screenshots/exhibit-card.png) | ![The museum passport](docs/screenshots/passport.png) |
-
-More are in `docs/screenshots/`: the museum atrium, builder close-up, swimming, tablet layout and the skyline at sunset.
 
 ## Quick start
 
