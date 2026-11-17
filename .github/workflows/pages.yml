@@ -1,0 +1,48 @@
+# Publishes the game to GitHub Pages.
+# The page is built from src/ with ./build.sh on every run, so it never depends
+# on the committed dist/muscraft.html being up to date.
+# Result: https://<owner>.github.io/<repo>/  (index.html is the game)
+#
+# One-time setup: Settings > Pages > Build and deployment > Source: "GitHub Actions".
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the game
+        run: |
+          ./build.sh
+          mkdir -p public
+          cp dist/muscraft.html public/index.html
+          # Keep the file name from the README working too.
+          cp dist/muscraft.html public/muscraft.html
+          test -s public/index.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
