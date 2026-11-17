@@ -1,6 +1,6 @@
 # musliMineCraft end-to-end tests
 
-Automated browser tests for the single-file game `dist/muscraft.html`. They drive the real game in Chromium
+Automated browser tests for the single-file game `dist/musliMineCraft.html`. They drive the real game in Chromium
 (software WebGL, so no GPU is needed) with real touch, mouse and keyboard input, and check that the game and the
 builder bots behave as intended. The suite never edits the game.
 
@@ -20,7 +20,7 @@ builder bots behave as intended. The suite never edits the game.
 | Museum | 26 exhibits, taps, passport, floor chip | Four floors, 26 distinct exhibits; a real finger tap opens an exhibit card and stamps the passport; the passport shows 26 stamps; the floor chip names the floor |
 | Six builders | six bots, spacing, per-bot join card, tag text | Six distinct bots on every setting; they never overlap, never stand in water or on the plot or inside blocks; each of the six has a join card `<name> is building ... Build together?` (parametrised); tags read `<name> \u00b7 <activity>` |
 | Dismantle | rolling tidy-up | After two finished structures a bot shows `<name> \u00b7 tidying up` and removes the older one |
-| Save v3 | reload, export/import, onSave, migration, corrupt record | Progress and edited chunks survive a reload; `MusCraft.exportSave/importSave` round trip and reject bad input; `onSave` fires; an `islaminecraft` save migrates once; a corrupt progress record starts a fresh world |
+| Save v3 | reload, export/import, onSave, migration, corrupt record | Progress and edited chunks survive a reload; `musliMineCraft.exportSave/importSave` round trip and reject bad input; `onSave` fires; an `islaminecraft` save migrates once; a corrupt progress record starts a fresh world |
 | Welcome | stage 1 to live panorama, HUD hidden, tips, Continue summary, buttons fit 3 screens | Title, tagline, Play/Settings/How to play; the live panorama fades in; a rotating tip; Continue plus a summary line for a saved game |
 | Water | float, swim to shore, helper | The player floats, swims out of the lake with real key input, and gets a `Swim to shore` helper after 20 s |
 | Wellbeing and settings | break reminder, sound + graphics persistence, hidden page | 20 minute reminder, settings survive reload, no streaming work while hidden |
@@ -49,13 +49,13 @@ HEADED=1 pytest -k Controls # watch it run
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `GAME_URL` | `file://.../dist/muscraft.html` (two folders above `tests/e2e/`) | Page to test. Any `http(s)://` or `file://` URL works. |
+| `GAME_URL` | `file://.../dist/musliMineCraft.html` (two folders above `tests/e2e/`) | Page to test. Any `http(s)://` or `file://` URL works. |
 | `HEADED` | unset | `HEADED=1` shows the browser window. |
 | `SLOW` | unset | `SLOW=1` multiplies every wait timeout by 3 for slow CI machines. |
 
 ## GitHub Actions
 
-See `.github/workflows/e2e.yml` in the repo root. It checks that `dist/muscraft.html` matches `./build.sh`, then runs the suite with `SLOW=1`.
+See `.github/workflows/e2e.yml` in the repo root. It checks that `dist/musliMineCraft.html` matches `./build.sh`, then runs the suite with `SLOW=1`.
 
 ## How it works (for maintainers)
 
@@ -88,15 +88,15 @@ phone) were fixed in the game and the marks removed. No test is marked xfail or 
 
 The game file documents this in a comment at its top. Summary:
 
-* `window.MusCraft.exportSave()` returns a Promise of a JSON string (progress, all edited chunks, builder-bot edits).
-* `window.MusCraft.importSave(json)` validates, replaces the save and reloads the page; it rejects on invalid input.
-* `window.MusCraft.onSave = fn` is called after each save with `{stars, mission, blocks, time}`.
-* The game posts `{type:'muscraft:save', stars, mission, blocks}` to its parent window after each save.
-* A host may post `{type:'muscraft:import', json}` to the game. It is accepted only when ALL of these hold: `window.MusCraftAllowImport === true`, the message comes from `window.parent`, and its origin is listed in `window.MusCraftAllowedOrigins` (an array the host sets; there is no default and the URL hash does nothing). The save summary (`muscraft:save`) is posted only to the origins in that list, never to `*`.
-* Only one tab writes the save (Web Locks, `muscraft-writer`). A second tab shows "musliMineCraft is open in another tab" with a "Play here" button that makes the other tab save and give way, then reloads from the stores. Without Web Locks both tabs write, merging chunk records in one transaction.
-* `window.IslamineCraft` is an alias of `window.MusCraft`. A save written by the old IslamineCraft build is migrated once.
-* Storage: IndexedDB `muscraft` (store `c` one record per edited chunk, store `m` bot edits), `localStorage` keys
-  `muscraft_prog_v1` (progress), `muscraft_jrn_v1` (journal of unconfirmed chunk writes) and `muscraft_save_v1`
+* `window.musliMineCraft.exportSave()` returns a Promise of a JSON string (progress, all edited chunks, builder-bot edits).
+* `window.musliMineCraft.importSave(json)` validates, replaces the save and reloads the page; it rejects on invalid input.
+* `window.musliMineCraft.onSave = fn` is called after each save with `{stars, mission, blocks, time}`.
+* The game posts `{type:'musliMineCraft:save', stars, mission, blocks}` to its parent window after each save.
+* A host may post `{type:'musliMineCraft:import', json}` to the game. It is accepted only when ALL of these hold: `window.musliMineCraftAllowImport === true`, the message comes from `window.parent`, and its origin is listed in `window.musliMineCraftAllowedOrigins` (an array the host sets; there is no default and the URL hash does nothing). The save summary (`musliMineCraft:save`) is posted only to the origins in that list, never to `*`.
+* Only one tab writes the save (Web Locks, `musliMineCraft-writer`). A second tab shows "musliMineCraft is open in another tab" with a "Play here" button that makes the other tab save and give way, then reloads from the stores. Without Web Locks both tabs write, merging chunk records in one transaction.
+* `window.IslamineCraft` is an alias of `window.musliMineCraft`. A save written by the old IslamineCraft build is migrated once.
+* Storage: IndexedDB `musliMineCraft` (store `c` one record per edited chunk, store `m` bot edits), `localStorage` keys
+  `musliMineCraft_prog_v1` (progress), `musliMineCraft_jrn_v1` (journal of unconfirmed chunk writes) and `musliMineCraft_save_v1`
   (fallback blob, used only when IndexedDB is unavailable).
 
 ## Not covered
@@ -113,7 +113,7 @@ The game file documents this in a comment at its top. Summary:
 
 New groups: SAFE START (`TestSafeStart`: fresh start at all five viewports on Low and High graphics, unsafe saved positions in water, mid-air, solid, a mosque wall, a tree top and at the world edge, reset then Play, importSave, Show me, the 20 s Swim to shore helper, joystick out of deep water), WELCOME LIVE (`TestWelcomeLive`: stage 1 at first paint, live scene, 12 sampled frames of the menu loop checked with the game's own projection and raycasts, loop closes, no overlaps at five viewports, Play ends the scene, saved time of day, WebGL failure, no old name), SAVE/RESUME additions (`TestSaveResume`), the modal click guard (`TestModalGuard`), tidy-up (`TestTidyUp`) and start view / HUD layout (`TestStartViewAndHud`: no bot within 3 blocks of the player for 10 s after Play; HUD elements never overlap, collapsed or expanded).
 
-Run: `cd tests/e2e && python3 -m pytest -q` (set `GAME_URL=file:///.../muscraft.html` to test another build). The full suite takes about 15 to 20 minutes on a shared machine.
+Run: `cd tests/e2e && python3 -m pytest -q` (set `GAME_URL=file:///.../musliMineCraft.html` to test another build). The full suite takes about 15 to 20 minutes on a shared machine.
 
 For the embedding API, see the main `README.md` and the comment at the top of `src/5c-save.js`.
 

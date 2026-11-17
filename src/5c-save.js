@@ -1,5 +1,5 @@
 /* ===== 7b. Save and resume: IndexedDB per-chunk edits + small localStorage progress record ===== */
-const JRN_KEY='muscraft_jrn_v1',PROG_KEY='muscraft_prog_v1',DB_NAME='muscraft',SAVE_CAP=1500000;
+const JRN_KEY='musliMineCraft_jrn_v1',PROG_KEY='musliMineCraft_prog_v1',DB_NAME='musliMineCraft',SAVE_CAP=1500000;
 const SV={ready:false,has:false,pos:null,useLs:false,changed:false,acc:0,lastBot:-99999,lastLs:-99999,px:0,pz:0,sum:null,migrated:false,tries:0,ver:4,writer:null,importing:false,progOk:true,lockQ:[],release:null,bc:null,merge:false};
 function encMap(mp){const out=[];for(const[k,m]of mp){if(!m.size)continue;const a=[];for(const[li,b]of m)a.push(li*64+b);out.push([k,a])}return out}
 function countBlocks(){let n=0;for(const m of edits.values())for(const b of m.values())if(b)n++;return n}
@@ -14,9 +14,9 @@ function progObj(){
 function saveProg(){if(SV.importing||SV.writer!==true)return false;try{localStorage.setItem(PROG_KEY,JSON.stringify(progObj()));return true}catch(e){return false}}
 function notifySave(){
  const s=SV.sum;if(!s)return;
- try{if(window.MusCraft&&typeof window.MusCraft.onSave==='function')window.MusCraft.onSave({stars:s.stars,mission:s.mission,blocks:s.blocks,time:Date.now()})}catch(e){}
- /* the summary goes only to origins the host listed in window.MusCraftAllowedOrigins (never '*') */
- try{const ao=window.MusCraftAllowedOrigins;if(Array.isArray(ao)&&window.parent&&window.parent!==window)for(const o of ao)if(typeof o==='string'&&o&&o!=='*')window.parent.postMessage({type:'muscraft:save',stars:s.stars,mission:s.mission,blocks:s.blocks},o)}catch(e){}
+ try{if(window.musliMineCraft&&typeof window.musliMineCraft.onSave==='function')window.musliMineCraft.onSave({stars:s.stars,mission:s.mission,blocks:s.blocks,time:Date.now()})}catch(e){}
+ /* the summary goes only to origins the host listed in window.musliMineCraftAllowedOrigins (never '*') */
+ try{const ao=window.musliMineCraftAllowedOrigins;if(Array.isArray(ao)&&window.parent&&window.parent!==window)for(const o of ao)if(typeof o==='string'&&o&&o!=='*')window.parent.postMessage({type:'musliMineCraft:save',stars:s.stars,mission:s.mission,blocks:s.blocks},o)}catch(e){}
 }
 /* IndexedDB writes started right before the page unloads can be dropped, so the edited chunks that are not yet confirmed are
    also kept in a small synchronous journal (localStorage) that the next start merges and removes */
@@ -95,7 +95,7 @@ function showOther(){
   o.innerHTML='<div>musliMineCraft is open in another tab.</div><div style="font-weight:400;font-size:16px">Only one tab can save your world at a time.</div><button style="background:#2a9d6b;color:#fff;border:2px solid #fff;border-radius:999px;padding:10px 24px;font:800 18px system-ui;min-height:48px">Play here</button>';
   o.querySelector('button').onclick=()=>{
    if(SV.bc)try{SV.bc.postMessage('take')}catch(e){}
-   try{navigator.locks.request('muscraft-writer',()=>{location.reload();return new Promise(()=>{})})}catch(e){location.reload()}
+   try{navigator.locks.request('musliMineCraft-writer',()=>{location.reload();return new Promise(()=>{})})}catch(e){location.reload()}
   };
   document.body.appendChild(o)}
  o.style.display='flex';
@@ -103,10 +103,10 @@ function showOther(){
 function lockInit(){
  if(!(navigator.locks&&navigator.locks.request)){SV.merge=true;setWriter(true);return}
  try{
-  if(window.BroadcastChannel){SV.bc=new BroadcastChannel('muscraft');
+  if(window.BroadcastChannel){SV.bc=new BroadcastChannel('musliMineCraft');
    SV.bc.onmessage=m=>{if(m.data==='take'&&SV.writer===true)saveNow(true,()=>{SV.writer=false;if(SV.release)SV.release();showOther()})}}
-  const ac=window.AbortController?new AbortController():null,to=setTimeout(()=>{if(ac)ac.abort()},800);
-  navigator.locks.request('muscraft-writer',ac?{signal:ac.signal}:{ifAvailable:true},lock=>{
+  const ac=window.AbortController?new AbortController():null,to=setTimeout(()=>{if(ac)ac.abort()},3000);
+  navigator.locks.request('musliMineCraft-writer',ac?{signal:ac.signal}:{ifAvailable:true},lock=>{
    clearTimeout(to);
    if(!lock){setWriter(false);return}
    setWriter(true);return new Promise(r=>{SV.release=r});
@@ -227,14 +227,14 @@ function wipeStores(){
 }
 /* ---- embedding API ---- */
 function exportSave(){
- return new Promise(res=>{res(JSON.stringify({muscraft:4,prog:progObj(),ed:encMap(edits),bed:encMap(bedits)}))});
+ return new Promise(res=>{res(JSON.stringify({musliMineCraft:4,prog:progObj(),ed:encMap(edits),bed:encMap(bedits)}))});
 }
 function importSave(json){
  return new Promise((res,rej)=>{
   if(SV.writer===false){rej(new Error('Another tab is saving this world'));return}
   if(typeof json!=='string'||json.length>20000000){rej(new Error('Save is too big'));return}
   let d;try{d=JSON.parse(json)}catch(e){rej(new Error('Not valid JSON'));return}
-  if(!d||typeof d!=='object'||d.muscraft!==4||!d.prog||typeof d.prog!=='object'||!Array.isArray(d.ed)||!Array.isArray(d.bed)){rej(new Error('Not a musliMineCraft save'));return}
+  if(!d||typeof d!=='object'||d.musliMineCraft!==4||!d.prog||typeof d.prog!=='object'||!Array.isArray(d.ed)||!Array.isArray(d.bed)){rej(new Error('Not a musliMineCraft save'));return}
   /* validate exactly like the loader: every record needs a chunk key and cell codes inside the world and the block range */
   const okCell=v=>Number.isSafeInteger(v)&&v>=0&&v<CV*64&&(v&63)<DEFS.length;
   const chk=l=>l.filter(e=>Array.isArray(e)&&Number.isInteger(e[0])&&e[0]>=0&&e[0]<NC*NC&&Array.isArray(e[1])).map(e=>[e[0],e[1].filter(okCell)]);
@@ -266,15 +266,15 @@ function importSave(json){
   }
  });
 }
-window.MusCraft={exportSave,importSave,onSave:null,version:4};
-window.IslamineCraft=window.MusCraft;
-/* A host page may import a save by posting {type:'muscraft:import',json}. It is accepted only when ALL hold:
-   window.MusCraftAllowImport===true, the sender is window.parent, and its origin is listed in window.MusCraftAllowedOrigins
+window.musliMineCraft={exportSave,importSave,onSave:null,version:4};
+window.IslamineCraft=window.musliMineCraft;
+/* A host page may import a save by posting {type:'musliMineCraft:import',json}. It is accepted only when ALL hold:
+   window.musliMineCraftAllowImport===true, the sender is window.parent, and its origin is listed in window.musliMineCraftAllowedOrigins
    (an array the host sets; there is no default). The save summary is posted back only to those listed origins. */
 window.addEventListener('message',e=>{
  const d=e.data;
- if(!d||d.type!=='muscraft:import'||typeof d.json!=='string')return;
- const ao=window.MusCraftAllowedOrigins;
- if(window.MusCraftAllowImport!==true||!Array.isArray(ao)||!ao.length||e.source!==window.parent||ao.indexOf(e.origin)<0)return;
+ if(!d||d.type!=='musliMineCraft:import'||typeof d.json!=='string')return;
+ const ao=window.musliMineCraftAllowedOrigins;
+ if(window.musliMineCraftAllowImport!==true||!Array.isArray(ao)||!ao.length||e.source!==window.parent||ao.indexOf(e.origin)<0)return;
  importSave(d.json).catch(()=>{});
 });

@@ -25,13 +25,13 @@ from playwright.sync_api import sync_playwright
 
 # --------------------------------------------------------------------------- config
 HERE = Path(__file__).resolve().parent
-GAME_URL = os.environ.get("GAME_URL") or (HERE.parent.parent / "dist" / "muscraft.html").as_uri()
+GAME_URL = os.environ.get("GAME_URL") or (HERE.parent.parent / "dist" / "musliMineCraft.html").as_uri()
 HEADED = os.environ.get("HEADED") == "1"
 SLOW = os.environ.get("SLOW") == "1"
-SAVE_KEY = "muscraft_save_v1"          # compact fallback copy (only used when IndexedDB is unavailable)
-PROG_KEY = "muscraft_prog_v1"          # small progress record (stars, mission, position, settings, passport, ...)
+SAVE_KEY = "musliMineCraft_save_v1"          # compact fallback copy (only used when IndexedDB is unavailable)
+PROG_KEY = "musliMineCraft_prog_v1"          # small progress record (stars, mission, position, settings, passport, ...)
 OLD_KEY = "islaminecraft_save_v1"      # the pre-rename save: migrated once, then removed
-DB_NAME = "muscraft"                   # IndexedDB: store "c" = one record per edited chunk, store "m" = builder-bot edits
+DB_NAME = "musliMineCraft"                   # IndexedDB: store "c" = one record per edited chunk, store "m" = builder-bot edits
 CHROMIUM_ARGS = [  # software WebGL so the suite runs on machines without a GPU (CI)
     "--use-angle=swiftshader",
     "--enable-unsafe-swiftshader",
@@ -235,7 +235,7 @@ JS_HELPERS = r"""
     setInterval(() => { const s = __stats(); E.pk.chunks = Math.max(E.pk.chunks, s.loadedChunks); E.pk.bytes = Math.max(E.pk.bytes, s.approxBytes); }, 50);
   };
   // number of edited-chunk records in IndexedDB (async)
-  E.idbChunks = () => new Promise(res => { try { const q = indexedDB.open('muscraft', 1); q.onerror = () => res(-1);
+  E.idbChunks = () => new Promise(res => { try { const q = indexedDB.open('musliMineCraft', 1); q.onerror = () => res(-1);
       q.onsuccess = () => { try { const c = q.result.transaction(['c'], 'readonly').objectStore('c').count(); c.onsuccess = () => { q.result.close(); res(c.result) }; c.onerror = () => res(-1) } catch (e) { res(-1) } } } catch (e) { res(-1) } });
   E.settled = () => { const s = __stats(); return !s.hold && s.queue < 4; };
   E.mission = () => ({ idx: S.mission, counter: (document.querySelector('#mission .mc') || {}).textContent || null,
@@ -1778,22 +1778,22 @@ class TestSaveV3:
         g.start()
         g.ev("S.stars=7;saveNow(true)")
         g.page.wait_for_timeout(500)
-        j = g.ev("MusCraft.exportSave()")
+        j = g.ev("musliMineCraft.exportSave()")
         d = json.loads(j)
-        assert d["muscraft"] == 4 and d["prog"]["stars"] == 7
-        ok = g.ev("(j)=>MusCraft.importSave(j).then(()=>true,()=>false)", j)
+        assert d["musliMineCraft"] == 4 and d["prog"]["stars"] == 7
+        ok = g.ev("(j)=>musliMineCraft.importSave(j).then(()=>true,()=>false)", j)
         assert ok
 
     def test_import_rejects_garbage(self, started):
-        r = started.ev("MusCraft.importSave('{not json').then(()=>'ok',e=>String(e.message))")
+        r = started.ev("musliMineCraft.importSave('{not json').then(()=>'ok',e=>String(e.message))")
         assert r != "ok"
-        r = started.ev("MusCraft.importSave(JSON.stringify({a:1})).then(()=>'ok',e=>String(e.message))")
+        r = started.ev("musliMineCraft.importSave(JSON.stringify({a:1})).then(()=>'ok',e=>String(e.message))")
         assert r != "ok"
 
     def test_on_save_callback_and_alias(self, started):
         g = started
-        assert g.ev("window.IslamineCraft===window.MusCraft")
-        g.ev("window.__got=null;MusCraft.onSave=s=>{window.__got=s};S.stars=3;saveNow(true)")
+        assert g.ev("window.IslamineCraft===window.musliMineCraft")
+        g.ev("window.__got=null;musliMineCraft.onSave=s=>{window.__got=s};S.stars=3;saveNow(true)")
         g.wait("window.__got&&window.__got.stars===3", "the onSave callback to fire", observe="window.__got")
 
     def test_old_islaminecraft_save_is_migrated_once(self, game):
@@ -1933,11 +1933,11 @@ class TestSafeStart:
         """importSave with a position in the lake reloads into a dry standing spot."""
         g = game(PHONE)
         g.start()
-        raw = g.ev("MusCraft.exportSave()")
+        raw = g.ev("musliMineCraft.exportSave()")
         d = json.loads(raw)
         d["prog"]["pos"] = [1011.5, 12, 1021.5, 0, 0]
         d["prog"]["stars"] = 3
-        g.page.evaluate("(j)=>MusCraft.importSave(j)", json.dumps(d))
+        g.page.evaluate("(j)=>musliMineCraft.importSave(j)", json.dumps(d))
         g.page.wait_for_load_state("load")
         g.ready()
         g.play()
@@ -2541,7 +2541,7 @@ class TestSaveRoundTrip:
           bots[0].done=[{x0:1300,z0:1300,y:30,tid:0}];dayT=.37;saveNow(true)})()""")
         g.wait("(async()=>(await __e2e.idbChunks())>=3)()", "3 chunk records", timeout=20000, observe="1")
         before = g.ev("({s:S.stars,m:S.mission,p:S.pass,b:S.skills.building,bd:botSaveState(),u:S.unlocked.length})")
-        j = g.ev("MusCraft.exportSave()")
+        j = g.ev("musliMineCraft.exportSave()")
         # reset from the title screen
         g.ev("resetAll()")
         g.wait("(async()=>S.stars===0&&S.mission===0&&(await __e2e.idbChunks())<=0)()", "the world to be wiped", timeout=20000, observe="[S.stars,S.mission]")
@@ -2549,8 +2549,8 @@ class TestSaveRoundTrip:
         g.page.reload(wait_until="commit")
         g.ready()
         assert g.ev("S.stars") == 0
-        g.ev(f"window.__old=1;MusCraft.importSave({json.dumps(j)})")
-        g.wait("!window.__old&&SV.ready&&S.stars===11", "the page to reload with the imported save", timeout=30000, observe="[!!window.__old,SV.ready,S.stars]")
+        g.ev(f"window.__old=1;musliMineCraft.importSave({json.dumps(j)})")
+        g.wait("!window.__old&&typeof SV!=='undefined'&&SV.ready&&S.stars===11", "the page to reload with the imported save", timeout=30000, observe="[!!window.__old,SV.ready,S.stars]")
         g.ready()
         after = g.ev("({s:S.stars,m:S.mission,p:S.pass,b:S.skills.building,bd:botSaveState(),u:S.unlocked.length})")
         for d in (before, after):
@@ -2654,11 +2654,11 @@ def _export_state(g, stars, mission):
     g.ev(f"""(()=>{{S.stars={stars};S.mission={mission};S.pass='1'.repeat(7)+'0'.repeat(19);S.skills.building=4;
       forceLoad(1180>>4,1180>>4,0);setBlock(1180,30,1180,B.GOLD,'player');saveNow(true)}})()""")
     g.wait("(async()=>(await __e2e.idbChunks())>=1)()", "the edit to be stored", timeout=20000, observe="1")
-    return g.ev("MusCraft.exportSave()")
+    return g.ev("musliMineCraft.exportSave()")
 
 
 def _imported_ok(g, stars, mission):
-    g.wait(f"!window.__old&&SV.ready&&S.stars=={stars}", "the page to reload with the imported save", timeout=30000, observe="[!!window.__old,SV.ready,S.stars,localStorage.getItem(PROG_KEY)&&localStorage.getItem(PROG_KEY).slice(0,50)]")
+    g.wait(f"!window.__old&&typeof SV!=='undefined'&&SV.ready&&S.stars=={stars}", "the page to reload with the imported save", timeout=30000, observe="[!!window.__old,SV.ready,S.stars,localStorage.getItem(PROG_KEY)&&localStorage.getItem(PROG_KEY).slice(0,50)]")
     g.ready()
     assert g.ev("[S.stars,S.mission,S.pass,S.skills.building]") == [stars, mission, "1" * 7 + "0" * 19, 4]
     assert g.ev("(()=>{forceLoad(1180>>4,1180>>4,1);return getB(1180,30,1180)})()") == g.ev("B.GOLD"), "Expected the imported edit"
@@ -2675,7 +2675,7 @@ class TestImportOverExistingSave:
         b.ev("S.stars=7;S.mission=1;S.pass='0'.repeat(26);setBlock(1190,30,1190,B.SANDSTONE,'player');saveNow(true)")
         b.wait("(async()=>JSON.parse(localStorage.getItem(PROG_KEY)).stars===7&&(await __e2e.idbChunks())>=1)()", "the existing save", timeout=20000, observe="1")
         b.ev("S.stars=8;queueSave()")
-        b.ev(f"window.__old=1;MusCraft.importSave({json.dumps(j)})")
+        b.ev(f"window.__old=1;musliMineCraft.importSave({json.dumps(j)})")
         _imported_ok(b, 500, 3)
         # nothing wrote the old state back afterwards
         b.play()
@@ -2686,8 +2686,8 @@ class TestImportOverExistingSave:
         g = game(PHONE)
         g.start()
         before = g.ev("saveNow(true);localStorage.getItem(PROG_KEY)")
-        j = json.dumps({"muscraft": 4, "prog": {"v": 4, "stars": 99}, "ed": [[8385, [64 * 5 + 3]]], "bed": []})
-        r = g.ev(f"(()=>{{const o=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(){{throw new Error('disk full')}};return MusCraft.importSave({json.dumps(j)}).then(()=>'ok',e=>String(e.message)).finally(()=>{{IDBObjectStore.prototype.put=o}})}})()")
+        j = json.dumps({"musliMineCraft": 4, "prog": {"v": 4, "stars": 99}, "ed": [[8385, [64 * 5 + 3]]], "bed": []})
+        r = g.ev(f"(()=>{{const o=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(){{throw new Error('disk full')}};return musliMineCraft.importSave({json.dumps(j)}).then(()=>'ok',e=>String(e.message)).finally(()=>{{IDBObjectStore.prototype.put=o}})}})()")
         assert r != "ok", "Expected the import to be rejected when a write fails"
         assert g.ev("localStorage.getItem(PROG_KEY)") == before and g.ev("S.stars") != 99
         assert g.ev("!SV.importing"), "The game must be allowed to save again after a failed import"
@@ -2695,42 +2695,42 @@ class TestImportOverExistingSave:
     def test_oversize_and_out_of_range_saves_are_rejected_or_filtered(self, game):
         g = game(PHONE)
         g.start()
-        r = g.ev("MusCraft.importSave('{'+' '.repeat(21000000)+'}').then(()=>'ok',e=>String(e.message))")
+        r = g.ev("musliMineCraft.importSave('{'+' '.repeat(21000000)+'}').then(()=>'ok',e=>String(e.message))")
         assert r != "ok"
-        j = json.dumps({"muscraft": 4, "prog": {"v": 4, "stars": 1e12}, "ed": [], "bed": []})
-        assert g.ev(f"MusCraft.importSave({json.dumps(j)}).then(()=>'ok',e=>String(e.message))") != "ok", "Expected absurd stars to be rejected"
+        j = json.dumps({"musliMineCraft": 4, "prog": {"v": 4, "stars": 1e12}, "ed": [], "bed": []})
+        assert g.ev(f"musliMineCraft.importSave({json.dumps(j)}).then(()=>'ok',e=>String(e.message))") != "ok", "Expected absurd stars to be rejected"
         g.ev("window.__old=1")
-        j = json.dumps({"muscraft": 4, "prog": {"v": 4, "stars": 3}, "ed": [[8385, [64 * 5 + 3, 99999999999, -4, 1.5, 64 * 12288 + 1]], [99999999, [1]]], "bed": []})
-        g.ev(f"MusCraft.importSave({json.dumps(j)})")
-        g.wait("!window.__old&&SV.ready&&S.stars===3", "the filtered import to load", timeout=30000, observe="S.stars")
-        n = g.ev("(async()=>{const q=indexedDB.open('muscraft',1);return await new Promise(r=>{q.onsuccess=()=>{const t=q.result.transaction('c').objectStore('c').getAll();t.onsuccess=()=>r(t.result)}})})()")
+        j = json.dumps({"musliMineCraft": 4, "prog": {"v": 4, "stars": 3}, "ed": [[8385, [64 * 5 + 3, 99999999999, -4, 1.5, 64 * 12288 + 1]], [99999999, [1]]], "bed": []})
+        g.ev(f"musliMineCraft.importSave({json.dumps(j)})")
+        g.wait("!window.__old&&typeof SV!=='undefined'&&SV.ready&&S.stars===3", "the filtered import to load", timeout=30000, observe="S.stars")
+        n = g.ev("(async()=>{const q=indexedDB.open('musliMineCraft',1);return await new Promise(r=>{q.onsuccess=()=>{const t=q.result.transaction('c').objectStore('c').getAll();t.onsuccess=()=>r(t.result)}})})()")
         assert n == [[64 * 5 + 3]], f"Expected only the one valid cell to be stored, observed {n}"
 
 
 class TestHostMessages:
     def _post(self, g, origin, source="window.parent"):
-        j = json.dumps({"muscraft": 4, "prog": {"v": 4, "stars": 321}, "ed": [], "bed": []})
-        g.ev(f"window.__old=1;window.dispatchEvent(new MessageEvent('message',{{data:{{type:'muscraft:import',json:{json.dumps(j)}}},origin:{json.dumps(origin)},source:{source}}}))")
+        j = json.dumps({"musliMineCraft": 4, "prog": {"v": 4, "stars": 321}, "ed": [], "bed": []})
+        g.ev(f"window.__old=1;window.dispatchEvent(new MessageEvent('message',{{data:{{type:'musliMineCraft:import',json:{json.dumps(j)}}},origin:{json.dumps(origin)},source:{source}}}))")
 
     def test_import_needs_the_flag_the_parent_window_and_a_listed_origin(self, game):
         g = game(PHONE)
         g.start()
-        g.ev("window.MusCraftAllowImport=true;window.MusCraftAllowedOrigins=['https://host.example']")
+        g.ev("window.musliMineCraftAllowImport=true;window.musliMineCraftAllowedOrigins=['https://host.example']")
         self._post(g, "https://evil.example")
         g.page.wait_for_timeout(800)
         assert g.ev("S.stars") != 321 and g.ev("!!window.__old"), "Expected a message from an unlisted origin to be ignored"
         self._post(g, "https://host.example", source="null")
         g.page.wait_for_timeout(800)
         assert g.ev("!!window.__old"), "Expected a message with the wrong source to be ignored"
-        g.ev("window.MusCraftAllowedOrigins=undefined")
+        g.ev("window.musliMineCraftAllowedOrigins=undefined")
         self._post(g, "https://host.example")
         g.page.wait_for_timeout(800)
         assert g.ev("!!window.__old"), "Expected no import without an origin allowlist"
-        g.ev("window.MusCraftAllowedOrigins=[];window.MusCraftAllowImport=true")
+        g.ev("window.musliMineCraftAllowedOrigins=[];window.musliMineCraftAllowImport=true")
         self._post(g, "https://host.example")
         g.page.wait_for_timeout(800)
         assert g.ev("!!window.__old"), "Expected no import with an empty allowlist"
-        g.ev("window.MusCraftAllowImport=false;window.MusCraftAllowedOrigins=['https://host.example']")
+        g.ev("window.musliMineCraftAllowImport=false;window.musliMineCraftAllowedOrigins=['https://host.example']")
         self._post(g, "https://host.example")
         g.page.wait_for_timeout(800)
         assert g.ev("!!window.__old"), "Expected no import without the allow flag"
@@ -2747,9 +2747,9 @@ class TestHostMessages:
     def test_a_listed_origin_from_the_parent_window_can_import(self, game):
         g = game(PHONE)
         g.start()
-        g.ev("window.MusCraftAllowImport=true;window.MusCraftAllowedOrigins=['https://host.example']")
+        g.ev("window.musliMineCraftAllowImport=true;window.musliMineCraftAllowedOrigins=['https://host.example']")
         self._post(g, "https://host.example")
-        g.wait("!window.__old&&SV.ready&&S.stars===321", "the accepted import", timeout=30000, observe="[!!window.__old,S.stars]")
+        g.wait("!window.__old&&typeof SV!=='undefined'&&SV.ready&&S.stars===321", "the accepted import", timeout=30000, observe="[!!window.__old,S.stars]")
 
     def test_the_save_summary_is_never_posted_to_any_origin(self, game):
         html = Path(GAME_URL.replace("file://", "")).read_text()
@@ -2789,7 +2789,7 @@ class TestTwoTabs:
         g.ev("forceLoad(1300>>4,1300>>4,0);setBlock(1300,30,1300,B.GOLD,'player');saveNow(true)")
         g.wait("(async()=>(await __e2e.idbChunks())>=1)()", "the first tab's chunk stored", timeout=20000, observe="1")
         pb.evaluate("forceLoad(1301>>4,1300>>4,0);setBlock(1301,30,1300,B.SANDSTONE,'player');saveNow(true)")
-        pb.wait_for_function("(async()=>{const q=indexedDB.open('muscraft',1);return await new Promise(r=>{q.onsuccess=()=>{const t=q.result.transaction('c').objectStore('c').getAll();t.onsuccess=()=>r(t.result.some(a=>a.length>=2))}})})()", timeout=T(20000))
+        pb.wait_for_function("(async()=>{const q=indexedDB.open('musliMineCraft',1);return await new Promise(r=>{q.onsuccess=()=>{const t=q.result.transaction('c').objectStore('c').getAll();t.onsuccess=()=>r(t.result.some(a=>a.length>=2))}})})()", timeout=T(20000))
         g.page.reload(wait_until="commit")
         g.ready()
         assert g.ev("(()=>{forceLoad(1300>>4,1300>>4,1);return [getB(1300,30,1300)===B.GOLD,getB(1301,30,1300)===B.SANDSTONE]})()") == [True, True]
@@ -2798,7 +2798,7 @@ class TestTwoTabs:
 class TestMigrationAndFallback:
     def test_old_key_stays_until_the_new_progress_is_written(self, game):
         g = game(PHONE, save=v3_save(stars=9, mission=3),
-                 init=["const s=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(String(k).indexOf('muscraft_prog')===0)throw new Error('quota');return s.call(this,k,v)}"])
+                 init=["const s=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(String(k).indexOf('musliMineCraft_prog')===0)throw new Error('quota');return s.call(this,k,v)}"])
         g.start(play=False)
         g.page.wait_for_timeout(3000)
         assert g.ev("!!localStorage.getItem(OLD_KEY)"), "Expected the old save to stay when the new progress could not be written"
@@ -2806,7 +2806,7 @@ class TestMigrationAndFallback:
     def test_too_big_fallback_save_keeps_the_previous_good_blob(self, game):
         seed = json.dumps({"v": 4, "ed": [[8385, [64 * 5 + 3]]], "bed": []})
         g = game(PHONE, init=["Object.defineProperty(window,'indexedDB',{value:undefined,configurable:true})",
-                              f"try{{if(!localStorage.getItem('muscraft_seeded')){{localStorage.setItem('muscraft_save_v1',{json.dumps(seed)});localStorage.setItem('muscraft_seeded','1')}}}}catch(e){{}}"])
+                              f"try{{if(!localStorage.getItem('musliMineCraft_seeded')){{localStorage.setItem('musliMineCraft_save_v1',{json.dumps(seed)});localStorage.setItem('musliMineCraft_seeded','1')}}}}catch(e){{}}"])
         g.start()
         key = g.ev("SAVE_KEY")
         g.ev(f"localStorage.setItem({json.dumps(key)},{json.dumps(seed)})")

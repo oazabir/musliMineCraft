@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <!--
 musliMineCraft embedding API (single file, no network):
- window.MusCraft.exportSave() -> Promise<string>  JSON text of the whole save (progress, edited chunks, bots).
- window.MusCraft.importSave(json) -> Promise<true>  validates, replaces the save, then reloads the page. Rejects on bad input.
- window.MusCraft.onSave = fn  host callback, called after each save with {stars,mission,blocks,time}.
- window.MusCraft.version = 4. window.IslamineCraft is a legacy alias of the same object.
- Messages to the parent window: {type:'muscraft:save',stars,mission,blocks}.
- Messages from the host: {type:'muscraft:import',json} is accepted only if window.MusCraftAllowImport===true
+ window.musliMineCraft.exportSave() -> Promise<string>  JSON text of the whole save (progress, edited chunks, bots).
+ window.musliMineCraft.importSave(json) -> Promise<true>  validates, replaces the save, then reloads the page. Rejects on bad input.
+ window.musliMineCraft.onSave = fn  host callback, called after each save with {stars,mission,blocks,time}.
+ window.musliMineCraft.version = 4. window.IslamineCraft is a legacy alias of the same object.
+ Messages to the parent window: {type:'musliMineCraft:save',stars,mission,blocks}.
+ Messages from the host: {type:'musliMineCraft:import',json} is accepted only if window.musliMineCraftAllowImport===true
  or the URL hash contains allowImport.
- Storage: IndexedDB "muscraft" (chunks + bots), localStorage muscraft_prog_v1 (progress), muscraft_jrn_v1
- (unconfirmed chunk journal), muscraft_save_v1 (fallback when IndexedDB is unavailable).
+ Storage: IndexedDB "musliMineCraft" (chunks + bots), localStorage musliMineCraft_prog_v1 (progress), musliMineCraft_jrn_v1
+ (unconfirmed chunk journal), musliMineCraft_save_v1 (fallback when IndexedDB is unavailable).
  Old islaminecraft_save_v1 data is migrated once on first start.
 -->
 <html lang="en">

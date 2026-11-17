@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds dist/muscraft.html from the parts in src/. Run from the repo root: ./build.sh
+# Builds dist/musliMineCraft.html from the parts in src/. Run from the repo root: ./build.sh
 # JS parts: blank lines and full-line comments are dropped and each line is trimmed.
 # The <style> block in 1-head.html is joined into one line.
 set -euo pipefail
@@ -51,6 +51,6 @@ for f in "${PARTS[@]}"; do
     *) cat "src/$f" >> "$tmp" ;;
   esac
 done
-mv "$tmp" dist/muscraft.html
+mv "$tmp" dist/musliMineCraft.html
 trap - EXIT
-echo "built dist/muscraft.html ($(wc -c < dist/muscraft.html) bytes)"
+echo "built dist/musliMineCraft.html ($(wc -c < dist/musliMineCraft.html) bytes)"

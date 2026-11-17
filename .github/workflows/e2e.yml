@@ -15,12 +15,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Check that dist/muscraft.html is up to date
+      - name: Check that dist/musliMineCraft.html is up to date
         run: |
-          cp dist/muscraft.html /tmp/committed.html
+          cp dist/musliMineCraft.html /tmp/committed.html
           ./build.sh
-          if ! cmp -s dist/muscraft.html /tmp/committed.html; then
-            echo "::error::dist/muscraft.html is out of date. Run ./build.sh and commit the result."
+          if ! cmp -s dist/musliMineCraft.html /tmp/committed.html; then
+            echo "::error::dist/musliMineCraft.html is out of date. Run ./build.sh and commit the result."
             exit 1
           fi
 

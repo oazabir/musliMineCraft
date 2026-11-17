@@ -1,6 +1,6 @@
 # Publishes the game to GitHub Pages.
 # The page is built from src/ with ./build.sh on every run, so it never depends
-# on the committed dist/muscraft.html being up to date.
+# on the committed dist/musliMineCraft.html being up to date.
 # Result: https://<owner>.github.io/<repo>/  (index.html is the game)
 #
 # One-time setup: Settings > Pages > Build and deployment > Source: "GitHub Actions".
@@ -33,9 +33,9 @@ jobs:
         run: |
           ./build.sh
           mkdir -p public
-          cp dist/muscraft.html public/index.html
+          cp dist/musliMineCraft.html public/index.html
           # Keep the file name from the README working too.
-          cp dist/muscraft.html public/muscraft.html
+          cp dist/musliMineCraft.html public/musliMineCraft.html
           test -s public/index.html
 
       - uses: actions/configure-pages@v5

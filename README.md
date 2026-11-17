@@ -35,17 +35,17 @@ More are in `docs/screenshots/`: the museum atrium, builder close-up, swimming, 
 
 The built game is committed, so you do not need to build anything.
 
-- Open `dist/muscraft.html` in a modern browser.
+- Open `dist/musliMineCraft.html` in a modern browser.
 - Or serve the folder and open the page:
 
 ```bash
 python3 -m http.server 8000
-# then open http://localhost:8000/dist/muscraft.html
+# then open http://localhost:8000/dist/musliMineCraft.html
 ```
 
 ## Embedding in an app
 
-Load `dist/muscraft.html` full size (the page fills the whole view). It needs three things from the host:
+Load `dist/musliMineCraft.html` full size (the page fills the whole view). It needs three things from the host:
 
 - JavaScript enabled.
 - DOM storage (`localStorage`) enabled. Android WebView has this off by default.
@@ -55,14 +55,14 @@ Examples:
 
 ```html
 <!-- iframe -->
-<iframe src="muscraft.html" style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>
+<iframe src="musliMineCraft.html" style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>
 ```
 
 ```kotlin
 // Android WebView
 webView.settings.javaScriptEnabled = true
 webView.settings.domStorageEnabled = true   // off by default
-webView.loadUrl("file:///android_asset/muscraft.html")
+webView.loadUrl("file:///android_asset/musliMineCraft.html")
 ```
 
 ```swift
@@ -75,26 +75,26 @@ web.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
 
 This is exactly what the game provides today (see `src/5c-save.js` and the comment at the top of `src/1-head.html`).
 
-JavaScript object `window.MusCraft` (`window.IslamineCraft` is an old alias for the same object; `MusCraft.version` is `4`):
+JavaScript object `window.musliMineCraft` (`window.IslamineCraft` is an old alias for the same object; `musliMineCraft.version` is `4`):
 
-- `MusCraft.exportSave()` returns a Promise of a JSON string. It holds progress, all edited chunks and builder-bot edits.
-- `MusCraft.importSave(json)` checks the JSON, replaces the save, then reloads the page. The Promise rejects on invalid input.
-- `MusCraft.onSave = fn` sets a callback. It is called after each save with `{stars, mission, blocks, time}`.
+- `musliMineCraft.exportSave()` returns a Promise of a JSON string. It holds progress, all edited chunks and builder-bot edits.
+- `musliMineCraft.importSave(json)` checks the JSON, replaces the save, then reloads the page. The Promise rejects on invalid input.
+- `musliMineCraft.onSave = fn` sets a callback. It is called after each save with `{stars, mission, blocks, time}`.
 
 Messages with the parent window (when the game is in an iframe):
 
-- Game to host: `{type: 'muscraft:save', stars, mission, blocks}` after each save. It is posted only to the origins in `window.MusCraftAllowedOrigins`, and never to `*`. If that list is not set, nothing is posted.
-- Host to game: `{type: 'muscraft:import', json}`. The game accepts it only when all three are true:
-  1. `window.MusCraftAllowImport === true` in the game window.
+- Game to host: `{type: 'musliMineCraft:save', stars, mission, blocks}` after each save. It is posted only to the origins in `window.musliMineCraftAllowedOrigins`, and never to `*`. If that list is not set, nothing is posted.
+- Host to game: `{type: 'musliMineCraft:import', json}`. The game accepts it only when all three are true:
+  1. `window.musliMineCraftAllowImport === true` in the game window.
   2. The message comes from `window.parent`.
-  3. Its origin is in `window.MusCraftAllowedOrigins`.
+  3. Its origin is in `window.musliMineCraftAllowedOrigins`.
 
-  `MusCraftAllowedOrigins` is an array the host sets inside the game window. There is no default.
+  `musliMineCraftAllowedOrigins` is an array the host sets inside the game window. There is no default.
 
 Other behaviour:
 
-- Only one tab writes the save (a Web Lock named `muscraft-writer`). A second tab shows "musliMineCraft is open in another tab" and a "Play here" button.
-- Storage: IndexedDB database `muscraft`; `localStorage` keys `muscraft_prog_v1` (progress), `muscraft_jrn_v1` (journal of unconfirmed chunk writes) and `muscraft_save_v1` (fallback, used only if IndexedDB is not available).
+- Only one tab writes the save (a Web Lock named `musliMineCraft-writer`). A second tab shows "musliMineCraft is open in another tab" and a "Play here" button.
+- Storage: IndexedDB database `musliMineCraft`; `localStorage` keys `musliMineCraft_prog_v1` (progress), `musliMineCraft_jrn_v1` (journal of unconfirmed chunk writes) and `musliMineCraft_save_v1` (fallback, used only if IndexedDB is not available).
 - A save from the older IslamineCraft build (`islaminecraft_save_v1`) is migrated once on first start.
 
 ## Museum photo credits
@@ -115,7 +115,7 @@ The game is built from the parts in `src/`. Run this from the repo root:
 ./build.sh
 ```
 
-It joins the parts in a fixed order and writes `dist/muscraft.html`. It needs only bash and awk. Blank lines and full-line comments in the JS parts are dropped. Commit the new `dist/muscraft.html` with your source changes. CI fails if it is out of date.
+It joins the parts in a fixed order and writes `dist/musliMineCraft.html`. It needs only bash and awk. Blank lines and full-line comments in the JS parts are dropped. Commit the new `dist/musliMineCraft.html` with your source changes. CI fails if it is out of date.
 
 ## Running the tests
 
@@ -130,7 +130,7 @@ pytest
 
 Environment variables:
 
-- `GAME_URL`: page to test. Default is `dist/muscraft.html` in this repo.
+- `GAME_URL`: page to test. Default is `dist/musliMineCraft.html` in this repo.
 - `HEADED=1`: show the browser window.
 - `SLOW=1`: make every wait three times longer, for slow machines.
 
@@ -140,8 +140,8 @@ The full suite takes about 15 to 20 minutes. Run one group with `pytest -k Bots`
 
 ```
 src/                  game source parts (HTML head, JS modules, HTML tail)
-build.sh              joins src/ into dist/muscraft.html
-dist/muscraft.html    the built, self-contained game (committed)
+build.sh              joins src/ into dist/musliMineCraft.html
+dist/musliMineCraft.html    the built, self-contained game (committed)
 tests/e2e/            Playwright tests, pytest.ini, requirements, test README
 docs/screenshots/     screenshots used in this README
 .github/workflows/    GitHub Actions: build check and e2e tests
