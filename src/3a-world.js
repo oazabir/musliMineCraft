@@ -427,7 +427,7 @@ function genChunk(c){
   const sb=v[(top<<8)|i];if(sb===B.LEAVES||sb===B.WOOD)continue;
   v[((ty+1)<<8)|i]=B.CHEST;if(ty+1>c.my)c.my=ty+1;
  }
- genSigns(x0,z0);genPortals(x0,z0);
+ genSigns(x0,z0);
  /* player and bot edits */
  if(!c.pure)for(const mp of [bedits.get(c.key),edits.get(c.key)])if(mp)for(const [i,b] of mp){v[i]=b;const y=i>>8;if(b&&y>c.my)c.my=y}
  for(let y=1;y<H-1;y++){const o=y<<8;for(let i=0;i<256;i++)if(v[o+i]===B.CHEST&&c.chests.length<8)c.chests.push([x0+(i&15),y,z0+(i>>4)])}

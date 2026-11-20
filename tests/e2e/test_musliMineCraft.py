@@ -2967,10 +2967,11 @@ class TestOpenAirPrison:
         s = g.ev("__prison()")
         assert s["safe"] == 10, f"A bomb on the roof must not reach the people inside, observed {s}"
         assert g.ev("__prison().pos.every(p=>p[3]!==3||!gzCov[gzIdx(p[0],p[2])])"), "Nobody under the roof is knocked down"
-        # pick a person in the open and drop the bomb on them in the same step, so they can not run out of range first
-        r = g.ev("""(()=>{const p=gzPeople.find(p=>p.st===0&&!gzCov[gzIdx(p.x,p.z)]);if(!p)return null;__prisonBoom(p.x,p.z);return p.st})()""")
-        assert r is not None, "Expected someone out in the open"
-        assert r == 3, "A bomb next to a person in the open knocks them down"
+        out = g.ev("__prison().pos.find(p=>p[3]===0&&!gzCov[gzIdx(p[0],p[2])])")
+        assert out, "Expected someone out in the open"
+        d0 = g.ev("__prison().down")
+        g.ev(f"__prisonBoom({out[0]},{out[2]})")
+        assert g.ev("__prison().down") > d0, "A bomb next to a person in the open knocks them down"
         assert g.ev("__prisonStep(5).down") == 0, "Knocked-down people get up again"
 
     def test_a_raid_scores_a_point_per_sheltered_person_and_milestone_stars_once(self, started):
@@ -3143,79 +3144,3 @@ class TestStartSign:
             assert n in txt, f"Expected {n!r} on the start sign, observed {txt!r}"
         b = g.ev("(()=>{const r=document.querySelector('.ntag.sign[style*=block]').getBoundingClientRect();return[r.left,r.top,r.right,r.bottom,innerWidth,innerHeight]})()")
         assert b[0] >= -1 and b[2] <= b[4] + 1 and b[3] <= b[5], f"Expected the whole label on screen at {vp[0]}, observed {b}"
-
-
-# --------------------------------------------------------------------------- stargate portals
-def _walk_into_gate(g, i):
-    """Stand 4 blocks in front of gate i facing it, then walk in with the W key until the jump starts."""
-    a = g.ev(f"__portals()[{i}]")
-    g.ev(f"__tp({a['x']}+{a['nx']}*4,{a['z']}+{a['nz']}*4,Math.atan2({a['nx']},{a['nz']}),0,true)")
-    g.settle()
-    g.page.keyboard.down("w")
-    try:
-        g.wait("__tpState().on", f"the jump through the gate to {a['name']} to start", timeout=8000,
-               observe="[player.x,player.z,__tpState()]")
-    finally:
-        g.page.keyboard.up("w")
-    return a
-
-
-class TestPortals:
-    def test_three_gates_around_the_start_and_a_gate_home_at_each_place(self, loaded):
-        g = loaded
-        P = g.ev("__portals()")
-        assert len(P) == 6
-        start = P[:3]
-        assert [p["name"] for p in start] == ["Museum of Islamic Heritage", "Grand Mosque", "Open Air Prison"]
-        for p in start:
-            d = math.hypot(p["x"] - 1025.5, p["z"] - 1024.5)
-            assert d < 40, f"Expected the {p['name']} gate near the start, observed {d:.0f} blocks away"
-        assert all(p["name"] == "the start" for p in P[3:])
-        r = g.ev("""(()=>{const out=[];for(const p of __portals()){const x=Math.floor(p.x),z=Math.floor(p.z);forceLoad(x>>4,z>>4,0);
-          out.push({pad:getB(x,p.base,z),air:[1,2,3,4,5,6].every(k=>!getB(x,p.base+k,z))})}return out})()""")
-        assert all(x["pad"] == g.ev("B.MARBLE") and x["air"] for x in r), f"Every gate stands on a marble pad with open space above, observed {r}"
-        # gates at the places stand beside them, never on the way in: off the museum avenue, off the mosque plaza
-        assert g.ev("(()=>{const l=museumLm(),p=__portals()[3];return Math.abs(p.x-l.x)>12&&Math.abs(p.x-l.x)<30})()"), "The museum gate stands beside its avenue"
-        assert g.ev("(()=>{const p=__portals()[4];return !inAvenue(Math.floor(p.x),Math.floor(p.z))&&!portalPad(966,995,0)&&Math.hypot(p.x-916,p.z-995)<60})()"), "The mosque gate stands beside the plaza, not on it"
-        assert g.ev("gzD(__portals()[5].x,__portals()[5].z)<0"), "The prison gate stands on the island"
-
-    @pytest.mark.parametrize("i", [0, 1, 2], ids=["museum", "mosque", "prison"])
-    def test_walking_into_a_start_gate_warps_the_player_to_its_place(self, desktop, i):
-        g = desktop
-        g.ev("S.gz.seen=true")
-        _walk_into_gate(g, i)
-        assert g.ev("getComputedStyle(document.getElementById('warp')).display") == "block", "The warp tunnel shows during the jump"
-        g.wait("!__tpState().on", "the jump to finish", timeout=8000, observe="__tpState()")
-        d = g.ev(f"__portals()[__portals()[{i}].to]")
-        r = g.ev("[player.x,player.z,collides(player.x,player.y,player.z),getComputedStyle(document.getElementById('warp')).display]")
-        assert math.hypot(r[0] - d["x"], r[1] - d["z"]) < 4.5, f"Expected to step out of the gate at {d['x']},{d['z']}, observed {r[:2]}"
-        assert not r[2], "The player must not land inside blocks"
-        assert r[3] == "none", "The warp tunnel is gone after the jump"
-        assert "Welcome to" in g.ev("document.getElementById('toast').textContent")
-
-    def test_the_gate_home_brings_the_player_back_to_the_start(self, desktop):
-        g = desktop
-        _walk_into_gate(g, 3)
-        g.wait("!__tpState().on", "the jump home to finish", timeout=8000, observe="__tpState()")
-        p = g.ev("__portals()[0]")
-        r = g.ev("[player.x,player.z]")
-        assert math.hypot(r[0] - p["x"], r[1] - p["z"]) < 4.5, f"Expected to come out of the museum gate by the start, observed {r}"
-        g.page.wait_for_timeout(int(T(1500)))
-        assert not g.ev("__tpState().on"), "Arriving must not send the player straight back"
-
-    def test_gate_sounds_and_labels(self, desktop):
-        g = desktop
-        g.ev("initAudio();psfx.open();psfx.arrive();portalHum(.1,2)")
-        p = g.ev("__portals()[0]")
-        g.ev(f"__tp({p['x']}+{p['nx']}*9,{p['z']}+{p['nz']}*9,Math.atan2({p['nx']},{p['nz']}),.1,true)")
-        g.wait("[...document.querySelectorAll('.ntag.portal')].some(e=>e.style.display==='block')", "the gate label", timeout=8000)
-        assert "Portal to Museum of Islamic Heritage" in g.ev("[...document.querySelectorAll('.ntag.portal')].map(e=>e.textContent).join('|')")
-
-    def test_signs_and_builders_keep_off_the_gate_pads(self, started):
-        g = started
-        assert g.ev("__signs(START.x,START.z,4).every(s=>!portalPad(s.x,s.z,0))"), "No signpost stands on a gate pad"
-        r = g.ev("""(()=>{const b=bots.find(o=>o.on)||getBot(0),p=__portals()[0];let bad=0;
-          for(let k=0;k<40;k++){b.x=p.x+.5;b.z=p.z+p.nz*6;b.y=groundTop(Math.floor(b.x),Math.floor(b.z))+1;b.site=null;
-            if(planSite(b))for(const c of b.cells)if(portalPad(c[0],c[2],0))bad++}
-          b.site=null;b.st=BS.WANDER;return bad})()""")
-        assert r == 0, f"A builder planned blocks on a gate pad ({r})"

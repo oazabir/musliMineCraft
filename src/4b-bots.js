@@ -145,7 +145,7 @@ function planSite(b){
    const wy=walkY(x+.5,z+.5,y0);
    if(wy<0||wy>y0||wy<y0-1){ok=false;break}
    if(wy===y0-1&&x>=cx&&x<cx+tp.w&&z>=cz&&z<cz+tp.d)found.push([x,y0-1,z,B.PATH]);
-   if(nearPlot(x,z,10)||inLm(x,z,6)||gzD(x,z)<GZ.moat+3||portalPad(x,z,3)){ok=false;break}
+   if(nearPlot(x,z,10)||inLm(x,z,6)||gzD(x,z)<GZ.moat+3){ok=false;break}
    if(x>=cx&&x<cx+tp.w&&z>=cz&&z<cz+tp.d)for(let y=y0-1;y<y0+8;y++)if(hasEdit(x,y,z)){ok=false;break}
   }
   if(!ok)continue;

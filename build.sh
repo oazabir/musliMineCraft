@@ -5,7 +5,7 @@
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
-PARTS=(1-head.html 2-core.js 3a-world.js 3a2-museum.js 3b-chunks.js 3-gl.js 4-play.js 4b-bots.js 5-game.js 5b-museum-ui.js 5c-save.js 5d-prison.js 5e-places.js 5f-portals.js 6-quiz.js 7-ui.js 8-tail.html)
+PARTS=(1-head.html 2-core.js 3a-world.js 3a2-museum.js 3b-chunks.js 3-gl.js 4-play.js 4b-bots.js 5-game.js 5b-museum-ui.js 5c-save.js 5d-prison.js 5e-places.js 6-quiz.js 7-ui.js 8-tail.html)
 
 strip_js() {
   awk '
