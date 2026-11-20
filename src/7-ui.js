@@ -398,7 +398,7 @@ function frame(now){
  else{busyFrame=streamWork(4,2,now)>0;if(now-lastUnload>400){lastUnload=now;unloadFar()}}
  if(beamsDirty&&now-beamsT>300){beamsT=now;rebuildBeams()}
  $('building').style.display=playing&&player.hold?'block':'none';
- updateCamera();fillBotGeo();updateTags();updateSigns(dt);updatePortalLabels();museumHud(dt);fillExGeo(now);uiWater();
+ drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);updatePortalLabels();museumHud(dt);fillExGeo(now);uiWater();
  hitView=null;
  if(playing&&!curModal){
   let r=null;

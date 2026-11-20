@@ -271,6 +271,17 @@ function flowers(l,lx,y,lz){
  if(y===1){const k=m&1?-1:B.FL0+((m+(lx>0?1:0)+(lz>0?2:0))%6);return k>=0?k:(hash2(lx,lz,4)>.5?B.TUFT:-1)}
  return -1;
 }
+function haram(l,lx,y,lz){
+ const ax=Math.abs(lx),az=Math.abs(lz),m=Math.max(ax,az);
+ /* broad marble courtyard, arcaded perimeter, Kaaba and small white-clad pilgrims */
+ if(y===0){if(m<=21)return m>=18?B.ARCH:B.MARBLE;return -1}
+ if(m===21){if(y<=8)return y%4===0?B.LATTICE:B.MARBLE;return y===9?B.GOLD:-1}
+ if(ax<=3&&az<=3){if(y<=5)return B.STONE;if(y===6&&ax<=2&&az<=2)return B.GOLD;return -1}
+ if(ax<=2&&az<=2&&y===7)return B.GOLD;
+ if(m>=6&&m<=16&&((ax%5===0&&az%5<=1)||(az%5===0&&ax%5<=1)))return y<=2?B.MARBLE:-1;
+ if(y===1&&ax>=5&&ax<=16&&az>=5&&az<=16&&((ax*7+az*11)%13<2))return B.MARBLE;
+ return -1;
+}
 const LMT={
  mosque:{fn:mosque,p:v=>MQ[v]},
  charbagh:{fn:charbagh,p:()=>({hx:17,hz:17,h:13,ymin:-1})},
@@ -280,6 +291,7 @@ const LMT={
  orchard:{fn:orchard,p:()=>({hx:14,hz:11,h:7})},
  vineyard:{fn:vineyard,p:()=>({hx:15,hz:11,h:5})},
  flowers:{fn:flowers,p:()=>({hx:10,hz:10,h:5,ymin:-1})}
+ ,haram:{fn:haram,p:()=>({hx:22,hz:22,h:10,ymin:0})}
 };
 let lmId=0;
 function makeLm(type,v,o,x,z,fixed,id){
@@ -291,15 +303,20 @@ function makeLm(type,v,o,x,z,fixed,id){
  const y0=P.y0||clamp(Math.round(s/pts.length),WL+3,cap);
  return{t:type,v,o,x,z,hx,hz,ex,ez,y0,h:P.h,ymin:P.ymin||0,P,fn:T0.fn,tp:P.top2||null,id:id};
 }
-/* the skyline ring: Islamic landmarks all around spawn, 95-125 blocks out (dx,dz from spawn) */
+/* Abu Dhabi's central district, then smaller landmark clusters across the Gulf. */
 const FIXED=[['mosque',0,3,-108,-29],['mosque',1,2,-30,108],['mosque',2,0,-46,-100],['mosque',3,2,59,95],['museum',0,0,10,-93],['charbagh',0,0,-91,43],['village',0,0,118,21],['caravan',0,0,97,-68],
- ['orchard',0,0,58,62],['vineyard',0,1,-48,62],['flowers',0,0,6,52]];
+ ['orchard',0,0,58,62],['vineyard',0,1,-48,62],['flowers',0,0,6,52],
+ /* Qatar, north-west across the Gulf: a compact Doha skyline and grand mosque. */
+ ['museum',0,0,-355,-365],['mosque',1,1,-390,-330],['village',0,0,-330,-410],
+ /* Saudi Arabia to the west and south-west: oasis town, caravan stop and mosques. */
+ ['haram',0,0,-520,245],['mosque',0,0,-520,220],['village',0,0,-565,300],['caravan',0,0,-485,330],['charbagh',0,0,-610,235]];
 const SPAWN_PALMS=[[-17,7],[-7,-13],[-21,-10],[-2,12]];
 /* an open avenue in front of the grand mosque (kept free of trees) with a few palms that frame it from the sides */
 const inAvenue=(x,z)=>x>=928&&x<=1002&&z>=984&&z<=1006;
 const AVE_PALMS=[[944,1010],[950,981],[958,1011],[961,980],[972,1012],[974,979]];
 const lmMemo=new Map();let fixedLms=null;
 function fixedList(){if(!fixedLms)fixedLms=FIXED.map((f,i)=>makeLm(f[0],f[1],f[2],SPAWN.x+f[3],SPAWN.z+f[4],true,i));return fixedLms}
+function protectedLandmarkBlock(x,y,z){for(const l of fixedList())if(l.t==='haram'&&Math.abs(x-l.x)<=l.ex&&Math.abs(z-l.z)<=l.ez&&y>=l.y0&&y<=l.y0+l.h)return true;return false}
 const RG=112,NR=Math.ceil(WX/RG);
 function lmCell(rx,rz){
  if(rx<0||rz<0||rx>=NR||rz>=NR)return null;
