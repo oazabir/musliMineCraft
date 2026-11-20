@@ -932,7 +932,8 @@ class TestQuiz:
 
 # =========================================================================== WORLD STREAMING AND MEMORY
 def _travel(g, x, z, yaw=-1.5708):
-    g.ev("(a)=>__tp(a[0],a[1],a[2],-0.2)", [x + 0.5, z + 0.5, yaw])
+    # the route east crosses the Open Air Prison; its first-visit card would pause the game, so it counts as already seen here
+    g.ev("(a)=>{S.gz.seen=true;__tp(a[0],a[1],a[2],-0.2)}", [x + 0.5, z + 0.5, yaw])
     g.settle(timeout=60000)
 
 
@@ -2875,3 +2876,271 @@ class TestTidyRules:
         r = g.ev("""(()=>{let res=null;for(let k=0;k<600&&!res;k++){__stepBots(1);for(const b of bots){if(b.on&&b.st===BS.BUILD&&b.site&&b.ci>2&&!(JB&&JB.bot===b)){
           const n=b.done.length,s=b.site;const ok=botRespawn(b,player.x,player.z,10,20,undefined,0);res={ok,added:b.done.length>n||b.done.length===6,rec:b.done.some(d=>d.x0===s.x0&&d.z0===s.z0)};break}}}return res})()""")
         assert r and r["ok"] and r["rec"], f"Expected the abandoned partial structure to be recorded for tidying, observed {r}"
+
+
+# --------------------------------------------------------------------------- Open Air Prison
+GZ_HUT = """(()=>{
+ const x0=GZ.x-4,z0=GZ.z+5,w=5,d=5;let fl=0;
+ for(let x=x0;x<x0+w;x++)for(let z=z0;z<z0+d;z++)fl=Math.max(fl,groundTop(x,z)+1);
+ const roof=fl+2,cells=[];
+ for(let x=x0;x<x0+w;x++)for(let z=z0;z<z0+d;z++){
+  const g=groundTop(x,z)+1,edge=x===x0||x===x0+w-1||z===z0||z===z0+d-1,door=x===x0+2&&z===z0+d-1;
+  for(let y=g;y<fl;y++)setBlock(x,y,z,B.SANDSTONE,0);
+  if(edge&&!door)for(let y=fl;y<roof;y++)setBlock(x,y,z,B.MUD,0);
+  setBlock(x,roof,z,B.STONE,0);cells.push([x,roof,z]);
+ }
+ return {x0,z0,fl,roof,cells};
+})()"""
+
+
+def _to_prison(g, raids=False):
+    """Go to the Open Air Prison with the skills-panel action, close the first-visit card and wait for the people."""
+    g.freeze_bots()
+    g.ev("visitPrison()")
+    g.wait("curModal&&document.getElementById('panel').textContent.includes('Open Air Prison')", "the Open Air Prison card on the first visit",
+           observe="[!!curModal,document.getElementById('panel').textContent.slice(0,80),__prison().on]", timeout=20000)
+    text = g.ev("document.getElementById('panel').textContent")
+    g.ev("closeModal()")
+    if not raids:
+        g.ev("GZS.raidT=1e9")
+    g.wait("__prison().spawned", "the people of the Open Air Prison to appear", timeout=20000, observe="__prison()")
+    return text
+
+
+def _fill_hut(g):
+    hut = g.ev(GZ_HUT)
+    g.ev("(()=>{for(let k=0;k<1200;k++){__prisonStep(.1);const s=__prison();if(s.cov&&s.safe===s.cov)return}})()")
+    return hut
+
+
+class TestOpenAirPrison:
+    def test_the_prison_is_an_island_ringed_by_water_and_free_of_landmarks(self, loaded):
+        g = loaded
+        r = g.ev("""(()=>{const ring=[];for(let a=0;a<6.28;a+=.4){let k=0;while(k<80&&gzD(GZ.x+Math.sin(a)*k,GZ.z+Math.cos(a)*k)<5)k+=.5;
+          const x=Math.floor(GZ.x+Math.sin(a)*k),z=Math.floor(GZ.z+Math.cos(a)*k);ring.push(groundTop(x,z))}
+          gatherLms(GZ.x-60,GZ.z-60,GZ.x+60,GZ.z+60);
+          return{mid:groundTop(GZ.x,GZ.z),ring,lms:chunkLms.filter(l=>Math.abs(l.x-GZ.x)<l.ex+GZ.hx+GZ.moat&&Math.abs(l.z-GZ.z)<l.ez+GZ.hz+GZ.moat).length,WL}})()""")
+        assert r["mid"] > r["WL"], f"Expected dry land in the middle of the Open Air Prison, observed top {r['mid']}"
+        assert all(t < r["WL"] for t in r["ring"]), f"Expected water all around the island, observed tops {r['ring']} (water level {r['WL']})"
+        assert r["lms"] == 0, "No landmark may overlap the island or its channel"
+
+    def test_first_visit_shows_the_card_and_24_people_run_inside_the_island(self, started):
+        g = started
+        card = _to_prison(g)
+        assert "shelter" in card.lower() and "roof" in card.lower(), f"The card must explain the task, observed {card[:200]!r}"
+        s0 = g.ev("__prison()")
+        assert s0["people"] == 24 and s0["seen"], f"observed {s0}"
+        s1 = g.ev("__prisonStep(4)")
+        moved = sum(1 for a, b in zip(s0["pos"], s1["pos"]) if abs(a[0] - b[0]) + abs(a[2] - b[2]) > .5)
+        assert moved >= 12, f"Expected the people to run around, only {moved} moved"
+        assert g.ev("__prison().pos.every(p=>gzD(p[0],p[2])<0)"), "Every person must stay on the island"
+        assert g.ev("getComputedStyle(document.getElementById('gzchip')).display") == "flex"
+        chip = g.ev("document.getElementById('gzchip').textContent")
+        assert re.match(r"Open Air Prison: \d+/24 safe", chip), f"Expected the Open Air Prison chip, observed {chip!r}"
+
+    def test_people_fill_a_roofed_shelter_up_to_its_capacity(self, started):
+        g = started
+        _to_prison(g)
+        assert g.ev("__prison().cov") == 0, "A fresh island has no roofs"
+        _fill_hut(g)
+        s = g.ev("__prison()")
+        assert s["cov"] == 10, f"A 5x5 hut with walls and a door has 10 roofed floor spots, observed {s['cov']}"
+        assert s["safe"] == 10 and s["free"] == 0, f"Expected the hut to fill to its capacity, observed {s}"
+        safe = [p for p in s["pos"] if p[3] == 2]
+        assert len({p[4] for p in safe}) == 10, "Each spot holds exactly one person"
+        assert g.ev("__prison().pos.filter(p=>p[3]===2).every(p=>gzCov[gzIdx(p[0],p[2])])"), "Sheltered people stand under the roof"
+        assert sum(1 for p in s["pos"] if p[3] in (0, 1)) == 14, "Everyone else keeps looking for a shelter"
+
+    def test_removing_the_roof_sends_people_back_out(self, started):
+        g = started
+        _to_prison(g)
+        hut = _fill_hut(g)
+        g.ev("(c)=>{for(const p of c)setBlock(p[0],p[1],p[2],0,0)}", hut["cells"])
+        s = g.ev("__prisonStep(1)")
+        assert s["cov"] == 0 and s["safe"] == 0, f"Without a roof nobody is safe, observed {s}"
+
+    def test_a_bomb_on_the_roof_spares_the_shelter_and_knocks_down_people_in_the_open(self, started):
+        g = started
+        _to_prison(g)
+        hut = _fill_hut(g)
+        g.ev(f"__prisonBoom({hut['x0']}+2.5,{hut['z0']}+2.5)")
+        s = g.ev("__prison()")
+        assert s["safe"] == 10, f"A bomb on the roof must not reach the people inside, observed {s}"
+        assert g.ev("__prison().pos.every(p=>p[3]!==3||!gzCov[gzIdx(p[0],p[2])])"), "Nobody under the roof is knocked down"
+        out = g.ev("__prison().pos.find(p=>p[3]===0&&!gzCov[gzIdx(p[0],p[2])])")
+        assert out, "Expected someone out in the open"
+        d0 = g.ev("__prison().down")
+        g.ev(f"__prisonBoom({out[0]},{out[2]})")
+        assert g.ev("__prison().down") > d0, "A bomb next to a person in the open knocks them down"
+        assert g.ev("__prisonStep(5).down") == 0, "Knocked-down people get up again"
+
+    def test_a_raid_scores_a_point_per_sheltered_person_and_milestone_stars_once(self, started):
+        g = started
+        _to_prison(g)
+        _fill_hut(g)
+        s0 = g.stars()
+        g.ev("__prisonRaid()")
+        g.ev("(()=>{for(let k=0;k<1200;k++){__prisonStep(.1);const s=__prison();if(s.raidN===1&&!s.raid)return}})()")
+        s = g.ev("__prison()")
+        assert s["raidN"] == 1 and not s["raid"], f"Expected the raid to finish, observed {s}"
+        assert s["pts"] == 10 and s["best"] == 10, f"Expected a point for each of the 10 sheltered people, observed {s}"
+        assert g.stars() == s0 + 6, "Reaching 5 and then 10 people safe gives 3 stars each"
+        g.ev("GZS.raidT=0")
+        g.ev("(()=>{for(let k=0;k<1200;k++){__prisonStep(.1);const s=__prison();if(s.raidN===2&&!s.raid)return}})()")
+        assert g.ev("__prison().pts") == 20 and g.stars() == s0 + 6, "A milestone pays out only once"
+
+    def test_prison_points_survive_a_reload_and_the_card_shows_only_once(self, game):
+        g = game(PHONE)
+        g.start()
+        _to_prison(g)
+        g.ev("S.gz.pts=37;S.gz.best=12;S.gz.ms=3;saveNow(true)")
+        g.page.reload(wait_until="commit")
+        g.ready()
+        g.play()
+        assert g.ev("[S.gz.pts,S.gz.best,S.gz.ms,S.gz.seen]") == [37, 12, 3, True]
+        g.ev("visitPrison()")
+        g.wait("__prison().spawned", "the people to appear without a card", timeout=20000, observe="[__prison(),!!curModal]")
+        assert not g.ev("!!curModal"), "The Open Air Prison card is shown only on the first visit"
+
+    def test_builders_never_plan_a_site_in_the_prison(self, started):
+        g = started
+        _to_prison(g)
+        r = g.ev("""(()=>{const b=bots.find(o=>o.on)||getBot(0);let bad=0,n=0;
+          for(let k=0;k<60;k++){b.x=GZ.x+.5;b.z=GZ.z+.5;b.y=groundTop(GZ.x,GZ.z)+1;b.site=null;if(planSite(b)){n++;if(gzD(b.site.x,b.site.z)<GZ.moat+3)bad++}}
+          b.site=null;b.st=BS.WANDER;return{bad,n}})()""")
+        assert r["bad"] == 0, f"A builder planned a site in the Open Air Prison: {r}"
+
+
+# --------------------------------------------------------------------------- loader image, signposts, quests
+class TestLoaderImage:
+    def test_the_builders_picture_shows_behind_the_loader_then_gives_way_to_the_live_view(self, game):
+        g = game(PHONE)
+        g.goto()
+        g.wait("!!document.getElementById('wshot')&&!!document.getElementById('wtrack')", "the loader picture and progress bar", timeout=5000)
+        r = g.ev("""(()=>{const e=document.getElementById('wshot'),c=getComputedStyle(e),b=e.getBoundingClientRect();
+          return{img:c.backgroundImage.includes('data:image/jpeg;base64,'),op:c.opacity,w:b.width,h:b.height,vw:innerWidth,vh:innerHeight}})()""")
+        assert r["img"], "The loader picture must be embedded in the file (no network)"
+        assert r["op"] == "1" and r["w"] >= r["vw"] - 1 and r["h"] >= r["vh"] - 1, f"Expected the picture to fill the screen while loading, observed {r}"
+        bar = g.ev("(()=>{const t=document.getElementById('wtrack').getBoundingClientRect(),e=document.elementFromPoint(t.left+t.width/2,t.top+t.height/2);return !!e&&e.id!=='wshot'})()")
+        assert bar, "The progress bar must be drawn above the picture"
+        g.wait("document.getElementById('welcome').classList.contains('live')", "the live panorama", timeout=60000)
+        g.wait("getComputedStyle(document.getElementById('wshot')).opacity==='0'", "the picture to fade out for the live view", timeout=5000,
+               observe="getComputedStyle(document.getElementById('wshot')).opacity")
+
+
+def _near_sign(g):
+    """Stand 4 blocks south of the nearest signpost, looking at it; returns the sign."""
+    s = g.ev("(()=>{const l=__signs(player.x,player.z,2).sort((a,b)=>Math.hypot(a.x-player.x,a.z-player.z)-Math.hypot(b.x-player.x,b.z-player.z));return l[0]})()")
+    assert s, "Expected a signpost near the start"
+    g.ev(f"__tp({s['x']}+.5,{s['z']}+4.5,0,-0.05,true)")
+    g.settle()
+    return s
+
+
+class TestSignposts:
+    def test_signposts_stand_in_the_world_and_name_three_places(self, started):
+        g = started
+        signs = g.ev("__signs(SPAWN.x,SPAWN.z,3)")
+        assert len(signs) >= 12, f"Expected signposts all around the start, observed {len(signs)}"
+        names = {n for s in signs for n in s["pl"]}
+        assert {"Grand Mosque", "Museum of Islamic Heritage", "Lake"} & names, f"Expected well-known places on the signs, observed {names}"
+        s = signs[0]
+        assert all(len(x["pl"]) >= 3 for x in signs), "Every sign names at least three places"
+        s = next(x for x in signs if x["b"] == 3)
+        b = g.ev(f"(()=>{{forceLoad({s['x']}>>4,{s['z']}>>4,0);return[{s['top']}+1,{s['top']}+2,{s['top']}+3].map(y=>getB({s['x']},y,{s['z']}))}})()")
+        assert b == g.ev("[B.WOOD,B.WOOD,B.SIGN]"), f"Expected a post with a sign board, observed {b}"
+        assert g.ev(f"__genHash({s['x']}>>4,{s['z']}>>4)") == g.ev(f"__genHash({s['x']}>>4,{s['z']}>>4)"), "Signs are part of the deterministic world"
+
+    def test_near_a_sign_its_label_lists_places_with_arrows_that_follow_the_view(self, started):
+        g = started
+        s = _near_sign(g)
+        g.wait("[...document.querySelectorAll('.ntag.sign')].some(e=>e.style.display==='block')", "the signpost label to show",
+               observe="[...document.querySelectorAll('.ntag.sign')].map(e=>e.style.display)", timeout=5000)
+        txt = g.ev("[...document.querySelectorAll('.ntag.sign')].find(e=>e.style.display==='block').textContent")
+        assert s["pl"][0] in txt and " m" in txt, f"Expected '{s['pl'][0]}' and a distance on the label, observed {txt!r}"
+        # turn so that the first place is straight ahead, then to the right: the arrow follows
+        rot = g.ev("""(()=>{const e=[...document.querySelectorAll('.ntag.sign')].find(e=>e.style.display==='block'),q=signCell(Math.floor(%d/SG),Math.floor(%d/SG)).pl[0];
+          const yaw=Math.atan2(-(q.x-player.x),-(q.z-player.z));player.yaw=yaw;updateSigns(0);const a=e.querySelector('i').style.transform;
+          player.yaw=yaw+Math.PI/2;updateSigns(0);const b=e.querySelector('i').style.transform;return[a,b]})()""" % (s["x"], s["z"]))
+        assert rot[0] in ("rotate(0deg)", "rotate(-0deg)"), f"Expected the arrow to point up for a place straight ahead, observed {rot}"
+        assert rot[1] == "rotate(90deg)", f"Expected the arrow to point right after turning left by 90 degrees, observed {rot}"
+
+    def test_a_broken_sign_board_hides_its_label(self, started):
+        g = started
+        s = _near_sign(g)
+        g.ev(f"setBlock({s['x']},{s['top']}+{s['b']},{s['z']},0,0)")
+        g.wait("[...document.querySelectorAll('.ntag.sign')].every(e=>e.style.display!=='block')", "the label to hide without its board",
+               timeout=5000, observe="[...document.querySelectorAll('.ntag.sign')].map(e=>e.style.display)")
+
+
+class TestQuests:
+    def test_quest_button_lists_the_quests(self, started):
+        g = started
+        g.page.locator("#btnQuest").tap()
+        g.wait("curModal&&document.querySelectorAll('.qitem').length===6", "the quest list", observe="document.getElementById('panel').textContent.slice(0,120)")
+        names = g.ev("[...document.querySelectorAll('.qitem b')].map(b=>b.textContent)")
+        for n in ("Mosque Visit", "Museum Visit", "Save the Muslims from Drone Attacks in the Open Air Prison"):
+            assert n in names, f"Expected the quest {n!r}, observed {names}"
+
+    @pytest.mark.parametrize("quest", ["Mosque Visit", "Museum Visit", "Save the Muslims from Drone Attacks in the Open Air Prison", "Garden Walk", "Lake Swim", "Caravanserai Visit"])
+    def test_tapping_a_quest_flies_the_player_there_and_lands_safely(self, started, quest):
+        g = started
+        g.page.locator("#btnQuest").tap()
+        g.wait("curModal&&document.querySelectorAll('.qitem').length===6", "the quest list")
+        g.page.wait_for_timeout(350)
+        g.page.locator(".qitem", has_text=quest).tap()
+        g.wait("!curModal&&!!FLY", "the flight to start", timeout=5000, observe="[!!curModal,!!FLY]")
+        y0 = g.ev("FLY.a[1]")
+        g.wait("FLY&&FLY.t>FLY.dur*.4&&FLY.t<FLY.dur*.6||!FLY", "the middle of the flight", timeout=10000)
+        mid = g.ev("player.y")
+        g.wait("!FLY", "the flight to land", timeout=20000, observe="[FLY&&FLY.t,FLY&&FLY.dur]")
+        to = g.ev(f"QUESTS.find(q=>q.n==={json.dumps(quest)}).to()")
+        r = g.ev("[player.x,player.z,collides(player.x,player.y,player.z)]")
+        assert math.hypot(r[0] - to[0], r[1] - to[1]) < 8, f"Expected to land near {to[:2]}, observed {r[:2]}"
+        assert not r[2], "The player must not land inside blocks"
+        assert mid > y0 + 5, f"Expected to fly above the world, observed {y0} -> {mid}"
+        g.wait("__stats().loadedChunks>9", "the world around the landing to load", timeout=20000, observe="__stats()")
+
+    def test_finishing_a_quest_gives_two_stars_once_and_is_saved(self, game):
+        g = game(PHONE)
+        g.start()
+        s0 = g.stars()
+        g.ev("(()=>{const t=QUESTS[4].to();__tp(LAKE.x+.5,LAKE.z+.5,0,0,true)})()")
+        g.wait("S.q&16", "the Lake Swim quest to complete in the water", timeout=10000, observe="[S.q,player.water,player.x,player.z]")
+        assert g.stars() == s0 + 2
+        g.ev("questT=0;questTick(1)")
+        assert g.stars() == s0 + 2, "A quest pays out only once"
+        g.ev("saveNow(true)")
+        g.page.reload(wait_until="commit")
+        g.ready()
+        assert g.ev("S.q") & 16, "Finished quests survive a reload"
+        g.play()
+        g.page.locator("#btnQuest").tap()
+        g.wait("document.querySelectorAll('.qitem.ok').length===1", "the finished quest to show a tick", observe="document.querySelectorAll('.qitem.ok').length")
+
+    @pytest.mark.parametrize("vp", VIEWPORTS, ids=[v[0] for v in VIEWPORTS])
+    def test_quest_button_fits_the_top_bar(self, game, vp):
+        g = game(vp)
+        g.start()
+        r = g.ev("""(()=>{const o={};for(const s of['#btnStats','#clock','#btnQuest','#btnSet']){const b=document.querySelector(s).getBoundingClientRect();o[s]=[b.left,b.top,b.right,b.bottom]}return o})()""")
+        ks = list(r)
+        for i in range(len(ks)):
+            for j in range(i + 1, len(ks)):
+                a, b = r[ks[i]], r[ks[j]]
+                assert not (min(a[2], b[2]) - max(a[0], b[0]) > 1 and min(a[3], b[3]) - max(a[1], b[1]) > 1), f"{ks[i]} overlaps {ks[j]} at {vp[0]}: {a} {b}"
+        for k, b in r.items():
+            assert b[0] >= -1 and b[2] <= vp[1] + 1, f"Expected {k} inside the screen at {vp[0]}, observed {b}"
+
+
+class TestStartSign:
+    @pytest.mark.parametrize("vp", [PHONE, DESKTOP, LANDSCAPE], ids=lambda v: v[0])
+    def test_the_first_view_shows_a_signpost_with_the_main_attractions(self, game, vp):
+        g = game(vp)
+        g.start()
+        g.wait("[...document.querySelectorAll('.ntag.sign')].some(e=>e.style.display==='block')", "the start signpost label in the first view",
+               timeout=10000, observe="[player.x,player.z,player.yaw,[...document.querySelectorAll('.ntag.sign')].map(e=>e.style.display)]")
+        txt = g.ev("[...document.querySelectorAll('.ntag.sign')].find(e=>e.style.display==='block').textContent")
+        for n in ("Lake", "Grand Mosque", "Museum of Islamic Heritage", "Charbagh Garden", "Open Air Prison"):
+            assert n in txt, f"Expected {n!r} on the start sign, observed {txt!r}"
+        b = g.ev("(()=>{const r=document.querySelector('.ntag.sign[style*=block]').getBoundingClientRect();return[r.left,r.top,r.right,r.bottom,innerWidth,innerHeight]})()")
+        assert b[0] >= -1 and b[2] <= b[4] + 1 and b[3] <= b[5], f"Expected the whole label on screen at {vp[0]}, observed {b}"

@@ -13,7 +13,13 @@ function raw(x,z){
  h=lerp(h,15.6+1.1*vnoise(x/26,z/26,12),sp*.7);
  const ld=Math.hypot(x-LAKE.x,z-LAKE.z)+3*(vnoise(x/6,z/6,3)-.5);
  h=lerp(WL-4,h,smooth(clamp((ld-7)/9,0,1)));
- G.om=om;G.hm=hm;return h;
+ let om2=om,hm2=hm;const gd=gzD(x,z);
+ if(gd<GZ.moat+14){
+  /* flat sand island, a short beach, a deep channel, then back to the desert */
+  const isl=WL+2.2+.9*vnoise(x/9,z/9,72),g=gd<1?lerp(isl,WL-1,sstep(-4,1,gd)):lerp(WL-1,WL-4,sstep(1,3,gd)),k=sstep(GZ.moat,GZ.moat+14,gd);
+  h=lerp(g,h,k);om2*=k;hm2*=k;
+ }
+ G.om=om2;G.hm=hm2;return h;
 }
 /* --- shared small builders --- */
 const FRUIT=[B.ORANGE,B.POM,B.OLIVE],TTOP=[2,1,2],TBOT=[3,2,3];
@@ -301,7 +307,7 @@ function lmCell(rx,rz){
  l=null;
  if(hash2(rx,rz,SEED+11)<.9){
   const x=rx*RG+32+Math.floor(hash2(rx,rz,SEED+13)*(RG-64)),z=rz*RG+32+Math.floor(hash2(rx,rz,SEED+14)*(RG-64));
-  if(Math.hypot(x-SPAWN.x,z-SPAWN.z)>190){
+  if(Math.hypot(x-SPAWN.x,z-SPAWN.z)>190&&!(Math.abs(x-GZ.x)<GZ.hx+GZ.moat+60&&Math.abs(z-GZ.z)<GZ.hz+GZ.moat+60)){
    const t=hash2(rx,rz,SEED+12),v3=hash2(rx,rz,SEED+15),o=Math.floor(hash2(rx,rz,SEED+16)*4);
    const ty=t<.26?'mosque':t<.4?'charbagh':t<.58?'village':t<.68?'caravan':t<.8?'orchard':t<.9?'vineyard':'flowers';
    l=makeLm(ty,v3<.34?1:v3<.67?2:3,o,x,z,false,100+rx*64+rz);
@@ -381,6 +387,8 @@ function genChunk(c){
     const q=hash2(x,z,32),zone=vnoise(x/12,z/12,33)>.64;
     if(q<(zone? .42:.17)){v[((top+1)<<8)|i]=zone?B.FL0+Math.floor(vnoise(x/6+3,z/6,34)*6):B.TUFT;my=top+1}
    }else if(top>=WL-1&&top<=WL+1&&om>.2&&!hill&&rn<.3){v[((top+1)<<8)|i]=B.REED;my=Math.max(my,top+1)}
+   /* Open Air Prison: scattered rubble from broken buildings, never a roof */
+   if(top>WL&&gzD(x,z)<-3){const r=hash2(x,z,73);if(r<.025){v[((top+1)<<8)|i]=r<.01?B.STONE:B.SANDSTONE;my=Math.max(my,top+1);if(r<.007){v[((top+2)<<8)|i]=B.STONE;my=Math.max(my,top+2)}}}
   }
   if(my>c.my)c.my=my;
  }
@@ -390,7 +398,7 @@ function genChunk(c){
   const grove=sstep(.56,.64,vnoise(gx/8,gz/8,40));
   let x=gx*5+2,z=gz*5+2;if(grove<.5){x+=Math.floor(hash2(gx,gz,SEED+61)*3)-1;z+=Math.floor(hash2(gx,gz,SEED+62)*3)-1}
   const top=colInfo(x,z);
-  if(CI.fl||CI.hm>.1||top<=WL+1||nearPlot(x,z,5))continue;
+  if(CI.fl||CI.hm>.1||top<=WL+1||nearPlot(x,z,5)||gzD(x,z)<GZ.moat+2)continue;
   const sp=Math.hypot(x-SPAWN.x,z-SPAWN.z);if(sp<5)continue;
   const p=CI.om>.3? .04+.4*grove*sstep(.3,.6,CI.om):.01;
   if(hs>p||inLm(x,z,11)||inAvenue(x,z))continue;
@@ -419,6 +427,7 @@ function genChunk(c){
   const sb=v[(top<<8)|i];if(sb===B.LEAVES||sb===B.WOOD)continue;
   v[((ty+1)<<8)|i]=B.CHEST;if(ty+1>c.my)c.my=ty+1;
  }
+ genSigns(x0,z0);
  /* player and bot edits */
  if(!c.pure)for(const mp of [bedits.get(c.key),edits.get(c.key)])if(mp)for(const [i,b] of mp){v[i]=b;const y=i>>8;if(b&&y>c.my)c.my=y}
  for(let y=1;y<H-1;y++){const o=y<<8;for(let i=0;i<256;i++)if(v[o+i]===B.CHEST&&c.chests.length<8)c.chests.push([x0+(i&15),y,z0+(i>>4)])}

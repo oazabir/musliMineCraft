@@ -11,7 +11,7 @@ const BLOOK=[
  {m:1,skin:SK[3],dress:[.3,.55,.35],pants:[.25,.3,.28],sash:[.55,.25,.15],cover:[.6,.2,.22],cap:1,beard:3,bc:[.1,.08,.08],tool:[.6,.6,.62],shoe:[.2,.14,.1],r:[.3,.55,.35]},
  {m:0,skin:SK[2],dress:[.45,.28,.5],cover:[.52,.56,.3],shoe:[.22,.15,.1],tool:[1,.85,.4],r:[.52,.56,.3]}];
 for(const L of BLOOK)L.bcol=L.beard?L.bc:[L.skin[0]*.45,L.skin[1]*.35,L.skin[2]*.3];
-const MAXB=6,botGeo=new Float32Array(MAXB*16*252+160*252+64),bots=[];let botN=0,partAmb=null;
+const MAXB=6,botGeo=new Float32Array(MAXB*16*252+160*252+360*252+64),bots=[];let botN=0,partAmb=null;
 const ringC=(n,y,b,sk)=>{const a=[];for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(i===0||j===0||i===n-1||j===n-1)a.push([i,y,j,b]);return a};
 const ringR=(w,d,y,b)=>{const a=[];for(let i=0;i<w;i++)for(let j=0;j<d;j++)if(i===0||j===0||i===w-1||j===d-1)a.push([i,y,j,b]);return a};
 const fill=(w,d,y,b)=>{const a=[];for(let i=0;i<w;i++)for(let j=0;j<d;j++)a.push([i,y,j,b]);return a};
@@ -145,7 +145,7 @@ function planSite(b){
    const wy=walkY(x+.5,z+.5,y0);
    if(wy<0||wy>y0||wy<y0-1){ok=false;break}
    if(wy===y0-1&&x>=cx&&x<cx+tp.w&&z>=cz&&z<cz+tp.d)found.push([x,y0-1,z,B.PATH]);
-   if(nearPlot(x,z,10)||inLm(x,z,6)){ok=false;break}
+   if(nearPlot(x,z,10)||inLm(x,z,6)||gzD(x,z)<GZ.moat+3){ok=false;break}
    if(x>=cx&&x<cx+tp.w&&z>=cz&&z<cz+tp.d)for(let y=y0-1;y<y0+8;y++)if(hasEdit(x,y,z)){ok=false;break}
   }
   if(!ok)continue;
@@ -419,6 +419,7 @@ function fillBotGeo(){
   if((b.x-cam.e[0])*cam.fw[0]+(b.y+1-cam.e[1])*cam.fw[1]+(b.z-cam.e[2])*cam.fw[2]<-3)continue;
   drawBotFig(b);
  }
+ gzDraw();
 }
 function botPick(o,d){
  let best=null,bt=1e9;

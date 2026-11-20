@@ -28,6 +28,9 @@ More are in `docs/screenshots/`: the museum atrium, builder close-up, swimming, 
 - Six builder friends. Each has a trade. They build structures and tidy up older ones.
 - Build together: join a builder friend and help finish a structure.
 - Swimming in lakes, with a "Swim to shore" helper.
+- Signposts all over the map. One stands right next to the start and lists the main attractions (the lake, Grand Mosque, museum, Charbagh Garden and the Open Air Prison), so you see them in the first view. Walk up to any other and it lists the three nearest places (mosques, the museum, gardens, the lake, the Open Air Prison, ...) with distances and arrows that turn with your view.
+- Quests: the map-pin button lists quests (Mosque Visit, Museum Visit, Save the Muslims from Drone Attacks in the Open Air Prison, Garden Walk, Lake Swim, Caravanserai Visit). Tap one to fly there. Finishing a quest the first time gives 2 stars.
+- The Open Air Prison: an island east of spawn, ringed by water, where 24 people run from drone attacks. Build shelters with roofs; each roofed floor spot hides one person. After each attack you earn a point per sheltered person, and stars the first time 5, 10, 15, 20 and all 24 are safe. Reach it by swimming east, with My Skills then Open Air Prison, or with the quest "Save the Muslims from Drone Attacks in the Open Air Prison". Nobody is shown dying: a person caught in the open is knocked down and gets up.
 - Saving and resume. Progress and every edited chunk are stored on the device.
 - Adaptive quality, so it runs on low-end Android phones.
 

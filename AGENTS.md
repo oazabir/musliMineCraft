@@ -14,8 +14,10 @@ Licence: CC BY-NC-SA 4.0 (no commercial use). Copyright Omar Al Zabir.
 ## Architecture
 - All JS parts are concatenated into ONE script, one global scope, `'use strict'`. No modules, no imports.
 - Part order = dependency order. `let`/`const` used before their line runs is a TDZ error. Put new code in the part that owns the concern.
-- Parts: `2-core` constants/blocks/atlas; `3a-world` terrain (pure function of seed); `3a2-museum`; `3b-chunks` chunk manager + mesher; `3-gl` renderer/sky; `4-play` player/physics/ray; `4b-bots` six builder bots; `5-game` state/missions/sound; `5b-museum-ui`; `5c-save` IndexedDB + localStorage + public API; `6-quiz`; `7-ui` modals/HUD/input/loader/main loop; `1-head.html` CSS + welcome overlay; `8-tail.html` boot.
+- Parts: `2-core` constants/blocks/atlas; `3a-world` terrain (pure function of seed); `3a2-museum`; `3b-chunks` chunk manager + mesher; `3-gl` renderer/sky; `4-play` player/physics/ray; `4b-bots` six builder bots; `5-game` state/missions/sound; `5b-museum-ui`; `5c-save` IndexedDB + localStorage + public API; `5d-prison` Open Air Prison island: people, drone attacks, shelters, scoring; `5e-places` place names, signposts (`B.SIGN`, one per 56x56 cell via `signCell`, built in `genChunk` by `genSigns`; the fixed `START_SIGN` is 2 blocks tall and lists `START_PL`), quests + `flyTo`; `6-quiz`; `7-ui` modals/HUD/input/loader/main loop; `1-head.html` CSS + welcome overlay; `8-tail.html` boot.
+- The loader picture (`#wshot` in `1-head.html`) is an inline base64 JPEG: top 800 px of `docs/screenshots/builder-bots-working.png` at 540 px wide, quality 48. Keep it small; it fades out when the live panorama starts.
 - Game code sits in `<script type="text/plain" id="game">` and is evaluated after two animation frames, so the welcome screen paints first.
+- Open Air Prison (`GZ` in `2-core`, `gzD` = signed distance to its shore): terrain shaped in `raw()`, no landmarks/palms/builder sites there. Shelter spot = floor cell with a solid block 2..8 above; one person per spot. Simulated only within `GZ_ACT` blocks. Hooks `__prison`, `__prisonStep`, `__prisonRaid`, `__prisonBoom`. It is called the Open Air Prison everywhere (game text, comments, docs, tests).
 - World: 2048 x 2048 blocks, 16x16 chunks, streamed. Edits stored per chunk (IndexedDB), progress in localStorage.
 - Quality is adaptive (`adapt`). Must run on low-end Android.
 - Public API `window.musliMineCraft` (`exportSave`, `importSave`, `onSave`, `version`), postMessage types `musliMineCraft:save|import`. Documented in the head comment of `1-head.html` and `README.md`.
@@ -33,7 +35,7 @@ Licence: CC BY-NC-SA 4.0 (no commercial use). Copyright Omar Al Zabir.
 - Mobile first: touch must always work (joystick, tap, drag-look). Desktop adds keyboard + mouse + pointer lock.
 - Pointer lock: any modal must release it; never re-capture while a card is open; Esc must stay released (`wantLock`/`relock` in `7-ui.js`). A hint shows while locked.
 - Save format is versioned. Changing stored data needs a migration and a test. Existing saves must keep loading.
-- Child-safe: no ads, tracking, chat, links out, or scary content. Islamic content must be accurate and respectful; keep the museum credits.
+- Child-safe: no ads, tracking, chat, links out, gore or deaths. Drone attacks show explosions, but people are only knocked down and get up. Islamic content must be accurate and respectful; keep the museum credits.
 - Keep a11y basics: labels on buttons, readable at 360x740 up to 1280x720, safe-area insets.
 - Test hooks are `window.__*` (`__tp`, `__stepBots`, `__find`, `__stats`, ...). Tests depend on them: do not rename or remove.
 

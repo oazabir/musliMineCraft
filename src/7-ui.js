@@ -71,8 +71,8 @@ function startScreen(){
  requestAnimationFrame(()=>requestAnimationFrame(()=>{if(!playing)$('welcome').classList.add('live')}));
 }
 function howCard(){
- const how=touchMode?['Drag the round pad to walk. Drag anywhere else to look.','Tap a block to break or place it. Use the Place / Break button to switch.','Follow the glowing blueprint, open the glowing chests, and tap a builder to build together.']
-  :['Click the game to look around. Move with W A S D and jump with Space.','Left click breaks a block. Right click places one. Keys 1 to 9 pick a block.','Follow the glowing blueprint, open the glowing chests, and click a builder to build together.'];
+ const how=touchMode?['Drag the round pad to walk. Drag anywhere else to look.','Tap a block to break or place it. Use the Place / Break button to switch.','Follow the glowing blueprint, open the glowing chests, and tap a builder to build together.','Swim east to the Open Air Prison, or tap My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.']
+  :['Click the game to look around. Move with W A S D and jump with Space.','Left click breaks a block. Right click places one. Keys 1 to 9 pick a block.','Follow the glowing blueprint, open the glowing chests, and click a builder to build together.','Swim east to the Open Air Prison, or open My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.'];
  modal(`<svg class="motif i"><use href="#star8"/></svg><h2>How to play</h2><ul class="how">${how.map(h=>`<li>${h}</li>`).join('')}</ul><div class="row"><button class="btn" data-a="ok">Got it</button></div>`,p=>{p.querySelector('[data-a=ok]').onclick=closeModal});
 }
 function startPlay(){
@@ -203,7 +203,8 @@ function skillsPanel(){
  const nx=RANKS.find(r=>r[1]>S.stars);
  modal(`<h2>My Skills</h2><p><b>${rankOf(S.stars)}</b> with ${S.stars} stars${nx?`. ${nx[1]-S.stars} more stars to become ${nx[0]}.`:'.'}</p>
   ${SKILLS.map(s=>`<div class="skill"><span>${s[1]}</span><b>${S.skills[s[0]]}</b></div>`).join('')}
-  <div class="row"><button class="btn alt" data-a="pass">Museum Passport</button><button class="btn" data-a="ok">Close</button></div>`,p=>{p.querySelector('[data-a=ok]').onclick=closeModal;p.querySelector('[data-a=pass]').onclick=()=>{closeModal();passportPanel()}});
+  <p>Open Air Prison: <b>${S.gz.pts}</b> points, best <b>${S.gz.best}</b> people safe in one drone attack.</p>
+  <div class="row"><button class="btn alt" data-a="pass">Museum Passport</button><button class="btn alt" data-a="prison">Open Air Prison</button><button class="btn" data-a="ok">Close</button></div>`,p=>{p.querySelector('[data-a=ok]').onclick=closeModal;p.querySelector('[data-a=prison]').onclick=visitPrison;p.querySelector('[data-a=pass]').onclick=()=>{closeModal();passportPanel()}});
 }
 function breakReminder(){
  modal(`<svg class="motif"><use href="#star8"/></svg><h2>Time for a little break</h2>
@@ -235,7 +236,7 @@ document.addEventListener('pointerlockchange',()=>{
 const locked=()=>document.pointerLockElement===canvas;
 function look(dx,dy){const k=.0016*S.settings.sens;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.45,1.45)}
 function act(px,py,button){
- if(!playing||curModal)return;
+ if(!playing||curModal||FLY)return;
  const r=playerRay(px,py),mode=button===0?'break':button===2?'place':S.mode;
  const hit=cast(r.o,r.d,REACH,mode==='place'?S.sel:0,mode==='break'),bp=botPick(r.o,r.d);
  const xp=exPick(r.o,r.d);
@@ -309,6 +310,7 @@ jb.addEventListener('pointerdown',e=>{input.jump=true;jb.setPointerCapture(e.poi
 for(const ev of['pointerup','pointercancel'])jb.addEventListener(ev,()=>{input.jump=false});
 $('btnMode').addEventListener('click',()=>{S.mode=S.mode==='place'?'break':'place';updateMode()});
 $('btnSet').addEventListener('click',settingsPanel);
+$('btnQuest').addEventListener('click',questPanel);
 $('btnStats').addEventListener('click',skillsPanel);
 $('btnPass').addEventListener('click',passportPanel);
 $('helpout').addEventListener('click',()=>{if(helpOut()){toast('Back on dry land');$('helpout').classList.remove('on')}else toast('Try walking towards the shore')});
@@ -383,9 +385,9 @@ function frame(now){
  if(document.hidden){last=now;return}
  const dt=Math.min(.05,(now-last)/1000||0);last=now;
  if(playing&&!curModal){
-  let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}
+  if(FLY)flyStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
   activeSec+=dt;if(activeSec>=BREAK_SECONDS){activeSec=0;breakReminder()}
-  edgeHint-=dt;stepBots(dt);saveTick(dt);
+  edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);saveTick(dt);
  }else if(glide)glideStep(dt);
  else if(!playing){if(W.on)welcomeCam(dt);else player.yaw+=dt*.08}
  if(playing||glide)dayT=(dayT+dt/DAY_SECONDS)%1;else dayT=W.day;
@@ -396,7 +398,7 @@ function frame(now){
  else{busyFrame=streamWork(4,2,now)>0;if(now-lastUnload>400){lastUnload=now;unloadFar()}}
  if(beamsDirty&&now-beamsT>300){beamsT=now;rebuildBeams()}
  $('building').style.display=playing&&player.hold?'block':'none';
- updateCamera();fillBotGeo();updateTags();museumHud(dt);fillExGeo(now);uiWater();
+ updateCamera();fillBotGeo();updateTags();updateSigns(dt);museumHud(dt);fillExGeo(now);uiWater();
  hitView=null;
  if(playing&&!curModal){
   let r=null;

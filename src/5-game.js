@@ -2,12 +2,12 @@
 /* ===== 7. Game state, save and sound ===== */
 const SKILLS=[['maths','Maths'],['arabic','Arabic'],['science','Science'],['knowledge','Knowledge'],['building','Building'],['museum','Museum stamps']];
 const RANKS=[['Apprentice',0],['Builder',10],['Craftsman',30],['Architect',60],['Master Builder',100]];
-const S={stars:0,mission:0,unlocked:STARTER.slice(),skills:{maths:0,arabic:0,science:0,knowledge:0,building:0,museum:0},settings:{sound:true,sens:3,gfx:'auto'},sel:B.SANDSTONE,mode:'place',tmp:[],pass:'00000000000000000000000000',passFl:[0,0,0,0],title:false,playT:0};
+const S={stars:0,mission:0,unlocked:STARTER.slice(),skills:{maths:0,arabic:0,science:0,knowledge:0,building:0,museum:0},settings:{sound:true,sens:3,gfx:'auto'},sel:B.SANDSTONE,mode:'place',tmp:[],pass:'00000000000000000000000000',passFl:[0,0,0,0],title:false,playT:0,gz:{pts:0,best:0,ms:0,seen:false},q:0};
 const rankOf=st=>RANKS.filter(r=>st>=r[1]).pop()[0];
 let playing=false,touchMode=false,saveTimer=0;
 let saveNotice=false;
 function resetState(){
- Object.assign(S,{stars:0,mission:0,unlocked:STARTER.slice(),sel:B.SANDSTONE,mode:'place',tmp:[],pass:'00000000000000000000000000',passFl:[0,0,0,0],title:false,playT:0});
+ Object.assign(S,{stars:0,mission:0,unlocked:STARTER.slice(),sel:B.SANDSTONE,mode:'place',tmp:[],pass:'00000000000000000000000000',passFl:[0,0,0,0],title:false,playT:0,gz:{pts:0,best:0,ms:0,seen:false},q:0});
  for(const k of Object.keys(S.skills))S.skills[k]=0;
  S.settings.sound=true;S.settings.sens=3;S.settings.gfx='auto';
 }
@@ -41,7 +41,10 @@ const sfx={
  wrong:()=>blip(220,.25,'sine',.1,0,160),
  right:()=>[523,659,784].forEach((f,i)=>blip(f,.18,'triangle',.12,i*.09)),
  brkLow:()=>blip(190,.08,'sawtooth',.025,0,100),splash:()=>blip(420,.22,'sine',.05,0,120),chime:()=>[784,1047,1568].forEach((f,i)=>blip(f,.3,'sine',.1,i*.08)),
- done:()=>[523,659,784,1047,1319].forEach((f,i)=>blip(f,.25,'triangle',.12,i*.11))
+ done:()=>[523,659,784,1047,1319].forEach((f,i)=>blip(f,.25,'triangle',.12,i*.11)),
+ siren:()=>{for(let i=0;i<3;i++){blip(560,.45,'sine',.045,i*.9,880);blip(880,.45,'sine',.045,i*.9+.45,560)}},
+ whistle:()=>blip(1400,.9,'sine',.025,0,300),
+ boom:v=>{blip(70,.7,'sawtooth',.16*v,0,28);blip(150,.35,'square',.06*v,0,40)}
 };
 
 /* ===== 8. Building missions ===== */

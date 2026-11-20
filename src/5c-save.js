@@ -9,7 +9,7 @@ function progObj(){
  SV.sum={stars:S.stars,mission:Math.min(S.mission+1,MISSIONS.length),blocks,rank:rankOf(S.stars)};
  return{v:4,stars:S.stars,mission:S.mission,unlocked:S.unlocked,skills:S.skills,settings:S.settings,sel:S.sel,mode:S.mode,
   pos:(playing||glide)?[player.x,player.y,player.z,player.yaw,player.pitch]:(SV.pos||null),day:(playing||glide)?dayT:(SV.dayKeep===undefined?dayT:SV.dayKeep),playT:Math.floor(S.playT),act:Math.floor(activeSec),
-  pass:S.pass,passFl:S.passFl,title:S.title,bd:botSaveState(),sum:SV.sum,idb:PERSIST.ok?1:0,ts:Date.now()};
+  pass:S.pass,passFl:S.passFl,title:S.title,gz:S.gz,q:S.q,bd:botSaveState(),sum:SV.sum,idb:PERSIST.ok?1:0,ts:Date.now()};
 }
 function saveProg(){if(SV.importing||SV.writer!==true)return false;try{localStorage.setItem(PROG_KEY,JSON.stringify(progObj()));return true}catch(e){return false}}
 function notifySave(){
@@ -130,6 +130,8 @@ function applyProg(d){
  if(typeof d.pass==='string'&&/^[012]{26}$/.test(d.pass))S.pass=d.pass;
  if(Array.isArray(d.passFl)&&d.passFl.length===4)S.passFl=d.passFl.map(v=>v?1:0);
  S.title=!!d.title;S.playT=validNum(d.playT,0,0,1e9);SV.act=validNum(d.act,0,0,1e9);
+ {const g=d.gz&&typeof d.gz==='object'?d.gz:{};S.gz={pts:validNum(g.pts,0,0,1e9),best:validNum(g.best,0,0,24),ms:validNum(g.ms,0,0,31),seen:!!g.seen}}
+ S.q=validNum(d.q,0,0,63);
  botLoadState(Array.isArray(d.bd)?d.bd:null);
  const p=d.pos;
  SV.hasP=Array.isArray(p)||d.stars>0||d.mission>0||!!(d.sum&&d.sum.blocks>0);

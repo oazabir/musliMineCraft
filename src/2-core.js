@@ -6,6 +6,8 @@ const OX=971, OZ=973, SPAWN={x:1024,z:1024}, LAKE={x:1011,z:1021};
 const SPAWN_YAW=1.3, SPAWN_PITCH=.1;
 const START={x:1025,z:1024},PLOT_X=1042.5,PLOT_Z=1024.5;
 const PLOT={x0:1026,x1:1059,z0:1014,z1:1034}, PLOT_Y=15;
+/* the Open Air Prison: a sandy strip island east of spawn, ringed by a water channel (see 5d-prison.js) */
+const GZ={x:1199,z:1024,hx:10,hz:24,r:6,moat:10};
 const DAY_SECONDS=600, BREAK_SECONDS=1200, REACH=6, SEED=20240611;
 const $=id=>document.getElementById(id);
 const inb=(x,y,z)=>x>=0&&x<WX&&z>=0&&z<WZ&&y>=0&&y<H;
@@ -18,6 +20,9 @@ const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 function hash2(x,y,s){let h=Math.imul(x|0,374761393)+Math.imul(y|0,668265263)+Math.imul(s|0,1274126177)|0;h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
 function vnoise(x,y,s){const xi=Math.floor(x),yi=Math.floor(y),u=smooth(x-xi),v=smooth(y-yi);
  return lerp(lerp(hash2(xi,yi,s),hash2(xi+1,yi,s),u),lerp(hash2(xi,yi+1,s),hash2(xi+1,yi+1,s),u),v)}
+/* signed distance to the Open Air Prison shoreline (negative on the island), with a slightly ragged coast */
+function gzD(x,z){const qx=Math.abs(x-GZ.x)-(GZ.hx-GZ.r),qz=Math.abs(z-GZ.z)-(GZ.hz-GZ.r);
+ return Math.hypot(Math.max(qx,0),Math.max(qz,0))+Math.min(Math.max(qx,qz),0)-GZ.r+1.4*(vnoise(x/7,z/7,71)-.5)}
 function mulberry(a){return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -25,9 +30,9 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 
 /* ===== 2. Blocks and texture atlas ===== */
 const B={AIR:0,SAND:1,SANDSTONE:2,STONE:3,DIRT:4,GRASS:5,WOOD:6,LEAVES:7,WATER:8,MUD:9,MARBLE:10,BLUE:11,GREEN:12,STAR:13,GOLD:14,LANTERN:15,GLASS:16,CARPET:17,LATTICE:18,SHELF:19,CHEST:20,
- PATH:21,ARCH:22,TURQ:23,RROCK:24,TRELLIS:25,ORANGE:26,POM:27,OLIVE:28,GRAPE:29,VINE:30,DATES:31,AWR:32,AWB:33,AWG:34,AWY:35,FL0:36,TUFT:42,REED:43,LIME:44,LIMEP:45};
+ PATH:21,ARCH:22,TURQ:23,RROCK:24,TRELLIS:25,ORANGE:26,POM:27,OLIVE:28,GRAPE:29,VINE:30,DATES:31,AWR:32,AWB:33,AWG:34,AWY:35,FL0:36,TUFT:42,REED:43,LIME:44,LIMEP:45,SIGN:46};
 const T={SAND:0,SSIDE:1,STOP:2,STONE:3,DIRT:4,GTOP:5,GSIDE:6,WSIDE:7,WTOP:8,LEAF:9,WATER:10,MUD:11,MARBLE:12,BLUE:13,GREEN:14,STAR:15,GOLD:16,LANT:17,GLASS:18,CARPET:19,LATTICE:20,SHELF:21,PLANK:22,CHEST:23,
- PATH:24,ARCH:25,TURQ:26,RROCK:27,TRELLIS:28,ORANGE:29,POM:30,OLIVE:31,GRAPE:32,VINE:33,DATES:34,AWR:35,AWB:36,AWG:37,AWY:38,FL0:39,TUFT:45,REED:46,LIME:47,LIMEP:48};
+ PATH:24,ARCH:25,TURQ:26,RROCK:27,TRELLIS:28,ORANGE:29,POM:30,OLIVE:31,GRAPE:32,VINE:33,DATES:34,AWR:35,AWB:36,AWG:37,AWY:38,FL0:39,TUFT:45,REED:46,LIME:47,LIMEP:48,SIGN:49};
 const DEFS=[];
 const OPQ=new Uint8Array(256);
 DEFS[0]={name:'Air',t:[0,0,0],kind:'a',trans:false,emis:false,solid:false,h:16};
@@ -51,6 +56,7 @@ def(B.VINE,'Grapevine',T.VINE,T.VINE,T.VINE,'c');def(B.DATES,'Dates',T.DATES,T.D
 ['Red awning','Blue awning','Green awning','Yellow awning'].forEach((n,i)=>def(B.AWR+i,n,T.AWR+i,T.AWR+i,T.AWR+i,'o'));
 ['Red tulip','Yellow flower','Purple flower','White daisy','Pink rose','Blue flower'].forEach((n,i)=>def(B.FL0+i,n,T.FL0+i,T.FL0+i,T.FL0+i,'x',i%2?11:12));
 def(B.LIME,'Limestone',T.LIME,T.LIME,T.LIME,'o');def(B.LIMEP,'Carved limestone',T.LIMEP,T.LIMEP,T.LIMEP,'o');
+def(B.SIGN,'Signpost',T.PLANK,T.PLANK,T.SIGN,'o');
 def(B.TUFT,'Grass tuft',T.TUFT,T.TUFT,T.TUFT,'x',9);def(B.REED,'Reeds',T.REED,T.REED,T.REED,'x',16);
 const DECOR_IDS=[21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,8];
 const HOTBAR_IDS=[1,2,3,4,5,6,7,9,10,11,12,13,14,15,16,17,18,19].concat(DECOR_IDS,[44,45]);
@@ -123,6 +129,10 @@ function buildAtlas(){
   if(y<top)return[0,0,0,0];return y<top+4&&x!==13?[112,70,40]:jit([126,160,76],18,T.REED,x,y)});
  paint(T.LIME,(x,y)=>{const o=((y>>2)&1)*4;return y%4===3||(x+o)%8===7?[208,194,160]:jit([236,224,196],10,T.LIME,x,y)});
  paint(T.LIMEP,(x,y)=>{if(x===0||y===0||x===15||y===15)return[206,192,158];const dx=x-7.5,dy=y-7.5;const k=Math.abs(Math.abs(dx)-Math.abs(dy))<1||Math.abs(dx)<.8||Math.abs(dy)<.8;return k&&Math.abs(dx)+Math.abs(dy)<9?[198,180,140]:jit([238,227,200],8,T.LIMEP,x,y)});
+ /* signpost board: a framed plank with an arrow and lines of writing */
+ paint(T.SIGN,(x,y)=>{if(x===0||y===0||x===15||y===15)return[92,60,32];if(x===1||y===1||x===14||y===14)return[132,92,52];
+  const ar=y>=3&&y<=6&&(x>=3&&x<=9&&(y===4||y===5)||x>=10&&x<=12&&Math.abs(y-4.5)<=12.5-x);if(ar)return[44,30,18];
+  if((y===9||y===12)&&x>=3&&x<=12-(y===12?3:0))return[70,48,28];return jit(shade([196,152,96],x%5===0?-14:0),12,T.SIGN,x,y)});
  g.putImageData(img,0,0);
  for(let b=1;b<DEFS.length;b++){if(!DEFS[b])continue;const t=DEFS[b].t[2];let r=0,gg=0,bb=0,c=0;
   for(let y=0;y<16;y++)for(let x=0;x<16;x++){const o=(((t>>3)*16+y)*128+(t&7)*16+x)*4;if(d[o+3]>100){r+=d[o];gg+=d[o+1];bb+=d[o+2];c++}}
