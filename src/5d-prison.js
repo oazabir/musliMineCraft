@@ -139,7 +139,7 @@ function gzTick(dt){
  if(on!==GZS.on){GZS.on=on;gzHud(true)}
  if(!on)return;
  gzInit();GZS.t=(GZS.t||0)+dt;
- if(!S.gz.seen&&d<-1&&player.ground&&!FLY){gzIntro();return}
+ if(!S.gz.seen&&d<-1&&player.ground&&!FLY&&!TP){gzIntro();return}
  GZS.gridT-=dt;if(GZS.gridT<=0){GZS.gridT=.4;gzGrid();gzSpawn();
   /* a few path searches per grid pass keep the frame cost flat */
   let n=0;for(const p of gzPeople){if(n>=6)break;if(p.st===0&&p.tgt<0){n++;const path=gzFind(gzIdx(p.x,p.z));if(path){p.tgt=path[path.length-1];gzOwn[p.tgt]=p.i;p.path=path;p.st=1}}}}
