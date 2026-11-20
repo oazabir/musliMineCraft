@@ -81,7 +81,7 @@ function stepPlayer(dt){
  const fwd=clamp(input.jy+(input.keys.has('w')||input.keys.has('arrowup')?1:0)-(input.keys.has('s')||input.keys.has('arrowdown')?1:0),-1,1);
  const str=clamp(input.jx+(input.keys.has('d')||input.keys.has('arrowright')?1:0)-(input.keys.has('a')||input.keys.has('arrowleft')?1:0),-1,1);
  const l=Math.hypot(fwd,str),k=l>1?1/l:1,sy=Math.sin(player.yaw),cy=Math.cos(player.yaw);
- const sp=(player.water?2.6:4.4)*(input.keys.has('shift')?1.65:1)*k;
+ const sp=(player.water?2.6:4.4)*k;
  player.vx=(-sy*fwd+cy*str)*sp;player.vz=(-cy*fwd-sy*str)*sp;
  const wx=Math.floor(player.x),wz=Math.floor(player.z),wy=Math.floor(player.y+.4),wasW=player.water,jmp=input.jump||input.keys.has(' ');
  player.water=getB(wx,wy,wz)===B.WATER;
