@@ -2,7 +2,7 @@
 const canvas=$('gl');
 let gl=null;
 try{gl=canvas.getContext('webgl',{antialias:false,alpha:false,powerPreference:'high-performance'})||canvas.getContext('experimental-webgl')}catch(e){gl=null}
-let progT,progS,progC,progH,atlasTex,quadBuf,hitBuf,idxBuf,botBuf,silBuf,vw=1,vh=1,aspect=1,fovY=1.1,dprCur=1.25,farFog=60,fovBase=1.1;
+let progT,progS,progC,progH,atlasTex,quadBuf,hitBuf,idxBuf,botBuf,silBuf,vw=1,vh=1,aspect=1,fovY=1.1,dprCur=1.25,farFog=60,fovBase=1.1,fovKick=0;
 const cam={e:[0,0,0],fw:[0,0,-1],rt:[1,0,0],up:[0,1,0],tx:1,ty:1};
 const PROJ=new Float32Array(16),VIEW=new Float32Array(16),VP=new Float32Array(16),PROJS=new Float32Array(16),VPS=new Float32Array(16),ambU=new Float32Array(3);
 function program(vs,fs,attrs){
@@ -217,7 +217,7 @@ function render(time){
  gl.enable(gl.DEPTH_TEST);
  silDraw(time);
  gl.useProgram(progT.p);const u=progT.u;
- const fb=Math.max(36,RAD*16-6),fT=fovBase+(aspect<1?.2:0)*menuK;
+ const fb=Math.max(36,RAD*16-6),fT=fovBase+fovKick+(aspect<1?.2:0)*menuK;
  if(Math.abs(fT-fovY)>.0005){fovY=fT;setProj()}
  farFog=fb+(150-fb)*menuK;const nearU=fb*.38+(78-fb*.38)*menuK;
  gl.uniformMatrix4fv(u.u_vp,false,VP);gl.uniform3fv(u.u_cam,cam.e);gl.uniform3fv(u.u_fog,hzV);for(let c=0;c<3;c++)ambU[c]=sky.amb[c]+(1-sky.amb[c])*.8*museumLit;gl.uniform3fv(u.u_amb,ambU);
@@ -252,6 +252,7 @@ function render(time){
  gl.uniform1f(cu.u_near,farFog*.38);gl.uniform1f(cu.u_far,farFog);
  gl.enableVertexAttribArray(0);gl.enableVertexAttribArray(1);gl.disableVertexAttribArray(2);
  if(botN){botObj.b=botBuf;botObj.n=botN;gl.bindBuffer(gl.ARRAY_BUFFER,botBuf);gl.bufferSubData(gl.ARRAY_BUFFER,0,botGeo.subarray(0,botN*7));drawColor(botObj,gl.TRIANGLES,1,1)}
+ portalDraw(time);
  gl.enable(gl.BLEND);
  const pulse=.75+.25*Math.sin(time*.003);
  gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);

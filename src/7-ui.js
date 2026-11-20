@@ -236,7 +236,7 @@ document.addEventListener('pointerlockchange',()=>{
 const locked=()=>document.pointerLockElement===canvas;
 function look(dx,dy){const k=.0016*S.settings.sens;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.45,1.45)}
 function act(px,py,button){
- if(!playing||curModal||FLY)return;
+ if(!playing||curModal||FLY||TP)return;
  const r=playerRay(px,py),mode=button===0?'break':button===2?'place':S.mode;
  const hit=cast(r.o,r.d,REACH,mode==='place'?S.sel:0,mode==='break'),bp=botPick(r.o,r.d);
  const xp=exPick(r.o,r.d);
@@ -385,9 +385,9 @@ function frame(now){
  if(document.hidden){last=now;return}
  const dt=Math.min(.05,(now-last)/1000||0);last=now;
  if(playing&&!curModal){
-  if(FLY)flyStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
+  if(FLY)flyStep(dt);else if(TP)tpStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
   activeSec+=dt;if(activeSec>=BREAK_SECONDS){activeSec=0;breakReminder()}
-  edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);saveTick(dt);
+  edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP)portalTick(dt);saveTick(dt);
  }else if(glide)glideStep(dt);
  else if(!playing){if(W.on)welcomeCam(dt);else player.yaw+=dt*.08}
  if(playing||glide)dayT=(dayT+dt/DAY_SECONDS)%1;else dayT=W.day;
@@ -398,7 +398,7 @@ function frame(now){
  else{busyFrame=streamWork(4,2,now)>0;if(now-lastUnload>400){lastUnload=now;unloadFar()}}
  if(beamsDirty&&now-beamsT>300){beamsT=now;rebuildBeams()}
  $('building').style.display=playing&&player.hold?'block':'none';
- updateCamera();fillBotGeo();updateTags();updateSigns(dt);museumHud(dt);fillExGeo(now);uiWater();
+ updateCamera();fillBotGeo();updateTags();updateSigns(dt);updatePortalLabels();museumHud(dt);fillExGeo(now);uiWater();
  hitView=null;
  if(playing&&!curModal){
   let r=null;

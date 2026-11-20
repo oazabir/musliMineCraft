@@ -24,7 +24,7 @@ function signCell(gx,gz){
  for(let t=0;t<3&&!s;t++){
   const x=gx*SG+6+Math.floor(hash2(gx,gz,SEED+90+t)*(SG-12)),z=gz*SG+6+Math.floor(hash2(gx,gz,SEED+93+t)*(SG-12));
   const top=groundTop(x,z);
-  if(top<=WL+1||CI.fl||CI.hm>.3||nearPlot(x,z,5)||inAvenue(x,z)||gzD(x,z)<GZ.moat+3||Math.hypot(x-START.x,z-START.z)<12)continue;
+  if(top<=WL+1||CI.fl||CI.hm>.3||nearPlot(x,z,5)||inAvenue(x,z)||gzD(x,z)<GZ.moat+3||portalPad(x,z,3)||Math.hypot(x-START.x,z-START.z)<12)continue;
   let ok=true;for(let dx=-1;dx<=1&&ok;dx++)for(let dz=-1;dz<=1;dz++)if(Math.abs(groundTop(x+dx,z+dz)-top)>1){ok=false;break}
   if(ok)s={x,z,top,k,b:3};
  }
