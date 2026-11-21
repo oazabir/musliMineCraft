@@ -273,13 +273,12 @@ function flowers(l,lx,y,lz){
 }
 function haram(l,lx,y,lz){
  const ax=Math.abs(lx),az=Math.abs(lz),m=Math.max(ax,az);
- /* broad marble courtyard, arcaded perimeter, Kaaba and small white-clad pilgrims */
+ /* marble mataf, arcades, four minarets and the Kaaba */
  if(y===0){if(m<=21)return m>=18?B.ARCH:B.MARBLE;return -1}
- if(m===21){if(y<=8)return y%4===0?B.LATTICE:B.MARBLE;return y===9?B.GOLD:-1}
- if(ax<=3&&az<=3){if(y<=5)return B.STONE;if(y===6&&ax<=2&&az<=2)return B.GOLD;return -1}
- if(ax<=2&&az<=2&&y===7)return B.GOLD;
- if(m>=6&&m<=16&&((ax%5===0&&az%5<=1)||(az%5===0&&ax%5<=1)))return y<=2?B.MARBLE:-1;
- if(y===1&&ax>=5&&ax<=16&&az>=5&&az<=16&&((ax*7+az*11)%13<2))return B.MARBLE;
+ if(ax>=18&&ax<=20&&az>=18&&az<=20){if(y<=1)return B.ARCH;if(y<=10)return y%4===0?B.LATTICE:B.MARBLE;if(y===11)return B.ARCH;if(y<=14)return y===14?B.TURQ:B.MARBLE;if(y===15)return B.GOLD}
+ if(m===21){const along=ax===21?az:ax;if(y<=2)return B.ARCH;if(y<=7){if(along%4===0)return B.MARBLE;if(y===6)return B.ARCH;if(y===4&&along%4===2)return B.LATTICE;return -1}if(y===8)return B.ARCH;if(y===9)return B.GOLD}
+ if(m===18){const along=ax===18?az:ax;if(along%3===0&&y<=5)return y===1?B.ARCH:B.MARBLE;if(y===5&&along%3===1)return B.ARCH;if(y===6)return B.ARCH}
+ if(ax<=3&&az<=3&&y>=1&&y<=7)return B.STONE;
  return -1;
 }
 const LMT={
@@ -291,7 +290,7 @@ const LMT={
  orchard:{fn:orchard,p:()=>({hx:14,hz:11,h:7})},
  vineyard:{fn:vineyard,p:()=>({hx:15,hz:11,h:5})},
  flowers:{fn:flowers,p:()=>({hx:10,hz:10,h:5,ymin:-1})}
- ,haram:{fn:haram,p:()=>({hx:22,hz:22,h:10,ymin:0})}
+ ,haram:{fn:haram,p:()=>({hx:22,hz:22,h:16,ymin:0})}
 };
 let lmId=0;
 function makeLm(type,v,o,x,z,fixed,id){

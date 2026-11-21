@@ -11,7 +11,7 @@ const BLOOK=[
  {m:1,skin:SK[3],dress:[.3,.55,.35],pants:[.25,.3,.28],sash:[.55,.25,.15],cover:[.6,.2,.22],cap:1,beard:3,bc:[.1,.08,.08],tool:[.6,.6,.62],shoe:[.2,.14,.1],r:[.3,.55,.35]},
  {m:0,skin:SK[2],dress:[.45,.28,.5],cover:[.52,.56,.3],shoe:[.22,.15,.1],tool:[1,.85,.4],r:[.52,.56,.3]}];
 for(const L of BLOOK)L.bcol=L.beard?L.bc:[L.skin[0]*.45,L.skin[1]*.35,L.skin[2]*.3];
-const MAXB=6,botGeo=new Float32Array(MAXB*16*252+160*252+360*252+64),bots=[];let botN=0,partAmb=null;
+const MAXB=6,botGeo=new Float32Array(MAXB*16*252+160*252+720*252+64),bots=[];let botN=0,partAmb=null;
 const ringC=(n,y,b,sk)=>{const a=[];for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(i===0||j===0||i===n-1||j===n-1)a.push([i,y,j,b]);return a};
 const ringR=(w,d,y,b)=>{const a=[];for(let i=0;i<w;i++)for(let j=0;j<d;j++)if(i===0||j===0||i===w-1||j===d-1)a.push([i,y,j,b]);return a};
 const fill=(w,d,y,b)=>{const a=[];for(let i=0;i<w;i++)for(let j=0;j<d;j++)a.push([i,y,j,b]);return a};
@@ -345,6 +345,44 @@ function part(b,ox,oy,oz,hx,hy,hz,col,sw,pv){
    botGeo[o+3]=col[0]*s*am[0];botGeo[o+4]=col[1]*s*am[1];botGeo[o+5]=col[2]*s*am[2];botGeo[o+6]=1;botN++}
  }
 }
+const HARAM_SKIN=[[.88,.68,.5],[.72,.5,.36],[.58,.38,.27],[.94,.78,.62],[.79,.59,.44]],HARAM_IHRAM=[[.97,.96,.9],[.91,.9,.83],[.83,.83,.77],[.99,.98,.94]],HARAM_WOMEN=[[.23,.27,.29],[.31,.25,.24],[.26,.31,.35],[.38,.3,.26],[.2,.32,.29],[.43,.37,.31]];
+const HARAM_CROWD=[];let haramCrowdReady=false;
+const HARAM_Q=new Float32Array(12),HARAM_QI=[0,1,2,0,2,3];
+function haramQuad(ax,ay,az,bx,by,bz,cx,cy,cz,dx,dy,dz,col){
+ const q=HARAM_Q;q[0]=ax;q[1]=ay;q[2]=az;q[3]=bx;q[4]=by;q[5]=bz;q[6]=cx;q[7]=cy;q[8]=cz;q[9]=dx;q[10]=dy;q[11]=dz;const am=partAmb||sky.amb;
+ for(let i=0;i<6;i++){const p=HARAM_QI[i]*3,o=botN*7;botGeo[o]=q[p];botGeo[o+1]=q[p+1];botGeo[o+2]=q[p+2];botGeo[o+3]=col[0]*am[0];botGeo[o+4]=col[1]*am[1];botGeo[o+5]=col[2]*am[2];botGeo[o+6]=1;botN++}
+}
+function haramDraw(){
+ if(!playing)return;const l=fixedList().find(q=>q.t==='haram');if(!l)return;
+ const dx=l.x-player.x,dz=l.z-player.z,lim=farFog+22;if(dx*dx+dz*dz>lim*lim)return;
+ if(!haramCrowdReady){haramCrowdReady=true;const rnd=mulberry(SEED+913),TAU=Math.PI*2;
+  for(let r=0;r<12;r++){const rad=5.4+r*.98,n=Math.floor(TAU*rad/.66),off=rnd()*TAU;
+   for(let i=0;i<n;i++){const fem=rnd()<.43,robe=fem?HARAM_WOMEN[Math.floor(rnd()*HARAM_WOMEN.length)]:HARAM_IHRAM[Math.floor(rnd()*HARAM_IHRAM.length)];
+    HARAM_CROWD.push({r:rad,a:off+TAU*i/n,sp:.15+rnd()*.08,s:.94+rnd()*.3,robe,skin:HARAM_SKIN[Math.floor(rnd()*HARAM_SKIN.length)],head:fem?robe:HARAM_SKIN[Math.floor(rnd()*HARAM_SKIN.length)]})}
+  }
+ }
+ const tm=performance.now()*.001,lim2=farFog*farFog*1.1,eye=cam.e,fw=cam.fw,base=l.y0+1;
+ const k={x:l.x+.5,y:l.y0+4.5,z:l.z+.5,yaw:0};
+ if(botN+36*52<botGeo.length/7){part(k,0,0,0,3.54,3.54,3.54,[0,0,0]);
+  const band=l.y0+5.4,gold=[.83,.64,.22],dark=[.5,.33,.1];
+  part(k,0,band-k.y,-3.56,3.55,.12,.025,gold);part(k,0,band-k.y,3.56,3.55,.12,.025,gold);part(k,3.56,band-k.y,0,.025,.12,3.55,gold);part(k,-3.56,band-k.y,0,.025,.12,3.55,gold);
+  const door={x:k.x+3.57,y:base+1.5,z:k.z,yaw:0};part(door,0,1.35,0,.035,.87,.58,dark);part(door,0,1.35,-.015,.04,.76,.47,gold);
+  const stone={x:k.x+3.58,y:base+.48,z:k.z+3.53,yaw:0};part(stone,0,0,0,.17,.19,.12,[.16,.12,.08]);
+  for(let i=-3;i<=3;i++){part(k,i,.0+band-k.y+.42,-3.585,.09,.045,.025,gold);part(k,i,.0+band-k.y+.42,3.585,.09,.045,.025,gold);part(k,3.585,.0+band-k.y+.42,i,.025,.045,.09,gold);part(k,-3.585,.0+band-k.y+.42,i,.025,.045,.09,gold)}
+  for(const sx of[-1,1])for(const sz of[-1,1]){const tower={x:l.x+.5+sx*19.5,y:l.y0+16,z:l.z+.5+sz*19.5,yaw:0};part(tower,0,.08,0,.53,.1,.53,gold);part(tower,0,.34,0,.2,.19,.2,gold);part(tower,0,.59,0,.07,.08,.07,gold)}
+ }
+ /* Tawaf circles counter-clockwise when viewed from above. */
+ for(let i=0;i<HARAM_CROWD.length;i++){
+  const p=HARAM_CROWD[i],a=p.a-tm*p.sp,x=l.x+.5+Math.cos(a)*p.r,z=l.z+.5+Math.sin(a)*p.r;
+  const vx=x-eye[0],vz=z-eye[2],d2=vx*vx+vz*vz;if(d2>lim2||vx*fw[0]+(base-eye[1])*fw[1]+vz*fw[2]<-3)continue;
+  if(d2>28*28&&i%2)continue;if(botN+24>botGeo.length/7)break;
+  const yaw=-a,s=p.s,rx=Math.cos(yaw),rz=-Math.sin(yaw),fx=-Math.sin(yaw),fz=-Math.cos(yaw),w=.17*s,h=1.02*s,hw=.12*s,hb=.94*s,ht=1.27*s;
+  haramQuad(x-rx*w,base,z-rz*w,x+rx*w,base,z+rz*w,x+rx*w,base+h,z+rz*w,x-rx*w,base+h,z-rz*w,p.robe);
+  haramQuad(x-fx*w,base,z-fz*w,x+fx*w,base,z+fz*w,x+fx*w,base+h,z+fz*w,x-fx*w,base+h,z-fz*w,p.robe);
+  haramQuad(x-rx*hw,base+hb,z-rz*hw,x+rx*hw,base+hb,z+rz*hw,x+rx*hw,base+ht,z+rz*hw,x-rx*hw,base+ht,z-rz*hw,p.head);
+  haramQuad(x-fx*hw,base+hb,z-fz*hw,x+fx*hw,base+hb,z+fz*hw,x+fx*hw,base+ht,z+fz*hw,x-fx*hw,base+ht,z-fz*hw,p.head);
+ }
+}
 let plog=null;
 const pq=new Float32Array(12);
 /* one front-facing plate (face details): local z = oz, facing forward (-z) */
@@ -419,6 +457,7 @@ function fillBotGeo(){
   if((b.x-cam.e[0])*cam.fw[0]+(b.y+1-cam.e[1])*cam.fw[1]+(b.z-cam.e[2])*cam.fw[2]<-3)continue;
   drawBotFig(b);
  }
+ haramDraw();
  gzDraw();machinePostDraw();
 }
 function botPick(o,d){
