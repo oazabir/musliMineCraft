@@ -1,18 +1,15 @@
 /* ===== 8e. Stargate portals: gates around the start and a return gate at each place ===== */
-/* A gate is a ring of stone segments with a turning glyph ring and nine chevrons around a rippling event horizon.
-   Walking through the horizon locks the chevrons, the horizon bursts out (the "kawoosh"), the screen warps and the
-   player steps out in front of the gate at the other end. Gates are drawn, not built from blocks: only their
-   marble pad is part of the world (genPortals), so they can not be broken. */
-/* PS scales the whole gate (0.6 = 40% smaller than the first design) */
-const PS=.6,PR=2.7*PS,PSEG=40,PRING=9,PHS=48,PHR=PR-.5*PS;
+/* The frame is drawn separately from the world blocks so the gate cannot be broken. */
+const PS=.43,PR=2.7*PS,PHR=PR-.5*PS,PGS=.6,PGY=.72,PGZ=.72;
+const PORT_ROWS=[[1,.76,.32],[1.32,1.08,.35],[1.67,1.27,2.4],[4.07,1.08,.34],[4.41,.76,.33]];
 let PORT=null;
 function portalList(){
  if(PORT)return PORT;
- const mk=(x,z,nx,nz,name,to,level)=>{const n=Math.hypot(nx,nz)||1;nx/=n;nz/=n;const cx=Math.floor(x)+.5,cz=Math.floor(z)+.5;
+ const mk=(x,z,nx,nz,name,to,level,precise=false)=>{const n=Math.hypot(nx,nz)||1;nx/=n;nz/=n;const cx=precise?x:Math.floor(x)+.5,cz=precise?z:Math.floor(z)+.5;
   const base=level??Math.max(WL+1,groundTop(Math.floor(x),Math.floor(z)));
-  return{x:cx,z:cz,nx,nz,tx:-nz,tz:nx,base,cy:base+1+PR-.05,name,to,spin:Math.random()*6,act:0,kw:0}};
+  return{x:cx,z:cz,nx,nz,tx:-nz,tz:nx,base,cy:base+1+PR-.05,name,to,act:0,kw:0}};
  const haram=lmOf('haram'),museum=museumLm();
- const hub=(i,name,to)=>mk(GATE_HUB.x+i*GATE_HUB.step,GATE_HUB.z,0,1,name,to,GATE_HUB.y);
+ const hub=(i,name,to)=>{const s=(i-(GATE_HUB.count-1)/2)*GATE_HUB.step;return mk(GATE_HUB.x+GATE_HUB.tx*s,GATE_HUB.z+GATE_HUB.tz*s,GATE_HUB.nx,GATE_HUB.nz,name,to,GATE_HUB.y,true)};
  /* Keep the original four pairs at their existing indices. */
  PORT=[hub(0,'Museum of Islamic Heritage',4),hub(1,'Grand Mosque',5),hub(2,'Open Air Prison',6),hub(3,'Masjid al-Haram and the Kaaba',7),
   mk(museum.x+20,museum.z+52,-20,-79,'the start',0),mk(950,1019,916-950,995-1019,'the start',1),
@@ -39,9 +36,9 @@ function genPortals(x0,z0){
    for(let y=p.base+1;y<=p.base+8;y++)put(x,y,z,0);
   }}
 }
-/* --- drawing: opaque ring parts, the translucent horizon, and additive glow --- */
-const PO=new Float32Array(7*36*89*GATE_HUB.count),PT=new Float32Array(7*6*PRING*PHS*GATE_HUB.count),PA=new Float32Array(7*6*(PHS+18)*GATE_HUB.count);
-let pBuf=null,pN=[0,0,0],pTime=0;
+/* --- drawing: masonry, portal surface, and sparks --- */
+const PO=new Float32Array(252*88*PORT.length),PT=new Float32Array(42*140*PORT.length),PA=new Float32Array(42*40*PORT.length),PE=new Float32Array(42*1800);
+let pBuf=null,pTextN=0,pTextUploaded=false;
 const PBC=new Float32Array(24),PLIT=[1,1,1];
 function pbox(o,cx,cy,cz,ux,uy,uz,vx,vy,vz,wx,wy,wz,hu,hv,hw,r,g,b,lit){
  if(o+252>PO.length)return o;
@@ -56,54 +53,117 @@ function ptri(A,o,ax,ay,az,bx,by,bz,cx,cy,cz,c1,c2,c3){
  A[o++]=bx;A[o++]=by;A[o++]=bz;A[o++]=c2[0];A[o++]=c2[1];A[o++]=c2[2];A[o++]=c2[3];
  A[o++]=cx;A[o++]=cy;A[o++]=cz;A[o++]=c3[0];A[o++]=c3[1];A[o++]=c3[2];A[o++]=c3[3];return o;
 }
-const HC=[];for(let i=0;i<=PRING;i++){HC.push([]);for(let s=0;s<=PHS;s++)HC[i].push([0,0,0,[0,0,0,0]])}
 function portalGeo(p,t,o){
- const C=[p.x,p.cy,p.z],T=[p.tx,0,p.tz],N=[p.nx,0,p.nz];
- const near=Math.hypot(player.x-p.x,player.z-p.z)<14,step=near?1:2,rings=near?PRING:4,sides=near?PHS:PHS/2;
- for(let k=0;k<PSEG;k+=step){
-  const th=k/PSEG*6.2832,c=Math.cos(th),s=Math.sin(th),rx=T[0]*c,ry=s,rz=T[2]*c,vx=-T[0]*s,vy=c,vz=-T[2]*s,sh=k%4<2?.04:0;
-  o[0]=pbox(o[0],C[0]+rx*PR,C[1]+ry*PR,C[2]+rz*PR,rx,ry,rz,vx,vy,vz,N[0],0,N[2],.3*PS,PR*.082*step,.34*PS,.34+sh,.37+sh,.42+sh);
-  /* the inner glyph ring turns; every fourth glyph glows */
-  const t2=th+p.spin,c2=Math.cos(t2),s2=Math.sin(t2),Rx=T[0]*c2,Ry=s2,Rz=T[2]*c2,Vx=-T[0]*s2,Vy=c2,Vz=-T[2]*s2,ri=PR-.42*PS;
-  const g=k%4===0,pul=.65+.35*Math.sin(t*3+k);
-  o[0]=pbox(o[0],C[0]+Rx*ri,C[1]+Ry*ri,C[2]+Rz*ri,Rx,Ry,Rz,Vx,Vy,Vz,N[0],0,N[2],.13*PS,ri*.077*step,.26*PS,g?.3*pul+.1:.5,g?.8*pul+.1:.47,g?1:.42,g);
+ const near=Math.hypot(player.x-p.x,player.z-p.z)<14;
+ const box=(x,y,z,w,h,d,v,lit=false)=>{
+  o[0]=pbox(o[0],p.x+p.tx*x*PGS+p.nx*z*PGZ,p.base+1+(y-1)*PGY,p.z+p.tz*x*PGS+p.nz*z*PGZ,p.tx,0,p.tz,0,1,0,p.nx,0,p.nz,w*PGS/2,h*PGY/2,d*PGZ/2,...v,lit);
+ };
+ const stone=[.84,.85,.87],trim=[.95,.95,.96],shadow=[.59,.62,.67],dark=[.26,.21,.18];
+ for(const side of [-1,1]){
+  box(side*1.71,1.10,0,1.18,.20,1.78,shadow);
+  box(side*1.67,1.26,0,1.00,.16,1.42,trim);
+  box(side*1.76,2.93,0,.98,3.18,.89,stone);
+  box(side*2.10,2.91,0,.28,3.24,1.12,shadow);
+  for(let j=0;j<8;j++)box(side*2.10,1.54+j*.39,0,.31,.11,1.15,j%2?stone:shadow);
+  box(side*1.61,4.63,0,1.23,.30,1.19,trim);
+  box(side*1.45,4.88,0,1.03,.22,1.02,stone);
+  for(const face of [-1,1]){
+   for(let j=0;j<5;j++)box(side*1.67,1.91+j*.48,face*.46,.23,.11,.06,dark);
+   for(const y of [1.55,4.40]){
+    box(side*1.67,y,face*.51,.60,.35,.15,stone);
+    for(let j=-1;j<=1;j++)box(side*1.67+j*.14,y,face*.60,.05,.24,.04,trim);
+   }
+   for(const y of [2.00,3.97])box(side*2.11,y,face*.59,.055,.43,.05,[.80,.94,1],true);
+  }
  }
- for(let j=0;j<9;j++){
-  const th=1.5708+j*.6981,c=Math.cos(th),s=Math.sin(th),rx=T[0]*c,ry=s,rz=T[2]*c,vx=-T[0]*s,vy=c,vz=-T[2]*s;
-  const on=p.act>0?j<p.act*12:false,b=on?1.25:near?.75+.2*Math.sin(t*4+j):.55;
-  o[0]=pbox(o[0],C[0]+rx*(PR+.26*PS),C[1]+ry*(PR+.26*PS),C[2]+rz*(PR+.26*PS),rx,ry,rz,vx,vy,vz,N[0],0,N[2],.22*PS,.3*PS,.44*PS,b,.42*b+(on?.2:0),.12*b,true);
+ for(const [y,w,h] of PORT_ROWS){
+  const edge=1.29;
+  for(const side of [-1,1])if(w<edge)box(side*(w+edge)/2,y+h/2,0,edge-w,h,.82,stone);
  }
- /* event horizon: rings of rippling blue that burst out along the normal when the gate opens */
- const kw=p.kw>0?Math.sin(Math.min(1,p.kw)*3.1416)*3.2*PS:0;
- for(let i=0;i<=rings;i++){const r=PHR*i/rings,q=1-r/PHR;
-  for(let s=0;s<=sides;s++){const ph=s/sides*6.2832,w=Math.sin(r*4.6-t*5+Math.sin(ph*3+t*1.3)*.9),k=.5+.5*w,bl=kw*q*q+(near?.04*w:0);
-   const H=HC[i][s];H[0]=C[0]+T[0]*Math.cos(ph)*r+N[0]*bl;H[1]=C[1]+Math.sin(ph)*r;H[2]=C[2]+T[2]*Math.cos(ph)*r+N[2]*bl;
-   const ctr=q*q*.35;H[3][0]=.08+.42*k+ctr;H[3][1]=.3+.55*k+ctr;H[3][2]=.85+.15*k;H[3][3]=.78+.12*q+(p.act>0?.1:0)}}
- for(let i=0;i<rings;i++)for(let s=0;s<sides;s++){const a=HC[i][s],b=HC[i][s+1],c=HC[i+1][s+1],d=HC[i+1][s];
-  o[1]=ptri(PT,o[1],a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2],a[3],b[3],c[3]);o[1]=ptri(PT,o[1],a[0],a[1],a[2],c[0],c[1],c[2],d[0],d[1],d[2],a[3],c[3],d[3])}
- /* additive halo around the ring and drifting sparkles on the horizon */
- const hi=[.35,.75,1,.3+(p.act>0?.45:0)+.08*Math.sin(t*2)],ho=[.35,.75,1,0];
- for(let s=0;s<sides;s++){const a0=s/sides*6.2832,a1=(s+1)/sides*6.2832,r0=PR+.35*PS,r1=PR+1.4*PS;
-  const P=(a,r)=>[C[0]+T[0]*Math.cos(a)*r,C[1]+Math.sin(a)*r,C[2]+T[2]*Math.cos(a)*r];
-  const A=P(a0,r0),Bp=P(a1,r0),Cc=P(a1,r1),D=P(a0,r1);
-  o[2]=ptri(PA,o[2],...A,...Bp,...Cc,hi,hi,ho);o[2]=ptri(PA,o[2],...A,...Cc,...D,hi,ho,ho)}
- for(let k=0;k<(near?18:0);k++){const h=hash2(k,p.to,9),a=h*6.2832+t*(.2+h*.3),r=PHR*((h*7.3+t*.15)%1),sz=.025+.025*h,f=.06+.02*Math.sin(t*3+k);
-  const x=C[0]+T[0]*Math.cos(a)*r+N[0]*f,y=C[1]+Math.sin(a)*r,z=C[2]+T[2]*Math.cos(a)*r+N[2]*f,cl=[.85,.97,1,.55];
-  o[2]=ptri(PA,o[2],x-T[0]*sz,y-sz,z-T[2]*sz,x+T[0]*sz,y-sz,z+T[2]*sz,x+T[0]*sz,y+sz,z+T[2]*sz,cl,cl,cl);
-  o[2]=ptri(PA,o[2],x-T[0]*sz,y-sz,z-T[2]*sz,x+T[0]*sz,y+sz,z+T[2]*sz,x-T[0]*sz,y+sz,z-T[2]*sz,cl,cl,cl)}
+ box(0,4.86,0,2.52,.24,1.10,trim);
+ box(0,5.10,0,1.76,.24,.93,stone);
+ box(0,5.33,0,1.20,.22,.81,trim);
+ for(const x of [-1.45,0,1.45]){
+  const y=x?5:5.44,f=.5+.5*Math.sin(11*t+x*6);
+  box(x,y+.09,0,.40,.18,.37,[.02,.53,.72],true);
+  box(x-.055,y+.25,0,.24,.33,.24,[.05,.72+.22*f,1],true);
+  box(x+.07,y+.32+.08*f,.03,.13,.25,.15,[.36,.96,1],true);
+ }
+ const kw=p.kw>0?Math.sin(p.kw*Math.PI)*1.5:0;
+ const quad=(A,k,x,y,w,h,z,c)=>{
+  x*=PGS;y=1+(y-1)*PGY;w*=PGS;h*=PGY;z*=PGZ;
+  const X=p.x+p.tx*x+p.nx*z,Z=p.z+p.tz*x+p.nz*z,Y=p.base+y,dx=p.tx*w,dz=p.tz*w;
+  o[k]=ptri(A,o[k],X,Y,Z,X+dx,Y,Z+dz,X+dx,Y+h,Z+dz,c,c,c);
+  o[k]=ptri(A,o[k],X,Y,Z,X+dx,Y+h,Z+dz,X,Y+h,Z,c,c,c);
+ };
+ for(let row=0;row<PORT_ROWS.length;row++){
+  const [y,w,h]=PORT_ROWS[row],cols=near?10:4,rows=Math.max(1,Math.round(h*(near?4:2)));
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+   const seed=hash2(i,j+row*12,p.to),pulse=.5+.5*Math.sin(t*(2+seed*3)+seed*27);
+   const bright=seed>.82?pulse*.55:pulse*.15;
+   const c=[.13+bright+p.act*.13,.035+bright*.10,.24+bright,1];
+   quad(PT,1,-w+2*w*i/cols,y+h*j/rows,2*w/cols,h/rows,kw,c);
+  }
+ }
+ for(let i=0;i<(near?36:12);i++){
+  const seed=hash2(i,p.to,12),y=1.06+3.6*((seed+t*(.11+seed*.08))%1);
+  const row=PORT_ROWS.find(r=>y>=r[0]&&y<r[0]+r[2]);
+  if(!row)continue;
+  const x=(hash2(i,p.to,26)*2-1)*(row[1]-.09),size=.025+.05*seed;
+  const face=(player.x-p.x)*p.nx+(player.z-p.z)*p.nz>=kw?1:-1;
+  quad(PA,2,x,y,size,size,kw+face*.025,[.92,.19,1,.38+.36*Math.sin(t*5+i)**2]);
+ }
 }
-const pObj=[{b:null,n:0},{b:null,n:0},{b:null,n:0}];
+const PGLYPH={A:'010/101/111/101/101',B:'110/101/110/101/110',C:'011/100/100/100/011',D:'110/101/101/101/110',E:'111/100/110/100/111',F:'111/100/110/100/100',G:'011/100/101/101/011',H:'101/101/111/101/101',I:'111/010/010/010/111',J:'001/001/001/101/010',K:'101/101/110/101/101',L:'100/100/100/100/111',M:'101/111/111/101/101',N:'101/111/111/111/101',O:'010/101/101/101/010',P:'110/101/110/100/100',Q:'010/101/101/111/011',R:'110/101/110/101/101',S:'011/100/010/001/110',T:'111/010/010/010/010',U:'101/101/101/101/111',V:'101/101/101/101/010',W:'101/101/111/111/101',X:'101/101/010/101/101',Y:'101/101/010/010/010',Z:'111/001/010/100/111','-':'000/000/111/000/000'};
+const pObj=[{b:null,n:0},{b:null,n:0},{b:null,n:0},{b:null,n:0}];
+function engraveQuad(o,p,x,y,z,s,c){
+ const rx=-p.tx,rz=-p.tz,X=p.x+rx*x+p.nx*z,Z=p.z+rz*x+p.nz*z,dx=rx*s,dz=rz*s;
+ o=ptri(PE,o,X,y,Z,X+dx,y,Z+dz,X+dx,y+s,Z+dz,c,c,c);
+ return ptri(PE,o,X,y,Z,X+dx,y+s,Z+dz,X,y+s,Z,c,c,c);
+}
+function engraveText(o,p,text,cy,c,s=.08){
+ const words=text.toUpperCase().split(/\s+/),lines=[];let line='';
+ for(const w of words){const n=line?line+' '+w:w;if(n.length>8&&line){lines.push(line);line=w}else line=n}if(line)lines.push(line);
+ const advance=s*4,gap=.12,total=lines.length*s*5+(lines.length-1)*gap,top=cy+total/2,z=-.43;
+ for(let r=0;r<lines.length;r++){
+  const q=lines[r],left=-(q.length*advance-s)/2,ytop=top-r*(s*5+gap);
+  for(let i=0;i<q.length;i++){
+   if(q[i]===' ')continue;const rows=(PGLYPH[q[i]]||PGLYPH['-']).split('/');
+   for(let yy=0;yy<5;yy++)for(let xx=0;xx<3;xx++)if(rows[yy][xx]==='1')o=engraveQuad(o,p,left+i*advance+xx*s,ytop-(yy+1)*s,z,s,c);
+  }
+ }
+ return o;
+}
+function buildPortalEngraving(){
+ if(pTextN)return;
+ let o=0;const ink=[.08,.075,.07,1];
+ for(const p of PORT)if(p.name!=='the start')o=engraveText(o,p,p.name,p.base+5.3,ink);
+ o=engraveText(o,GATE_HUB,'Landmarks',GATE_HUB.y+7.4,[.025,.025,.025,1],.11);pTextN=o;
+}
+function portalBackboard(o){
+ o=pbox(o,GATE_HUB.x-GATE_HUB.nx*.55,GATE_HUB.y+4,GATE_HUB.z-GATE_HUB.nz*.55,
+  GATE_HUB.tx,0,GATE_HUB.tz,0,1,0,GATE_HUB.nx,0,GATE_HUB.nz,23.5,4,.1,.72,.70,.65,false);
+ return pbox(o,GATE_HUB.x-GATE_HUB.nx*.2,GATE_HUB.y+8.08,GATE_HUB.z-GATE_HUB.nz*.2,
+  GATE_HUB.tx,0,GATE_HUB.tz,0,1,0,GATE_HUB.nx,0,GATE_HUB.nz,24,.16,.5,.66,.56,.40,false);
+}
 function portalDraw(now){
  if(!(playing||glide))return;
- const t=now/1000,e=cam.e,fw=cam.fw,lim=(farFog+12)*(farFog+12),o=[0,0,0];
+ buildPortalEngraving();
+ const t=now/1000,e=cam.e,fw=cam.fw,lim=(farFog+12)*(farFog+12),o=[0,0,0,0],wx=GATE_HUB.x-e[0],wz=GATE_HUB.z-e[2],wallVisible=wx*wx+wz*wz<lim&&wx*fw[0]+(GATE_HUB.y+4-e[1])*fw[1]+wz*fw[2]>-29;
+ if(wallVisible)o[0]=portalBackboard(o[0]);
  for(const p of PORT){const dx=p.x-e[0],dz=p.z-e[2];if(dx*dx+dz*dz>lim||dx*fw[0]+(p.cy-e[1])*fw[1]+dz*fw[2]<-PR-2)continue;portalGeo(p,t,o)}
- if(!o[0]&&!o[1])return;
- if(!pBuf||!gl.isBuffer(pBuf[0]))pBuf=[gl.createBuffer(),gl.createBuffer(),gl.createBuffer()];
- const arrs=[PO,PT,PA];
- for(let i=0;i<3;i++){pObj[i].b=pBuf[i];pObj[i].n=o[i]/7;if(!o[i])continue;gl.bindBuffer(gl.ARRAY_BUFFER,pBuf[i]);gl.bufferData(gl.ARRAY_BUFFER,arrs[i].subarray(0,o[i]),gl.DYNAMIC_DRAW)}
+ if(!o[0]&&!o[1]&&!o[2]&&!pTextN)return;
+ if(!pBuf||!gl.isBuffer(pBuf[0])){pBuf=[gl.createBuffer(),gl.createBuffer(),gl.createBuffer(),gl.createBuffer()];pTextUploaded=false}
+ const arrs=[PO,PT,PA,PE];
+ for(let i=0;i<4;i++){
+  pObj[i].b=pBuf[i];pObj[i].n=i===3?(wallVisible?pTextN/7:0):o[i]/7;
+  if(i===3){if(pTextUploaded)continue;gl.bindBuffer(gl.ARRAY_BUFFER,pBuf[i]);gl.bufferData(gl.ARRAY_BUFFER,arrs[i].subarray(0,pTextN),gl.STATIC_DRAW);pTextUploaded=true;continue}
+  if(!o[i])continue;gl.bindBuffer(gl.ARRAY_BUFFER,pBuf[i]);gl.bufferData(gl.ARRAY_BUFFER,arrs[i].subarray(0,o[i]),gl.DYNAMIC_DRAW)
+ }
  drawColor(pObj[0],gl.TRIANGLES,1,1);
+ drawColor(pObj[3],gl.TRIANGLES,1,1);
  gl.enable(gl.BLEND);gl.depthMask(false);
- gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);drawColor(pObj[1],gl.TRIANGLES,1,.6);
+ gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);drawColor(pObj[1],gl.TRIANGLES,1,.25);
  gl.blendFunc(gl.SRC_ALPHA,gl.ONE);drawColor(pObj[2],gl.TRIANGLES,1,.5);
  gl.depthMask(true);gl.disable(gl.BLEND);
 }
@@ -139,7 +199,6 @@ function portalTick(dt){
  let best=1e9;tpCd-=dt;
  for(const p of PORT){
   const dx=player.x-p.x,dz=player.z-p.z,d=Math.hypot(dx,dz);if(d<best)best=d;
-  p.spin+=dt*(p.act>0?2.4:d<14?.35:.12);
   if(p.kw>0){p.kw+=dt*1.6;if(p.kw>=1)p.kw=0}
   if(p.act>0&&!(TP&&(TP.p===p||TP.d===p))){p.act=Math.max(0,p.act-dt*.6)}
   if(d>8)continue;
@@ -169,32 +228,6 @@ function tpStep(dt){
  }
  fovKick=1.05*(1-sstep(.8,1.6,t));$('warp').style.opacity=(1-sstep(.85,1.6,t)).toFixed(3);
  if(t>=1.6){TP=null;tpCd=1;fovKick=0;const w=$('warp');w.style.display='none';w.style.opacity='0';$('app').classList.remove('warping');toast(`Welcome to ${T.d.name==='the start'?T.p.name:'the start'}`)}
-}
-/* --- labels above the gates --- */
-let ptEls=null;
-function updatePortalLabels(){
- if(!ptEls){ptEls=[];const box=$('tags');for(let i=0;i<3;i++){const d=document.createElement('div');d.className='ntag portal';d.style.display='none';d.innerHTML='<span></span>';box.appendChild(d);ptEls.push({d,s:d.firstChild,txt:'',shown:false,w:0})}}
- const on=playing&&!curModal&&!mapDialog.open&&!FLY&&!TP,list=[];
- if(on)for(const p of PORT){
-  const d=Math.hypot(p.x-player.x,p.z-player.z);if(d>=34)continue;
-  const center=project(p.x,p.cy,p.z);if(!center)continue;
-  const x=(center[0]*.5+.5)*vw,y=(.5-center[1]*.5)*vh;
-  if(x<-60||x>vw+60||y<-40||y>vh+40)continue;
-  const top=project(p.x,p.cy+PR+.9,p.z);
-  list.push([d,p,x,top?(.5-top[1]*.5)*vh:y]);
- }
- list.sort((a,b)=>a[0]-b[0]);
- for(let i=0;i<ptEls.length;i++){
-  const E=ptEls[i],it=list[i];let show=false;
-  if(it){const [,p,x,y]=it;show=true;
-   if(!E.shown){E.shown=true;E.d.style.display='block';E.w=0}
-   const txt=p.name==='the start'?'Portal back to the start':`Portal to ${p.name}`;
-   if(txt!==E.txt){E.txt=txt;E.s.textContent=txt;E.w=0}
-   if(!E.w)E.w=E.d.offsetWidth;
-   E.d.style.transform=`translate(${clamp(x-E.w/2,6,vw-E.w-6)|0}px,${Math.max(hudBot,y-30)|0}px)`;
-  }
-  if(!show&&E.shown){E.shown=false;E.d.style.display='none'}
- }
 }
 /* test hooks */
 window.__portals=()=>PORT.map(p=>({x:p.x,z:p.z,nx:p.nx,nz:p.nz,base:p.base,cy:p.cy,name:p.name,to:p.to}));

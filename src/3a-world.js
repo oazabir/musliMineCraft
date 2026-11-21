@@ -83,7 +83,7 @@ function mosque(l,lx,y,lz){
    const dy=y-(wh+P.dh+1);
    r=dome(lx,dy,dz,P.dr,P.dome,P.acc);if(r>=0)return r;
    if(lx===0&&dz===0&&dy>P.dr&&dy<=P.dr+3)return dy===P.dr+2?B.LANTERN:B.GOLD;
-   if(P.sd&&y>wh){const s=hw-3;const cx=Math.abs(lx)-s,cz=Math.abs(dz)-s;return dome(cx,y-wh-1,cz,3,B.GOLD,B.GOLD)}
+   if(P.sd&&y>wh){const s=hw-3,cx=ax-s,cz=Math.abs(dz)-s;if(cx===0&&cz===0&&y===wh+5)return B.GOLD;return dome(cx,y-wh-1,cz,3,P.dome,P.dome)}
   }
   return -1;
  }
@@ -334,6 +334,7 @@ const LMT={
  vineyard:{fn:vineyard,p:()=>({hx:15,hz:11,h:5})},
  flowers:{fn:flowers,p:()=>({hx:10,hz:10,h:5,ymin:-1})}
  ,haram:{fn:haram,p:()=>({hx:78,hz:75,h:31,top:31,ymin:0})},
+ landmarks:{fn:()=>-1,p:()=>({hx:15,hz:26,h:8,y0:16,ymin:0})},
  burj:{fn:burjKhalifa,p:()=>({hx:9,hz:10,h:31,top:31,y0:15,ymin:0})},
  sail:{fn:burjAlArab,p:()=>({hx:16,hz:20,h:31,top:31,y0:15,ymin:-2})},
  dohaMia:{fn:dohaMia,p:()=>({hx:19,hz:20,h:26,top:26,ymin:0})},
@@ -365,17 +366,18 @@ const FIXED=[['mosque',0,3,-108,-29],['mosque',1,2,-30,108],['mosque',2,0,-46,-1
  /* Qatar, north-west across the Gulf: a compact Doha skyline and grand mosque. */
  ['museum',0,0,-355,-365],['mosque',1,1,-390,-330],['village',0,0,-330,-410],
  /* Saudi Arabia to the west and south-west: oasis town, caravan stop and mosques. */
- ['haram',0,0,-520,245],['mosque',0,0,-520,165],['village',0,0,-620,310],['caravan',0,0,-485,390],['charbagh',0,0,-660,235],
+ ['haram',0,0,-520,245],['mosque',0,0,-520,165],['village',0,0,-620,310],['caravan',0,0,-485,390],['charbagh',0,0,-660,235],['landmarks',0,0,-37,-11],
  ...FEATURED_LMS.map(l=>[l.t,0,0,l.dx,l.dz])];
-const GATE_HUB={x:1006,z:1006,step:6,y:16,count:4+FEATURED_LMS.length};
-const hubDist=(x,z)=>Math.max(GATE_HUB.x-3-x,x-(GATE_HUB.x+(GATE_HUB.count-1)*GATE_HUB.step+3),Math.abs(z-GATE_HUB.z)-4,0);
+const GATE_HUB={x:987-6.5*.963,z:1013-6.5*.268,step:4.76,nx:.963,nz:.268,y:16,count:4+FEATURED_LMS.length,tx:-.268,tz:.963};
+const hubDist=(x,z)=>{const dx=x-GATE_HUB.x,dz=z-GATE_HUB.z,s=dx*GATE_HUB.tx+dz*GATE_HUB.tz,d=dx*GATE_HUB.nx+dz*GATE_HUB.nz;
+ return Math.max(Math.abs(s)-(GATE_HUB.count-1)*GATE_HUB.step/2-3,Math.abs(d)-4,0)};
 const SPAWN_PALMS=[[-17,7],[-7,-13],[-21,-10],[-2,12]];
 /* an open avenue in front of the grand mosque (kept free of trees) with a few palms that frame it from the sides */
 const inAvenue=(x,z)=>x>=928&&x<=1002&&z>=984&&z<=1006;
 const AVE_PALMS=[[944,1010],[950,981],[958,1011],[961,980],[972,1012],[974,979]];
 const lmMemo=new Map();let fixedLms=null;
 function fixedList(){if(!fixedLms)fixedLms=FIXED.map((f,i)=>makeLm(f[0],f[1],f[2],SPAWN.x+f[3],SPAWN.z+f[4],true,i));return fixedLms}
-function protectedLandmarkBlock(x,y,z){for(const l of fixedList())if(l.t==='haram'&&Math.abs(x-l.x)<=l.ex&&Math.abs(z-l.z)<=l.ez&&y>=l.y0&&y<=l.y0+l.h)return true;return false}
+function protectedLandmarkBlock(x,y,z){for(const l of fixedList())if((l.t==='haram'||l.t==='landmarks')&&Math.abs(x-l.x)<=l.ex&&Math.abs(z-l.z)<=l.ez&&y>=l.y0&&y<=l.y0+l.h)return true;return false}
 const RG=112,NR=Math.ceil(WX/RG);
 function lmCell(rx,rz){
  if(rx<0||rz<0||rx>=NR||rz>=NR)return null;
@@ -402,8 +404,10 @@ function gatherLms(x0,z0,x1,z1){
 const CI={top:0,om:0,hm:0,fl:0,plot:0};
 function colInfo(x,z){
  let h=raw(x,z),fl=0;CI.om=G.om;CI.hm=G.hm;
- for(let i=0;i<chunkLms.length;i++){const l=chunkLms[i],dx=Math.abs(x-l.x)-l.ex,dz=Math.abs(z-l.z)-l.ez,d=Math.hypot(Math.max(dx,0),Math.max(dz,0));
-  if(d<8){h=lerp(h,l.y0,1-smooth(d/8));if(dx<=0&&dz<=0)fl=1}}
+ for(let i=0;i<chunkLms.length;i++){const l=chunkLms[i];let dx,dz;
+  if(l.t==='landmarks'){const vx=x-l.x,vz=z-l.z,s=vx*GATE_HUB.tx+vz*GATE_HUB.tz,d=vx*GATE_HUB.nx+vz*GATE_HUB.nz;dx=Math.abs(s)-24;dz=d< -8?-8-d:d>4?d-4:0}
+  else{dx=Math.abs(x-l.x)-l.ex;dz=Math.abs(z-l.z)-l.ez}
+  const d=Math.hypot(Math.max(dx,0),Math.max(dz,0));if(d<8){h=lerp(h,l.y0,1-smooth(d/8));if(dx<=0&&dz<=0)fl=1}}
  const dp=Math.hypot(Math.max(PLOT.x0-x,0,x-PLOT.x1),Math.max(PLOT.z0-z,0,z-PLOT.z1));
  h=lerp(PLOT_Y,h,smooth(clamp(dp/8,0,1)));
  const hd=hubDist(x,z);if(hd<4){h=lerp(GATE_HUB.y,h,smooth(hd/4));if(hd===0)fl=1}

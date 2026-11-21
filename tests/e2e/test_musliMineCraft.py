@@ -3216,16 +3216,17 @@ class TestPortals:
             "Burj Khalifa", "Burj Al Arab", "Museum of Islamic Art", "The Treasury at Petra", "Kuwait Towers", "Hegra",
         ]
         assert len(P) == 2 * len(start)
-        assert len({(p["z"], p["base"], p["nx"], p["nz"]) for p in start}) == 1, "Spawn gates share one level and face the same way"
-        assert [b["x"] - a["x"] for a, b in zip(start, start[1:])] == [6] * (len(start) - 1)
+        assert len({(p["base"], p["nx"], p["nz"]) for p in start}) == 1, "Spawn gates share one level and face the player"
+        assert all(abs(math.hypot(b["x"]-a["x"],b["z"]-a["z"])-4.76)<.1 for a,b in zip(start,start[1:])), "Gate centers keep an even 4.76-block pitch"
+        assert g.ev("Math.abs(GATE_HUB.step-4.6*PGS-2)<.1"), "Scaled portal frames have a two-block gap"
         assert all(P[P[i]["to"]]["to"] == i for i in range(len(P))), "Every gate must link back to its partner"
         for p in start:
             d = math.hypot(p["x"] - 1025.5, p["z"] - 1024.5)
-            assert d < 40, f"Expected the {p['name']} gate near the start, observed {d:.0f} blocks away"
+            assert d < 55, f"Expected the {p['name']} gate across the lake, observed {d:.0f} blocks away"
         assert all(P[p["to"]]["name"] == "the start" for p in start)
         r = g.ev("""(()=>{const out=[];for(const p of __portals()){const x=Math.floor(p.x),z=Math.floor(p.z);forceLoad(x>>4,z>>4,0);
-          out.push({pad:getB(x,p.base,z),air:[1,2,3,4,5,6].every(k=>!getB(x,p.base+k,z))})}return out})()""")
-        assert all(x["pad"] == g.ev("B.MARBLE") and x["air"] for x in r), f"Every gate stands on a marble pad with open space above, observed {r}"
+          out.push({pad:getB(x,p.base,z),floor:groundTop(x,z),base:p.base,air:[1,2,3,4,5,6].every(k=>!getB(x,p.base+k,z))})}return out})()""")
+        assert all(x["pad"] == g.ev("B.MARBLE") and x["floor"] == x["base"] and x["air"] for x in r), f"Every gate base matches the floor and has open space above it, observed {r}"
         # gates at the places stand beside them, never on the way in: off the museum avenue, off the mosque plaza
         assert g.ev("(()=>{const l=museumLm(),p=__portals()[4];return Math.abs(p.x-l.x)>12&&Math.abs(p.x-l.x)<30})()"), "The museum gate stands beside its avenue"
         assert g.ev("(()=>{const p=__portals()[5];return !inAvenue(Math.floor(p.x),Math.floor(p.z))&&!portalPad(966,995,0)&&Math.hypot(p.x-916,p.z-995)<60})()"), "The mosque gate stands beside the plaza, not on it"
@@ -3262,9 +3263,11 @@ class TestPortals:
         g = desktop
         g.ev("initAudio();psfx.open();psfx.arrive();portalHum(.1,2)")
         p = g.ev("__portals()[0]")
-        g.ev(f"__tp({p['x']}+{p['nx']}*9,{p['z']}+{p['nz']}*9,Math.atan2({p['nx']},{p['nz']}),.1,true)")
-        g.wait("[...document.querySelectorAll('.ntag.portal')].some(e=>e.style.display==='block')", "the gate label", timeout=8000)
-        assert "Portal to Museum of Islamic Heritage" in g.ev("[...document.querySelectorAll('.ntag.portal')].map(e=>e.textContent).join('|')")
+        g.ev(f"__tp({p['x']}+{p['nx']}*42,{p['z']}+{p['nz']}*42,Math.atan2({p['nx']},{p['nz']}),.1,true)")
+        g.ev("buildPortalEngraving()")
+        r = g.ev("({d:Math.hypot(player.x-__portals()[0].x,player.z-__portals()[0].z),n:pTextN/42,f:document.querySelectorAll('.ntag.portal').length})")
+        assert r["d"] > 34 and r["n"] > 0, f"The destination names should be fixed geometry on the wall at a distance, observed {r}"
+        assert r["f"] == 0, f"Destination names should not use floating DOM labels, observed {r}"
 
     def test_map_pin_travels_to_the_named_gate(self, desktop):
         g = desktop
@@ -3299,6 +3302,18 @@ class TestPortals:
         assert r["extension"] == g.ev("B.LIMEP") and r["hall"] == g.ev("B.MARBLE"), f"Expected the northern prayer hall and roof, observed {r}"
         assert r["clock"] == g.ev("B.GOLD") and r["clockTop"] == g.ev("B.GOLD"), f"Expected the Abraj Al-Bait clock face and crown, observed {r}"
         assert r["extent"] == [78, 75], f"Expected an expanded Haram footprint, observed {r}"
+
+    def test_landmarks_back_panel_is_compact_with_floor_aligned_gates(self, loaded):
+        g = loaded
+        r = g.ev("""(()=>{const l=fixedList().find(q=>q.t==='landmarks');return{
+          name:lmName(l),x:l.x,z:l.z,frontDist:Math.hypot(l.x+GATE_HUB.nx*4-LAKE.x,l.z+GATE_HUB.nz*4-LAKE.z),
+          panel:portalBackboard(0),solid:l.fn(l,0,1,0),dims:[l.ex,l.ez,l.h],gateDepth:(__portals()[0].x-l.x)*GATE_HUB.nx+(__portals()[0].z-l.z)*GATE_HUB.nz,
+          gap:GATE_HUB.step-4.6*PGS,
+          hubZ:GATE_HUB.z,gateN:__portals().filter(p=>p.name!=='the start').length}})()""")
+        assert r["name"] == "Landmarks" and r["frontDist"] > 16, f"Expected the hall on the far side of the lake, observed {r}"
+        assert r["panel"] > 0 and r["solid"] == -1, f"Expected one rendered back panel with no enclosing block walls, observed {r}"
+        assert r["dims"][2] <= 8 and -8 < r["gateDepth"] < -5.5 and abs(r["gap"]-2)<.1, f"Expected a short ticket-booth panel, floor-level gates, and two-block gaps, observed {r}"
+        assert r["gateN"] == 10, f"Expected all ten destination gates, observed {r}"
 
     def test_tawaf_uses_slow_bot_figures_with_small_movement_variation(self, started):
         g = started

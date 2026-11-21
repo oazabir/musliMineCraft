@@ -150,7 +150,7 @@ function startScreen(){
 function howCard(){
  const how=touchMode?['Drag the round pad to walk. Drag anywhere else to look.','Tap a block to break or place it. Use the Place / Break button to switch.','Follow the glowing blueprint, open the glowing chests, and tap a builder to build together.','Swim east to the Open Air Prison, or tap My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.']
   :['Click the game to look around. Move with W A S D and jump with Space.','Left click breaks a block. Right click places one. Keys 1 to 9 pick a block.','Follow the glowing blueprint, open the glowing chests, and click a builder to build together.','Swim east to the Open Air Prison, or open My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.'];
- how.push(`${touchMode?'Tap Map':'Press M'} to travel to landmarks. The gates just north of spawn also take you there.`);
+ how.push(`${touchMode?'Tap Map':'Press M'} to travel to landmarks. The Landmarks wall across the lake has gates to these places.`);
  modal(`<svg class="motif i"><use href="#star8"/></svg><h2>How to play</h2><ul class="how">${how.map(h=>`<li>${h}</li>`).join('')}</ul><div class="row"><button class="btn" data-a="ok">Got it</button></div>`,p=>{p.querySelector('[data-a=ok]').onclick=closeModal});
 }
 function startPlay(){
@@ -473,9 +473,9 @@ function uiWater(){
 function frame(now){
  requestAnimationFrame(frame);
  if(document.hidden){last=now;return}
- const dt=Math.min(.05,(now-last)/1000||0);last=now;
+ const elapsed=(now-last)/1000||0,dt=Math.min(.05,elapsed);last=now;
  if(playing&&!curModal&&!mapDialog.open){
- if(LIFT_RIDE)liftStep(dt);else if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
+ if(LIFT_RIDE)liftStep(dt);else if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(Math.min(.12,elapsed));else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
   activeSec+=dt;if(activeSec>=BREAK_SECONDS&&!LIFT_RIDE){activeSec=0;breakReminder()}
   edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on&&!LIFT_RIDE)portalTick(dt);saveTick(dt);
  }else if(glide)glideStep(dt);
@@ -488,7 +488,7 @@ function frame(now){
  else{busyFrame=streamWork(4,2,now)>0;if(now-lastUnload>400){lastUnload=now;unloadFar()}}
  if(beamsDirty&&now-beamsT>300){beamsT=now;rebuildBeams()}
  $('building').style.display=playing&&player.hold?'block':'none';
- drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);updatePortalLabels();museumHud(dt);fillExGeo(now);uiWater();liftHud();
+ drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);museumHud(dt);fillExGeo(now);uiWater();liftHud();
  hitView=null;
  if(playing&&!curModal&&!mapDialog.open){
   let r=null;
