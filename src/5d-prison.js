@@ -7,7 +7,7 @@ const GZ_MS=[5,10,15,20,24],GZ_ACT=46,GZ_HIT=3.6;
 const gzIn=new Uint8Array(GZC),gzFl=new Int8Array(GZC).fill(-1),gzCov=new Uint8Array(GZC),gzOwn=new Int16Array(GZC).fill(-1);
 const gzPrev=new Int32Array(GZC),gzMark=new Uint32Array(GZC),gzQ=new Int32Array(GZC);
 const gzWalk=[],gzPeople=[],gzPlanes=[],gzBombs=[],gzFx=[];
-const GZS={on:false,ready:false,inMask:false,gridT:0,raidT:6,raid:false,raidN:0,hurt:0,safe:0,last:null,mark:1,spawned:false,o:{x:0,y:0,z:0,yaw:0}};
+const GZS={on:false,ready:false,inMask:false,gridT:0,raidT:6,waveT:0,raid:false,ending:false,raidN:0,seq:0,hurt:0,safe:0,last:null,mark:1,spawned:false,o:{x:0,y:0,z:0,yaw:0}};
 const GZ_DRESS=[[.55,.18,.2],[.2,.3,.55],[.25,.45,.3],[.5,.4,.25],[.35,.35,.4],[.6,.5,.35],[.15,.35,.45]];
 const GZ_COVER=[[.12,.12,.14],[.85,.85,.82],[.4,.2,.35],[.25,.3,.5],[.55,.45,.3]];
 const GZ_SKIN=[[.86,.68,.52],[.78,.58,.42],[.66,.47,.33],[.92,.76,.62]];
@@ -88,15 +88,15 @@ function gzPersonTick(p,dt){
  if(p.rt<=0||Math.hypot(p.rx-p.x,p.rz-p.z)<.4){const c=gzWalk[Math.floor(Math.random()*gzWalk.length)];p.rx=gzCX(c)+Math.random()*.6-.3;p.rz=gzCZ(c)+Math.random()*.6-.3;p.rt=2+Math.random()*4}
  if(!gzMove(p,p.rx,p.rz,sp,dt))p.rt=0;
 }
+function gzAddPlane(){
+ const dir=Math.random()<.5?1:-1,x=GZ.x+(Math.random()*2-1)*(GZ.hx-3),drops=[];
+ for(let j=0;j<3+Math.floor(Math.random()*3);j++)drops.push(GZ.z+(Math.random()*2-1)*(GZ.hz-3));
+ drops.sort((a,b)=>dir*(a-b));
+ gzPlanes.push({id:GZS.raidN*100+GZS.seq++,x,y:29+Math.random()*5,z:GZ.z-dir*(GZ.hz+48+Math.random()*22),dir,sp:13,drops});
+}
 function gzStartRaid(){
- GZS.raid=true;GZS.raidN++;GZS.hurt=0;GZS.raidT=11+Math.random()*5;
- const n=Math.random()<.45?2:1;
- for(let k=0;k<n;k++){
-  const dir=Math.random()<.5?1:-1,x=GZ.x+(Math.random()*2-1)*(GZ.hx-3),drops=[];
-  for(let j=0;j<3+Math.floor(Math.random()*3);j++)drops.push(GZ.z+(Math.random()*2-1)*(GZ.hz-3));
-  drops.sort((a,b)=>dir*(a-b));
-  gzPlanes.push({x,y:29+k*2.5,z:GZ.z-dir*(GZ.hz+55+k*14),dir,sp:13,drops});
- }
+ GZS.raid=true;GZS.ending=false;GZS.raidN++;GZS.seq=0;GZS.hurt=0;GZS.raidT=23;GZS.waveT=6;
+ const n=2+Math.floor(Math.random()*2);for(let k=0;k<n;k++)gzAddPlane();
  sfx.siren();
 }
 function gzBoom(x,y,z){
@@ -121,6 +121,7 @@ function gzImpactY(x,z){
 }
 function gzEndRaid(){
  GZS.raid=false;let safe=0;for(const p of gzPeople)if(p.st===2)safe++;
+ GZS.ending=false;GZS.raidT=35+Math.random()*15;
  GZS.safe=safe;S.gz.pts+=safe;if(safe>S.gz.best)S.gz.best=safe;
  let won=0;for(let k=0;k<GZ_MS.length;k++)if(safe>=GZ_MS[k]&&!(S.gz.ms&(1<<k))){S.gz.ms|=1<<k;won++}
  if(won){S.stars+=3*won;S.skills.building+=won;updateHud();confetti();sfx.done();toast(`${safe} people safe in your shelters! +${3*won} stars`)}
@@ -145,15 +146,22 @@ function gzTick(dt){
   let n=0;for(const p of gzPeople){if(n>=6)break;if(p.st===0&&p.tgt<0){n++;const path=gzFind(gzIdx(p.x,p.z));if(path){p.tgt=path[path.length-1];gzOwn[p.tgt]=p.i;p.path=path;p.st=1}}}}
  if(!GZS.spawned)return;
  for(const p of gzPeople)gzPersonTick(p,dt);
- if(!GZS.raid){GZS.raidT-=dt;if(GZS.raidT<=0)gzStartRaid()}
- for(let i=gzPlanes.length-1;i>=0;i--){const a=gzPlanes[i];a.z+=a.dir*a.sp*dt;
-  while(a.drops.length&&(a.z-a.drops[0])*a.dir>=0){a.drops.shift();gzBombs.push({x:a.x+Math.random()*3-1.5,y:a.y-1,z:a.z,vz:a.dir*a.sp*.35,vy:0});sfx.whistle()}
+ if(!GZS.raid&&!GZS.ending&&!gzPlanes.length&&!gzBombs.length){GZS.raidT-=dt;if(GZS.raidT<=0)gzStartRaid()}
+ for(let i=gzPlanes.length-1;i>=0;i--){const a=gzPlanes[i];
+  if(a.hit){a.fallT+=dt;a.vx+=a.turnDir*dt*.55;a.x+=a.vx*dt;a.y+=a.vy*dt;a.vy-=8*dt;a.z+=a.dir*a.sp*.12*dt;a.yawOff+=a.turnDir*dt*.22;a.roll+=(a.vx>0?1:-1)*dt*1.8;a.smokeT-=dt;
+   if(a.smokeT<=0){a.smokeT=.11;gzFx.push({k:1,x:a.x,y:a.y+.2,z:a.z,t:0,life:1.5,s:.36+Math.random()*.2,vx:(Math.random()-.5)*.5,vy:.45,vz:(Math.random()-.5)*.5})}
+   if(a.y<=gzImpactY(a.x,a.z)){for(let n=0;n<8;n++)gzFx.push({k:1,x:a.x+(Math.random()-.5)*1.2,y:a.y+.2,z:a.z+(Math.random()-.5)*1.2,t:0,life:1.2+Math.random(),s:.45+Math.random()*.32,vx:(Math.random()-.5)*.65,vy:.6+Math.random()*.6,vz:(Math.random()-.5)*.65});gzPlanes.splice(i,1)}
+   continue;
+  }
+  a.z+=a.dir*a.sp*dt;
+  while(a.drops.length&&(a.z-a.drops[0])*a.dir>=0){a.drops.shift();gzBombs.push({pid:a.id,x:a.x+Math.random()*3-1.5,y:a.y-1,z:a.z,vz:a.dir*a.sp*.35,vy:0});sfx.whistle()}
   if((a.z-GZ.z)*a.dir>GZ.hz+70)gzPlanes.splice(i,1)}
  for(let i=gzBombs.length-1;i>=0;i--){const b=gzBombs[i];b.vy-=22*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;
   const iy=gzImpactY(b.x,b.z);if(b.y<=iy){gzBombs.splice(i,1);gzBoom(b.x,iy,b.z)}}
  for(let i=gzFx.length-1;i>=0;i--){const f=gzFx[i];f.t+=dt;if(f.t>=f.life){gzFx.splice(i,1);continue}if(f.t<0)continue;
-  f.x+=f.vx*dt;f.y+=f.vy*dt;f.z+=f.vz*dt;if(f.k===0){f.vx*=.9;f.vz*=.9;f.vy-=6*dt}else{f.vx*=.97;f.vz*=.97}}
- if(GZS.raid&&!gzPlanes.length&&!gzBombs.length)gzEndRaid();
+  f.x+=f.vx*dt;f.y+=f.vy*dt;f.z+=f.vz*dt;if(f.k===0){f.vx*=.9;f.vz*=.9;f.vy-=6*dt}else if(f.k===1){f.vx*=.97;f.vz*=.97}else f.vy-=.4*dt}
+ if(GZS.raid){GZS.raidT-=dt;GZS.waveT-=dt;if(GZS.waveT<=0&&GZS.raidT>0&&gzPlanes.length<3){gzAddPlane();if(Math.random()<.45)gzAddPlane();GZS.waveT=5+Math.random()*3}if(GZS.raidT<=0){GZS.raid=false;GZS.ending=true}}
+ if(GZS.ending&&!gzPlanes.length&&!gzBombs.length)gzEndRaid();
  gzHud();
 }
 let gzHudTxt='';
@@ -187,14 +195,33 @@ function gzDraw(){
  const vis=(x,y,z)=>{const dx=x-e[0],dz=z-e[2];return dx*dx+dz*dz<lim&&dx*fw[0]+(y-e[1])*fw[1]+dz*fw[2]>-4};
  for(const p of gzPeople)if(vis(p.x,p.y+1,p.z))gzFig(p);
  /* drones: a slim body with a rounded sensor nose, long thin wings, a V tail and a pusher propeller */
- for(const a of gzPlanes){const yw=a.dir>0?Math.PI:0,x=a.x,y=a.y,z=a.z,pr=GZS.t*40;
-  gzBox(x,y,z,yw,0,0,0,.3,.27,1.9,GZ_PLANE);gzBox(x,y,z,yw,0,-.06,-1.95,.34,.34,.32,GZ_PLANE);gzBox(x,y,z,yw,0,-.28,-1.6,.17,.12,.17,GZ_DARK);
-  gzBox(x,y,z,yw,0,.08,-.1,3.9,.05,.36,GZ_PLANE);gzBox(x,y,z,yw,.45,.32,1.65,.42,.05,.22,GZ_DARK);gzBox(x,y,z,yw,-.45,.32,1.65,.42,.05,.22,GZ_DARK);
+ for(const a of gzPlanes){const yw=(a.dir>0?Math.PI:0)+(a.yawOff||0),x=a.x,y=a.y,z=a.z,pr=GZS.t*40,pitch=a.hit?clamp(a.vy*.035,-.7,.7):0;
+  gzBox(x,y,z,yw,0,0,0,.3,.27,1.9,GZ_PLANE,pitch,0);gzBox(x,y,z,yw,0,-.06,-1.95,.34,.34,.32,GZ_PLANE,pitch,0);gzBox(x,y,z,yw,0,-.28,-1.6,.17,.12,.17,GZ_DARK,pitch,0);
+  gzBox(x,y,z,yw,0,.08,-.1,3.9,.05,.36,GZ_PLANE,pitch,0);gzBox(x,y,z,yw,.45,.32,1.65,.42,.05,.22,GZ_DARK,pitch,0);gzBox(x,y,z,yw,-.45,.32,1.65,.42,.05,.22,GZ_DARK,pitch,0);
   gzBox(x,y,z,yw,0,.28,1.7,.05,.3,.2,GZ_DARK);gzBox(x,y,z,yw,0,0,2.02,.62*Math.abs(Math.cos(pr)),.08,.03,GZ_DARK);gzBox(x,y,z,yw,0,0,2.02,.08,.62*Math.abs(Math.sin(pr)),.03,GZ_DARK)}
  for(const b of gzBombs)gzBox(b.x,b.y,b.z,0,0,0,0,.14,.3,.14,GZ_BOMB);
  for(const f of gzFx){if(f.t<0||!vis(f.x,f.y,f.z))continue;const k=f.t/f.life;
   if(f.k===0){const c=GZ_FIRE[Math.min(2,Math.floor(k*3))],s=f.s*(1+k*.8);gzBox(f.x,f.y,f.z,f.t*3,0,0,0,s,s,s,c)}
+  else if(f.k===2)gzBox(f.x,f.y,f.z,0,0,0,0,f.s,f.s,f.s,[1,.78,.12]);
   else{const s=f.s*(1+k*2.2),g=1-k*.35;gzBox(f.x,f.y,f.z,f.t,0,0,0,s,s,s,[GZ_SMOKE[0]*g,GZ_SMOKE[1]*g,GZ_SMOKE[2]*g])}}
+}
+function gzShoot(o,d,max){
+ if(!GZS.on||!GZS.spawned||!gzPlanes.length)return false;
+ let best=max,hit=-1;
+ for(let i=0;i<gzPlanes.length;i++){
+  const a=gzPlanes[i],flip=a.dir>0?-1:1;
+  const ox=(o[0]-a.x)*flip,oz=(o[2]-a.z)*flip,dx=d[0]*flip,dz=d[2]*flip,oy=o[1]-a.y,dy=d[1];
+  let lo=0,hi=best,ok=true;
+  for(const q of[[ox,dx,-4.2,4.2],[oy,dy,-.8,.8],[oz,dz,-2.3,2.3]]){
+   if(Math.abs(q[1])<1e-7){if(q[0]<q[2]||q[0]>q[3]){ok=false;break}}
+   else{let a0=(q[2]-q[0])/q[1],a1=(q[3]-q[0])/q[1];if(a0>a1)[a0,a1]=[a1,a0];lo=Math.max(lo,a0);hi=Math.min(hi,a1);if(lo>hi){ok=false;break}}
+  }
+  if(ok&&hi>=0&&lo<best){best=lo;hit=i}
+ }
+ if(hit<0)return false;
+ const a=gzPlanes[hit];if(a.hit)return false;a.hit=true;a.vx=(Math.random()<.5?-1:1)*(3+Math.random()*2);a.turnDir=a.vx>0?1:-1;a.yawOff=0;a.vy=-1.5;a.fallT=0;a.smokeT=0;a.roll=a.vx>0?-.35:.35;
+ for(let i=gzBombs.length-1;i>=0;i--)if(gzBombs[i].pid===a.id)gzBombs.splice(i,1);
+ toast('Drone hit. Smoke trail!');return true;
 }
 /* test hooks */
 window.__prison=()=>{let safe=0,down=0,seek=0;for(const p of gzPeople){if(p.st===2)safe++;else if(p.st===3)down++;else if(p.st===1)seek++}

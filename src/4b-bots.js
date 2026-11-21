@@ -419,7 +419,7 @@ function fillBotGeo(){
   if((b.x-cam.e[0])*cam.fw[0]+(b.y+1-cam.e[1])*cam.fw[1]+(b.z-cam.e[2])*cam.fw[2]<-3)continue;
   drawBotFig(b);
  }
- gzDraw();
+ gzDraw();machinePostDraw();
 }
 function botPick(o,d){
  let best=null,bt=1e9;

@@ -28,6 +28,17 @@ function confetti(){
   $('app').appendChild(d);setTimeout(()=>d.remove(),3200)}
 }
 function updateHud(){$('starN').textContent=S.stars;$('rank').textContent=rankOf(S.stars)}
+const mapCanvas=$('mapCanvas'),mapCtx=mapCanvas.getContext('2d');let mapT=0;
+function drawMap(now){if(now-mapT<250)return;mapT=now;const c=mapCtx,w=mapCanvas.width,h=mapCanvas.height,full=$('map').classList.contains('open');
+ c.fillStyle='#d5c18f';c.fillRect(0,0,w,h);
+ for(let y=0;y<h;y+=12)for(let x=0;x<w;x+=12)if(hash2(x,y,SEED+72)>.62){c.fillStyle='#c8b17b';c.fillRect(x,y,12,12)}
+ c.strokeStyle='#78603b';c.lineWidth=2;c.strokeRect(1,1,w-2,h-2);
+ const points=[['Abu Dhabi',SPAWN.x,SPAWN.z],['Grand Mosque',SPAWN.x-108,SPAWN.z-29],['Louvre Abu Dhabi',SPAWN.x+10,SPAWN.z-93],['Qatar',SPAWN.x-370,SPAWN.z-385],['Doha',SPAWN.x-355,SPAWN.z-365],['Saudi Arabia',SPAWN.x-520,SPAWN.z+245],['Masjid al-Haram and Kaaba',SPAWN.x-520,SPAWN.z+245]];
+ for(const [name,x,z] of points){const mx=x/WX*w,mz=z/WZ*h;c.fillStyle=name==='Abu Dhabi'?'#d74b31':name.includes('Kaaba')?'#27231e':'#f5e7c5';c.strokeStyle='#342a20';c.lineWidth=2;c.beginPath();c.arc(mx,mz,full?5:4,0,Math.PI*2);c.fill();c.stroke();if(full){c.font='bold 12px system-ui';c.fillStyle='#342a20';c.fillText(name,mx+8,mz+4)}}
+ const px=player.x/WX*w,pz=player.z/WZ*h;c.fillStyle='#164d38';c.beginPath();c.moveTo(px,pz-6);c.lineTo(px-4,pz+4);c.lineTo(px+4,pz+4);c.closePath();c.fill();
+}
+function setMapOpen(open){const m=$('map');m.classList.toggle('open',open);m.setAttribute('aria-label',open?'Click a place to travel':'Expand world map');mapT=0}
+$('map').onclick=e=>{const m=$('map');if(!m.classList.contains('open')){setMapOpen(true);return}const r=mapCanvas.getBoundingClientRect(),x=clamp(Math.floor((e.clientX-r.left)/r.width*WX),5,WX-5),z=clamp(Math.floor((e.clientY-r.top)/r.height*WZ),5,WZ-5);setMapOpen(false);if(!playing){toast('Start playing before travelling.');return}if(!teleport(x,z,player.yaw,player.pitch)){toast('Could not find a safe place nearby.');return}toast('Travelled to map location.')};
 function updateMode(){
  const b=$('btnMode');b.className=S.mode;
  b.innerHTML=`<svg class="i s"><use href="#${S.mode==='place'?'plus':'pick'}"/></svg>${S.mode==='place'?'Place':'Break'}`;
@@ -234,11 +245,13 @@ document.addEventListener('pointerlockchange',()=>{
  }
 });
 const locked=()=>document.pointerLockElement===canvas;
-function look(dx,dy){const k=.0016*S.settings.sens;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.45,1.45)}
+function look(dx,dy){const k=.0016*S.settings.sens;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.45,1.45);if(MG.on){player.x=MG_POST.x+Math.sin(player.yaw)*MG_RADIUS;player.z=MG_POST.z+Math.cos(player.yaw)*MG_RADIUS;player.vx=player.vy=player.vz=0}}
 function act(px,py,button){
  if(!playing||curModal||FLY||TP)return;
+ if(MG.on){if(button===2)leaveMachinePost();else if(button===0)machineFire(px,py);return}
  const r=playerRay(px,py),mode=button===0?'break':button===2?'place':S.mode;
  const hit=cast(r.o,r.d,REACH,mode==='place'?S.sel:0,mode==='break'),bp=botPick(r.o,r.d);
+ if(button===2&&hit&&!hit.ghost&&machinePostBlock(hit.x,hit.y,hit.z)){enterMachinePost();return}
  const xp=exPick(r.o,r.d);
  if(xp&&(!hit||xp.t<hit.t||(hit.b===B.GLASS&&xp.t<hit.t+2.5))&&(!bp||xp.t<bp.t)){openExhibit(xp.i);return}
  if(bp&&(!hit||bp.t<hit.t)){openBotCard(bp.bot);return}
@@ -246,6 +259,7 @@ function act(px,py,button){
  if(hit.b===B.CHEST){openChest(hit.x,hit.y,hit.z);return}
  if(mode==='break'){
   if(hit.ghost||hit.y===0)return;
+  if((typeof protectedLandmarkBlock==='function'&&protectedLandmarkBlock(hit.x,hit.y,hit.z))||portalPad(hit.x,hit.z,0)||machinePostBlock(hit.x,hit.y,hit.z)){toast('This landmark or post is protected.');return}
   setBlock(hit.x,hit.y,hit.z,0,0);sfx.brk();return;
  }
  if(!S.unlocked.includes(S.sel)&&!S.tmp.includes(S.sel)){toast('That block is locked.');return}
@@ -385,9 +399,9 @@ function frame(now){
  if(document.hidden){last=now;return}
  const dt=Math.min(.05,(now-last)/1000||0);last=now;
  if(playing&&!curModal){
-  if(FLY)flyStep(dt);else if(TP)tpStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
+  if(MG.on){player.vx=player.vy=player.vz=0}else if(FLY)flyStep(dt);else if(TP)tpStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
   activeSec+=dt;if(activeSec>=BREAK_SECONDS){activeSec=0;breakReminder()}
-  edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP)portalTick(dt);saveTick(dt);
+  edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on)portalTick(dt);saveTick(dt);
  }else if(glide)glideStep(dt);
  else if(!playing){if(W.on)welcomeCam(dt);else player.yaw+=dt*.08}
  if(playing||glide)dayT=(dayT+dt/DAY_SECONDS)%1;else dayT=W.day;

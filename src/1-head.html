@@ -33,6 +33,7 @@ svg.i.s{fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke
 #cross:before,#cross:after{content:"";position:absolute;background:#fff;box-shadow:0 0 3px #000}
 #cross:before{left:10px;top:3px;width:2px;height:16px}#cross:after{left:3px;top:10px;width:16px;height:2px}
 .desk #cross.on{display:block}
+#mgHint{position:absolute;left:50%;bottom:calc(var(--sb) + 94px);transform:translateX(-50%);display:none;background:rgba(8,61,68,.9);color:#fff;border:2px solid var(--gold);border-radius:5px;padding:7px 12px;font-weight:800;font-size:14px;z-index:5;pointer-events:none;white-space:nowrap}#mgHint.on{display:block}
 #hud{position:absolute;left:0;top:0;right:0;padding:calc(var(--st) + 8px) calc(var(--sr) + 10px) 0 calc(var(--sl) + 10px);pointer-events:none;display:flex;flex-direction:column;gap:8px;align-items:center}
 #hud>*{pointer-events:auto}
 #map{position:absolute;left:calc(var(--sl) + 10px);top:calc(var(--st) + 10px);width:150px;height:112px;padding:5px;background:#d9c28f;border:3px solid #55452c;box-shadow:inset 0 0 0 2px #f2e4be,0 3px 9px #0008;z-index:4;cursor:pointer;touch-action:manipulation}
@@ -233,6 +234,7 @@ svg.i.s{fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke
 <div id="app" class="desk pre">
 <canvas id="gl" tabindex="0"></canvas>
 <div id="cross"></div>
+<div id="mgHint">Aim with mouse · Left click: fire · Right click: leave</div>
 <div id="tags"></div>
 <button id="map" aria-label="Expand world map"><canvas id="mapCanvas" width="256" height="192"></canvas></button>
 <div id="hud">

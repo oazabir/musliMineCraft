@@ -265,4 +265,5 @@ function render(time){
   gl.bindBuffer(gl.ARRAY_BUFFER,hitBuf);gl.bufferData(gl.ARRAY_BUFFER,hitF,gl.DYNAMIC_DRAW);
   hitObj.b=hitBuf;drawColor(hitObj,gl.LINES,1);
  }
+ machineDraw(time);
 }

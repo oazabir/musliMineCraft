@@ -3161,25 +3161,28 @@ def _walk_into_gate(g, i):
 
 
 class TestPortals:
-    def test_three_gates_around_the_start_and_a_gate_home_at_each_place(self, loaded):
+    def test_gates_around_the_start_and_a_gate_home_at_each_place(self, loaded):
         g = loaded
         P = g.ev("__portals()")
-        assert len(P) == 6
-        start = P[:3]
-        assert [p["name"] for p in start] == ["Museum of Islamic Heritage", "Grand Mosque", "Open Air Prison"]
+        assert len(P) == 8
+        start = P[:4]
+        assert [p["name"] for p in start] == ["Museum of Islamic Heritage", "Grand Mosque", "Open Air Prison", "Masjid al-Haram and the Kaaba"]
         for p in start:
             d = math.hypot(p["x"] - 1025.5, p["z"] - 1024.5)
             assert d < 40, f"Expected the {p['name']} gate near the start, observed {d:.0f} blocks away"
-        assert all(p["name"] == "the start" for p in P[3:])
+        assert all(p["name"] == "the start" for p in P[4:])
         r = g.ev("""(()=>{const out=[];for(const p of __portals()){const x=Math.floor(p.x),z=Math.floor(p.z);forceLoad(x>>4,z>>4,0);
           out.push({pad:getB(x,p.base,z),air:[1,2,3,4,5,6].every(k=>!getB(x,p.base+k,z))})}return out})()""")
         assert all(x["pad"] == g.ev("B.MARBLE") and x["air"] for x in r), f"Every gate stands on a marble pad with open space above, observed {r}"
         # gates at the places stand beside them, never on the way in: off the museum avenue, off the mosque plaza
-        assert g.ev("(()=>{const l=museumLm(),p=__portals()[3];return Math.abs(p.x-l.x)>12&&Math.abs(p.x-l.x)<30})()"), "The museum gate stands beside its avenue"
-        assert g.ev("(()=>{const p=__portals()[4];return !inAvenue(Math.floor(p.x),Math.floor(p.z))&&!portalPad(966,995,0)&&Math.hypot(p.x-916,p.z-995)<60})()"), "The mosque gate stands beside the plaza, not on it"
-        assert g.ev("gzD(__portals()[5].x,__portals()[5].z)<0"), "The prison gate stands on the island"
+        assert g.ev("(()=>{const l=museumLm(),p=__portals()[4];return Math.abs(p.x-l.x)>12&&Math.abs(p.x-l.x)<30})()"), "The museum gate stands beside its avenue"
+        assert g.ev("(()=>{const p=__portals()[5];return !inAvenue(Math.floor(p.x),Math.floor(p.z))&&!portalPad(966,995,0)&&Math.hypot(p.x-916,p.z-995)<60})()"), "The mosque gate stands beside the plaza, not on it"
+        assert g.ev("gzD(__portals()[6].x,__portals()[6].z)<0"), "The prison gate stands on the island"
+        h = g.ev("(()=>{const l=fixedList().find(l=>l.t==='haram'),p=__portals()[7];return {x:l.x,z:l.z,ex:l.ex,ez:l.ez,px:p.x,pz:p.z}})()")
+        assert abs(h["px"]-h["x"]) > h["ex"] and abs(h["pz"]-h["z"]) < h["ez"], "The Haram return gate stands beside the Kaaba courtyard"
+        assert g.ev("(()=>{const l=fixedList().find(l=>l.t==='haram');return protectedLandmarkBlock(l.x,l.y0+1,l.z)})()"), "Masjid al-Haram and the Kaaba are protected from breaking"
 
-    @pytest.mark.parametrize("i", [0, 1, 2], ids=["museum", "mosque", "prison"])
+    @pytest.mark.parametrize("i", [0, 1, 2, 3], ids=["museum", "mosque", "prison", "haram"])
     def test_walking_into_a_start_gate_warps_the_player_to_its_place(self, desktop, i):
         g = desktop
         g.ev("S.gz.seen=true")
@@ -3195,7 +3198,7 @@ class TestPortals:
 
     def test_the_gate_home_brings_the_player_back_to_the_start(self, desktop):
         g = desktop
-        _walk_into_gate(g, 3)
+        _walk_into_gate(g, 4)
         g.wait("!__tpState().on", "the jump home to finish", timeout=8000, observe="__tpState()")
         p = g.ev("__portals()[0]")
         r = g.ev("[player.x,player.z]")

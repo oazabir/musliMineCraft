@@ -1,4 +1,4 @@
-/* ===== 8e. Stargate portals: three gates around the start, and a gate home at each place ===== */
+/* ===== 8e. Stargate portals: gates around the start and a return gate at each place ===== */
 /* A gate is a ring of stone segments with a turning glyph ring and nine chevrons around a rippling event horizon.
    Walking through the horizon locks the chevrons, the horizon bursts out (the "kawoosh"), the screen warps and the
    player steps out in front of the gate at the other end. Gates are drawn, not built from blocks: only their
@@ -13,11 +13,14 @@ function portalList(){
   return{x:cx,z:cz,nx,nz,tx:-nz,tz:nx,base,cy:base+1+PR-.05,name,to,spin:Math.random()*6,act:0,kw:0}};
  const sx=START.x+.5,sz=START.z+.5,toS=(x,z)=>[sx-x,sz-z];
  /* 0-2 stand around the start and face it; 3-5 stand at the places, face them, and lead back */
- PORT=[mk(1027,1006,...toS(1027,1006),'Museum of Islamic Heritage',3),mk(998,1006,...toS(998,1006),'Grand Mosque',4),
-  mk(1026,1041,...toS(1026,1041),'Open Air Prison',5),
+ const haram=fixedList().find(l=>l.t==='haram');
+ PORT=[mk(1027,1006,...toS(1027,1006),'Museum of Islamic Heritage',4),mk(998,1006,...toS(998,1006),'Grand Mosque',5),
+  mk(1026,1041,...toS(1026,1041),'Open Air Prison',6),
+  mk(1035,1006,...toS(1035,1006),'Masjid al-Haram and the Kaaba',7),
   /* beside each place, never on its entrance path: east of the museum's avenue and south of the Grand Mosque's
      plaza, each turned to face its building */
-  mk(museumLm().x+20,museumLm().z+52,-20,-79,'the start',0),mk(950,1019,916-950,995-1019,'the start',1),mk(GZ.x,GZ.z+GZ.hz-3,0,-1,'the start',2)];
+  mk(museumLm().x+20,museumLm().z+52,-20,-79,'the start',0),mk(950,1019,916-950,995-1019,'the start',1),mk(GZ.x,GZ.z+GZ.hz-3,0,-1,'the start',2),
+  mk(haram.x+30,haram.z+4,-1,0,'the start',3)];
  return PORT;
 }
 portalList();
