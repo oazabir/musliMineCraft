@@ -3244,3 +3244,24 @@ class TestPortals:
             if(planSite(b))for(const c of b.cells)if(portalPad(c[0],c[2],0))bad++}
           b.site=null;b.st=BS.WANDER;return bad})()""")
         assert r == 0, f"A builder planned blocks on a gate pad ({r})"
+
+    def test_haram_has_the_expansion_clock_tower_and_clearly_black_stone(self, loaded):
+        g = loaded
+        r = g.ev("""(()=>{const l=fixedList().find(q=>q.t==='haram');return{
+          courtyard:haram(l,48,0,0),edge:haram(l,55,0,0),extension:haram(l,0,15,-40),hall:haram(l,8,8,-40),
+          clock:haram(l,-61,23,-4),clockTop:haram(l,-68,31,-4),extent:[l.ex,l.ez]}})()""")
+        assert r["courtyard"] == g.ev("B.PATH"), f"The mataf should span a broad courtyard, observed {r}"
+        assert r["edge"] == g.ev("B.ARCH"), f"Expected a perimeter around the expanded courtyard, observed {r}"
+        assert r["extension"] == g.ev("B.LIMEP") and r["hall"] == g.ev("B.MARBLE"), f"Expected the northern prayer hall and roof, observed {r}"
+        assert r["clock"] == g.ev("B.GOLD") and r["clockTop"] == g.ev("B.GOLD"), f"Expected the Abraj Al-Bait clock face and crown, observed {r}"
+        assert r["extent"] == [78, 75], f"Expected an expanded Haram footprint, observed {r}"
+
+    def test_tawaf_uses_slow_bot_figures_with_small_movement_variation(self, started):
+        g = started
+        r = g.ev("""(()=>{const l=fixedList().find(q=>q.t==='haram');player.x=l.x+.5;player.y=l.y0+3;player.z=l.z+.5;updateCamera();
+          botN=0;haramCrowdReady=false;haramDraw();let lo=1,hi=0,ok=true,animated=0;
+          for(const p of HARAM_CROWD){lo=Math.min(lo,p.sp);hi=Math.max(hi,p.sp);ok=ok&&p.fig.look===p.look;if(p.fig.ph>0)animated++}
+          return{n:HARAM_CROWD.length,lo,hi,ok,animated,body:botGeo[3],frame:botGeo[252*7+3],stone:botGeo[288*7+3]}})()""")
+        assert r["n"] > 500 and r["ok"] and r["animated"] > 0, f"Tawaf figures should use the builder models, observed {r}"
+        assert r["lo"] >= .09 and r["hi"] < .15, f"Tawaf figures should walk slowly, observed {r}"
+        assert r["stone"] < r["body"] < r["frame"], f"The Kaaba should be slightly grey with a black stone and silver setting, observed {r}"

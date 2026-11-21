@@ -95,7 +95,7 @@ function gzAddPlane(dir,x,y,z){
 }
 function gzAddWave(){
  const dir=Math.random()<.5?1:-1;
- for(let i=0;i<10;i++){const row=(i/5)|0,col=i%5,x=GZ.x+(col-2)*3.7+(Math.random()-.5),y=29+row*2.5+Math.random()*.5,z=GZ.z-dir*(GZ.hz+50+row*14);gzAddPlane(dir,x,y,z)}
+ for(let i=0;i<5;i++){const x=GZ.x+(i-2)*3.7+(Math.random()-.5),y=29+Math.random()*.5,z=GZ.z-dir*(GZ.hz+50);gzAddPlane(dir,x,y,z)}
 }
 function gzStartRaid(){
  GZS.raid=true;GZS.ending=false;GZS.raidN++;GZS.seq=0;GZS.hurt=0;GZS.raidT=44;GZS.waveT=14;gzAddWave();

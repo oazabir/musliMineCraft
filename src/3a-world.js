@@ -273,8 +273,42 @@ function flowers(l,lx,y,lz){
 }
 function haram(l,lx,y,lz){
  const ax=Math.abs(lx),az=Math.abs(lz),m=Math.max(ax,az);
- /* marble mataf, arcades, four minarets and the Kaaba */
- if(y===0){if(m<=21)return m>=18?B.ARCH:B.MARBLE;return -1}
+ /* broad marble mataf with the northern expansion and its four minarets */
+ if(y===0){if(m<=56)return m>=54?B.ARCH:(m>21&&(lx%8===0||lz%8===0)?B.PATH:B.MARBLE);
+  return Math.abs(lx+68)<=7&&Math.abs(lz+4)<=8?B.MARBLE:-1}
+ /* King Abdullah expansion: wide prayer halls, roof terraces and colonnades */
+ if(lz>=-53&&lz<=-29&&ax<=42){
+  if(y===1||y===2){if(ax<=40&&lz>=-51&&lz<=-31)return y===1?B.MARBLE:B.LIMEP}
+  if(y>=3&&y<=14){const col=lx%8===0&&ax<=40||lz%8===0&&lz>=-52&&lz<=-30;
+   if(ax>=40||lz===-52||lz===-30||col)return y%6===0?B.ARCH:B.MARBLE}
+  if(y===15&&ax<=40&&lz>=-52&&lz<=-30)return B.LIMEP;
+  if(y>=16&&y<=18&&(ax>=39||lz===-52||lz===-30))return y===18?B.ARCH:B.MARBLE;
+  if(y===19&&ax<=40)return B.GOLD;
+ }
+ /* long side prayer halls link the old arcades to the expansion */
+ if(ax>=34&&ax<=52&&lz>=-25&&lz<=29){
+  if(y===1||y===2)return B.MARBLE;
+  if(y>=3&&y<=15){if(ax===34||ax===52||(lz%8===0))return y===15?B.ARCH:y%5===0?B.LATTICE:B.MARBLE;return -1}
+  if(y===16&&(ax<=51))return B.LIMEP;
+ }
+ /* expansion minarets at the north corners */
+ if((ax===39||ax===41)&&(lz===-51||lz===-31)){
+  if(y>=2&&y<=27)return y%6===0?B.ARCH:B.MARBLE;
+  if(y===28)return B.GOLD;if(y===29)return B.TURQ;if(y===30)return B.GOLD;
+ }
+ /* Abraj Al-Bait inspired clock tower beyond the west colonnade */
+ const tx=lx+68,tz=lz+4,ta=Math.max(Math.abs(tx),Math.abs(tz));
+ if(Math.abs(tx)<=7&&Math.abs(tz)<=8){
+  if(y<=3)return ta>=7?B.GOLD:B.MARBLE;
+  if(y<=19){if(Math.abs(tx)===7||Math.abs(tz)===8)return y%5===0?B.GOLD:B.LIMEP;return B.MARBLE}
+  if(y<=27){
+   const edge=Math.abs(tx)===7||Math.abs(tz)===8,pos=Math.abs(tx)===7?tz:tx;
+   if(edge){if(y===20||y===27||Math.abs(pos)===4)return B.GOLD;
+    if(y>=20&&y<=26)return y===23&&pos===0||y===24&&pos===1||y===22&&pos===-1?B.GOLD:B.STONE}
+   return y%4===0?B.GOLD:B.MARBLE;
+  }
+  if(y<=31){const r=31-y;return Math.abs(tx)<=r&&Math.abs(tz)<=r?(y>=30?B.GOLD:B.LIMEP):-1}
+ }
  if(ax>=18&&ax<=20&&az>=18&&az<=20){if(y<=1)return B.ARCH;if(y<=10)return y%4===0?B.LATTICE:B.MARBLE;if(y===11)return B.ARCH;if(y<=14)return y===14?B.TURQ:B.MARBLE;if(y===15)return B.GOLD}
  if(m===21){const along=ax===21?az:ax;if(y<=2)return B.ARCH;if(y<=7){if(along%4===0)return B.MARBLE;if(y===6)return B.ARCH;if(y===4&&along%4===2)return B.LATTICE;return -1}if(y===8)return B.ARCH;if(y===9)return B.GOLD}
  if(m===18){const along=ax===18?az:ax;if(along%3===0&&y<=5)return y===1?B.ARCH:B.MARBLE;if(y===5&&along%3===1)return B.ARCH;if(y===6)return B.ARCH}
@@ -290,7 +324,7 @@ const LMT={
  orchard:{fn:orchard,p:()=>({hx:14,hz:11,h:7})},
  vineyard:{fn:vineyard,p:()=>({hx:15,hz:11,h:5})},
  flowers:{fn:flowers,p:()=>({hx:10,hz:10,h:5,ymin:-1})}
- ,haram:{fn:haram,p:()=>({hx:22,hz:22,h:16,ymin:0})},
+ ,haram:{fn:haram,p:()=>({hx:78,hz:75,h:31,top:31,ymin:0})},
  burj:{fn:burjKhalifa,p:()=>({hx:9,hz:10,h:31,top:31,y0:15,ymin:0})},
  sail:{fn:burjAlArab,p:()=>({hx:16,hz:20,h:31,top:31,y0:15,ymin:-2})},
  dohaMia:{fn:dohaMia,p:()=>({hx:19,hz:20,h:26,top:26,ymin:0})},
@@ -322,7 +356,7 @@ const FIXED=[['mosque',0,3,-108,-29],['mosque',1,2,-30,108],['mosque',2,0,-46,-1
  /* Qatar, north-west across the Gulf: a compact Doha skyline and grand mosque. */
  ['museum',0,0,-355,-365],['mosque',1,1,-390,-330],['village',0,0,-330,-410],
  /* Saudi Arabia to the west and south-west: oasis town, caravan stop and mosques. */
- ['haram',0,0,-520,245],['mosque',0,0,-520,220],['village',0,0,-565,300],['caravan',0,0,-485,330],['charbagh',0,0,-610,235],
+ ['haram',0,0,-520,245],['mosque',0,0,-520,165],['village',0,0,-620,310],['caravan',0,0,-485,390],['charbagh',0,0,-660,235],
  ...FEATURED_LMS.map(l=>[l.t,0,0,l.dx,l.dz])];
 const GATE_HUB={x:1006,z:1006,step:6,y:16,count:4+FEATURED_LMS.length};
 const hubDist=(x,z)=>Math.max(GATE_HUB.x-3-x,x-(GATE_HUB.x+(GATE_HUB.count-1)*GATE_HUB.step+3),Math.abs(z-GATE_HUB.z)-4,0);

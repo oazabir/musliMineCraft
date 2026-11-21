@@ -826,7 +826,37 @@ return -1;
 }
 function haram(l,lx,y,lz){
 const ax=Math.abs(lx),az=Math.abs(lz),m=Math.max(ax,az);
-if(y===0){if(m<=21)return m>=18?B.ARCH:B.MARBLE;return -1}
+if(y===0){if(m<=56)return m>=54?B.ARCH:(m>21&&(lx%8===0||lz%8===0)?B.PATH:B.MARBLE);
+return Math.abs(lx+68)<=7&&Math.abs(lz+4)<=8?B.MARBLE:-1}
+if(lz>=-53&&lz<=-29&&ax<=42){
+if(y===1||y===2){if(ax<=40&&lz>=-51&&lz<=-31)return y===1?B.MARBLE:B.LIMEP}
+if(y>=3&&y<=14){const col=lx%8===0&&ax<=40||lz%8===0&&lz>=-52&&lz<=-30;
+if(ax>=40||lz===-52||lz===-30||col)return y%6===0?B.ARCH:B.MARBLE}
+if(y===15&&ax<=40&&lz>=-52&&lz<=-30)return B.LIMEP;
+if(y>=16&&y<=18&&(ax>=39||lz===-52||lz===-30))return y===18?B.ARCH:B.MARBLE;
+if(y===19&&ax<=40)return B.GOLD;
+}
+if(ax>=34&&ax<=52&&lz>=-25&&lz<=29){
+if(y===1||y===2)return B.MARBLE;
+if(y>=3&&y<=15){if(ax===34||ax===52||(lz%8===0))return y===15?B.ARCH:y%5===0?B.LATTICE:B.MARBLE;return -1}
+if(y===16&&(ax<=51))return B.LIMEP;
+}
+if((ax===39||ax===41)&&(lz===-51||lz===-31)){
+if(y>=2&&y<=27)return y%6===0?B.ARCH:B.MARBLE;
+if(y===28)return B.GOLD;if(y===29)return B.TURQ;if(y===30)return B.GOLD;
+}
+const tx=lx+68,tz=lz+4,ta=Math.max(Math.abs(tx),Math.abs(tz));
+if(Math.abs(tx)<=7&&Math.abs(tz)<=8){
+if(y<=3)return ta>=7?B.GOLD:B.MARBLE;
+if(y<=19){if(Math.abs(tx)===7||Math.abs(tz)===8)return y%5===0?B.GOLD:B.LIMEP;return B.MARBLE}
+if(y<=27){
+const edge=Math.abs(tx)===7||Math.abs(tz)===8,pos=Math.abs(tx)===7?tz:tx;
+if(edge){if(y===20||y===27||Math.abs(pos)===4)return B.GOLD;
+if(y>=20&&y<=26)return y===23&&pos===0||y===24&&pos===1||y===22&&pos===-1?B.GOLD:B.STONE}
+return y%4===0?B.GOLD:B.MARBLE;
+}
+if(y<=31){const r=31-y;return Math.abs(tx)<=r&&Math.abs(tz)<=r?(y>=30?B.GOLD:B.LIMEP):-1}
+}
 if(ax>=18&&ax<=20&&az>=18&&az<=20){if(y<=1)return B.ARCH;if(y<=10)return y%4===0?B.LATTICE:B.MARBLE;if(y===11)return B.ARCH;if(y<=14)return y===14?B.TURQ:B.MARBLE;if(y===15)return B.GOLD}
 if(m===21){const along=ax===21?az:ax;if(y<=2)return B.ARCH;if(y<=7){if(along%4===0)return B.MARBLE;if(y===6)return B.ARCH;if(y===4&&along%4===2)return B.LATTICE;return -1}if(y===8)return B.ARCH;if(y===9)return B.GOLD}
 if(m===18){const along=ax===18?az:ax;if(along%3===0&&y<=5)return y===1?B.ARCH:B.MARBLE;if(y===5&&along%3===1)return B.ARCH;if(y===6)return B.ARCH}
@@ -842,7 +872,7 @@ caravan:{fn:caravan,p:()=>({hx:14,hz:14,h:17,ymin:-1})},
 orchard:{fn:orchard,p:()=>({hx:14,hz:11,h:7})},
 vineyard:{fn:vineyard,p:()=>({hx:15,hz:11,h:5})},
 flowers:{fn:flowers,p:()=>({hx:10,hz:10,h:5,ymin:-1})}
-,haram:{fn:haram,p:()=>({hx:22,hz:22,h:16,ymin:0})},
+,haram:{fn:haram,p:()=>({hx:78,hz:75,h:31,top:31,ymin:0})},
 burj:{fn:burjKhalifa,p:()=>({hx:9,hz:10,h:31,top:31,y0:15,ymin:0})},
 sail:{fn:burjAlArab,p:()=>({hx:16,hz:20,h:31,top:31,y0:15,ymin:-2})},
 dohaMia:{fn:dohaMia,p:()=>({hx:19,hz:20,h:26,top:26,ymin:0})},
@@ -871,7 +901,7 @@ const FEATURED_LMS=[
 const FIXED=[['mosque',0,3,-108,-29],['mosque',1,2,-30,108],['mosque',2,0,-46,-100],['mosque',3,2,59,95],['museum',0,0,10,-93],['charbagh',0,0,-91,43],['village',0,0,118,21],['caravan',0,0,97,-68],
 ['orchard',0,0,58,62],['vineyard',0,1,-48,62],['flowers',0,0,6,52],
 ['museum',0,0,-355,-365],['mosque',1,1,-390,-330],['village',0,0,-330,-410],
-['haram',0,0,-520,245],['mosque',0,0,-520,220],['village',0,0,-565,300],['caravan',0,0,-485,330],['charbagh',0,0,-610,235],
+['haram',0,0,-520,245],['mosque',0,0,-520,165],['village',0,0,-620,310],['caravan',0,0,-485,390],['charbagh',0,0,-660,235],
 ...FEATURED_LMS.map(l=>[l.t,0,0,l.dx,l.dz])];
 const GATE_HUB={x:1006,z:1006,step:6,y:16,count:4+FEATURED_LMS.length};
 const hubDist=(x,z)=>Math.max(GATE_HUB.x-3-x,x-(GATE_HUB.x+(GATE_HUB.count-1)*GATE_HUB.step+3),Math.abs(z-GATE_HUB.z)-4,0);
@@ -1905,7 +1935,7 @@ const BLOOK=[
 {m:1,skin:SK[3],dress:[.3,.55,.35],pants:[.25,.3,.28],sash:[.55,.25,.15],cover:[.6,.2,.22],cap:1,beard:3,bc:[.1,.08,.08],tool:[.6,.6,.62],shoe:[.2,.14,.1],r:[.3,.55,.35]},
 {m:0,skin:SK[2],dress:[.45,.28,.5],cover:[.52,.56,.3],shoe:[.22,.15,.1],tool:[1,.85,.4],r:[.52,.56,.3]}];
 for(const L of BLOOK)L.bcol=L.beard?L.bc:[L.skin[0]*.45,L.skin[1]*.35,L.skin[2]*.3];
-const MAXB=6,botGeo=new Float32Array(MAXB*16*252+160*252+720*252+64),bots=[];let botN=0,partAmb=null;
+const MAXB=6,botGeo=new Float32Array(MAXB*16*252+160*252+1720*252+64),bots=[];let botN=0,partAmb=null;
 const ringC=(n,y,b,sk)=>{const a=[];for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(i===0||j===0||i===n-1||j===n-1)a.push([i,y,j,b]);return a};
 const ringR=(w,d,y,b)=>{const a=[];for(let i=0;i<w;i++)for(let j=0;j<d;j++)if(i===0||j===0||i===w-1||j===d-1)a.push([i,y,j,b]);return a};
 const fill=(w,d,y,b)=>{const a=[];for(let i=0;i<w;i++)for(let j=0;j<d;j++)a.push([i,y,j,b]);return a};
@@ -2229,41 +2259,35 @@ for(let ki=0;ki<6;ki++){const k=QI[ki],o=botN*7,p=q[k]*3;botGeo[o]=bcp[p];botGeo
 botGeo[o+3]=col[0]*s*am[0];botGeo[o+4]=col[1]*s*am[1];botGeo[o+5]=col[2]*s*am[2];botGeo[o+6]=1;botN++}
 }
 }
-const HARAM_SKIN=[[.88,.68,.5],[.72,.5,.36],[.58,.38,.27],[.94,.78,.62],[.79,.59,.44]],HARAM_IHRAM=[[.97,.96,.9],[.91,.9,.83],[.83,.83,.77],[.99,.98,.94]],HARAM_WOMEN=[[.23,.27,.29],[.31,.25,.24],[.26,.31,.35],[.38,.3,.26],[.2,.32,.29],[.43,.37,.31]];
 const HARAM_CROWD=[];let haramCrowdReady=false;
-const HARAM_Q=new Float32Array(12),HARAM_QI=[0,1,2,0,2,3];
-function haramQuad(ax,ay,az,bx,by,bz,cx,cy,cz,dx,dy,dz,col){
-const q=HARAM_Q;q[0]=ax;q[1]=ay;q[2]=az;q[3]=bx;q[4]=by;q[5]=bz;q[6]=cx;q[7]=cy;q[8]=cz;q[9]=dx;q[10]=dy;q[11]=dz;const am=partAmb||sky.amb;
-for(let i=0;i<6;i++){const p=HARAM_QI[i]*3,o=botN*7;botGeo[o]=q[p];botGeo[o+1]=q[p+1];botGeo[o+2]=q[p+2];botGeo[o+3]=col[0]*am[0];botGeo[o+4]=col[1]*am[1];botGeo[o+5]=col[2]*am[2];botGeo[o+6]=1;botN++}
-}
 function haramDraw(){
 if(!playing)return;const l=fixedList().find(q=>q.t==='haram');if(!l)return;
 const dx=l.x-player.x,dz=l.z-player.z,lim=farFog+22;if(dx*dx+dz*dz>lim*lim)return;
 if(!haramCrowdReady){haramCrowdReady=true;const rnd=mulberry(SEED+913),TAU=Math.PI*2;
 for(let r=0;r<12;r++){const rad=5.4+r*.98,n=Math.floor(TAU*rad/.66),off=rnd()*TAU;
-for(let i=0;i<n;i++){const fem=rnd()<.43,robe=fem?HARAM_WOMEN[Math.floor(rnd()*HARAM_WOMEN.length)]:HARAM_IHRAM[Math.floor(rnd()*HARAM_IHRAM.length)];
-HARAM_CROWD.push({r:rad,a:off+TAU*i/n,sp:.15+rnd()*.08,s:.94+rnd()*.3,robe,skin:HARAM_SKIN[Math.floor(rnd()*HARAM_SKIN.length)],head:fem?robe:HARAM_SKIN[Math.floor(rnd()*HARAM_SKIN.length)]})}
+for(let i=0;i<n;i++){const look=Object.assign({},BLOOK[Math.floor(rnd()*MAXB)]);
+if(look.m){look.dress=[.96,.95,.9];look.pants=[.9,.89,.84];look.sash=[.72,.71,.67]}
+const p={r:rad,a:off+TAU*i/n,sp:.09+rnd()*.055,phase:rnd()*TAU,look};
+p.fig={x:0,y:0,z:0,yaw:0,ph:0,leg:0,arm:0,st:BS.WANDER,look};HARAM_CROWD.push(p)}
 }
 }
 const tm=performance.now()*.001,lim2=farFog*farFog*1.1,eye=cam.e,fw=cam.fw,base=l.y0+1;
 const k={x:l.x+.5,y:l.y0+4.5,z:l.z+.5,yaw:0};
-if(botN+36*52<botGeo.length/7){part(k,0,0,0,3.54,3.54,3.54,[0,0,0]);
+if(botN+36*52<botGeo.length/7){part(k,0,0,0,3.54,3.54,3.54,[.055,.055,.055]);
 const band=l.y0+5.4,gold=[.83,.64,.22],dark=[.5,.33,.1];
 part(k,0,band-k.y,-3.56,3.55,.12,.025,gold);part(k,0,band-k.y,3.56,3.55,.12,.025,gold);part(k,3.56,band-k.y,0,.025,.12,3.55,gold);part(k,-3.56,band-k.y,0,.025,.12,3.55,gold);
 const door={x:k.x+3.57,y:base+1.5,z:k.z,yaw:0};part(door,0,1.35,0,.035,.87,.58,dark);part(door,0,1.35,-.015,.04,.76,.47,gold);
-const stone={x:k.x+3.58,y:base+.48,z:k.z+3.53,yaw:0};part(stone,0,0,0,.17,.19,.12,[.16,.12,.08]);
+const stone={x:k.x+3.58,y:base+.48,z:k.z+3.53,yaw:0};part(stone,0,0,0,.23,.24,.065,[.76,.76,.72]);part(stone,0,0,-.045,.17,.18,.035,[.008,.008,.008]);
 for(let i=-3;i<=3;i++){part(k,i,.0+band-k.y+.42,-3.585,.09,.045,.025,gold);part(k,i,.0+band-k.y+.42,3.585,.09,.045,.025,gold);part(k,3.585,.0+band-k.y+.42,i,.025,.045,.09,gold);part(k,-3.585,.0+band-k.y+.42,i,.025,.045,.09,gold)}
 for(const sx of[-1,1])for(const sz of[-1,1]){const tower={x:l.x+.5+sx*19.5,y:l.y0+16,z:l.z+.5+sz*19.5,yaw:0};part(tower,0,.08,0,.53,.1,.53,gold);part(tower,0,.34,0,.2,.19,.2,gold);part(tower,0,.59,0,.07,.08,.07,gold)}
 }
 for(let i=0;i<HARAM_CROWD.length;i++){
-const p=HARAM_CROWD[i],a=p.a-tm*p.sp,x=l.x+.5+Math.cos(a)*p.r,z=l.z+.5+Math.sin(a)*p.r;
+const p=HARAM_CROWD[i],a=p.a-tm*p.sp+Math.sin(tm*.42+p.phase)*.035,r=p.r+Math.sin(tm*.7+p.phase)*.14,
+x=l.x+.5+Math.cos(a)*r,z=l.z+.5+Math.sin(a)*r;
 const vx=x-eye[0],vz=z-eye[2],d2=vx*vx+vz*vz;if(d2>lim2||vx*fw[0]+(base-eye[1])*fw[1]+vz*fw[2]<-3)continue;
-if(d2>28*28&&i%2)continue;if(botN+24>botGeo.length/7)break;
-const yaw=-a,s=p.s,rx=Math.cos(yaw),rz=-Math.sin(yaw),fx=-Math.sin(yaw),fz=-Math.cos(yaw),w=.17*s,h=1.02*s,hw=.12*s,hb=.94*s,ht=1.27*s;
-haramQuad(x-rx*w,base,z-rz*w,x+rx*w,base,z+rz*w,x+rx*w,base+h,z+rz*w,x-rx*w,base+h,z-rz*w,p.robe);
-haramQuad(x-fx*w,base,z-fz*w,x+fx*w,base,z+fz*w,x+fx*w,base+h,z+fz*w,x-fx*w,base+h,z-fz*w,p.robe);
-haramQuad(x-rx*hw,base+hb,z-rz*hw,x+rx*hw,base+hb,z+rz*hw,x+rx*hw,base+ht,z+rz*hw,x-rx*hw,base+ht,z-rz*hw,p.head);
-haramQuad(x-fx*hw,base+hb,z-fz*hw,x+fx*hw,base+hb,z+fz*hw,x+fx*hw,base+ht,z+fz*hw,x-fx*hw,base+ht,z-fz*hw,p.head);
+if(d2>28*28&&i%2)continue;if(botN+720>botGeo.length/7)break;
+const f=p.fig;f.x=x;f.y=base;f.z=z;f.yaw=-a+Math.sin(tm*.5+p.phase)*.09;f.ph=tm*4+p.phase;f.leg=.65+Math.sin(tm*.6+p.phase)*.12;
+drawBotFig(f);
 }
 }
 let plog=null;
@@ -3232,7 +3256,7 @@ gzPlanes.push({id:GZS.raidN*100+GZS.seq++,x,y,z,dir,sp:13,hp:5,drops});
 }
 function gzAddWave(){
 const dir=Math.random()<.5?1:-1;
-for(let i=0;i<10;i++){const row=(i/5)|0,col=i%5,x=GZ.x+(col-2)*3.7+(Math.random()-.5),y=29+row*2.5+Math.random()*.5,z=GZ.z-dir*(GZ.hz+50+row*14);gzAddPlane(dir,x,y,z)}
+for(let i=0;i<5;i++){const x=GZ.x+(i-2)*3.7+(Math.random()-.5),y=29+Math.random()*.5,z=GZ.z-dir*(GZ.hz+50);gzAddPlane(dir,x,y,z)}
 }
 function gzStartRaid(){
 GZS.raid=true;GZS.ending=false;GZS.raidN++;GZS.seq=0;GZS.hurt=0;GZS.raidT=44;GZS.waveT=14;gzAddWave();
