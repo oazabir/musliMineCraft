@@ -2827,15 +2827,17 @@ p.rt-=dt;
 if(p.rt<=0||Math.hypot(p.rx-p.x,p.rz-p.z)<.4){const c=gzWalk[Math.floor(Math.random()*gzWalk.length)];p.rx=gzCX(c)+Math.random()*.6-.3;p.rz=gzCZ(c)+Math.random()*.6-.3;p.rt=2+Math.random()*4}
 if(!gzMove(p,p.rx,p.rz,sp,dt))p.rt=0;
 }
-function gzAddPlane(){
-const dir=Math.random()<.5?1:-1,x=GZ.x+(Math.random()*2-1)*(GZ.hx-3),drops=[];
-for(let j=0;j<3+Math.floor(Math.random()*3);j++)drops.push(GZ.z+(Math.random()*2-1)*(GZ.hz-3));
+function gzAddPlane(dir,x,y,z){
+const drops=[];for(let j=0;j<1+Math.floor(Math.random()*2);j++)drops.push(GZ.z+(Math.random()*2-1)*(GZ.hz-3));
 drops.sort((a,b)=>dir*(a-b));
-gzPlanes.push({id:GZS.raidN*100+GZS.seq++,x,y:29+Math.random()*5,z:GZ.z-dir*(GZ.hz+48+Math.random()*22),dir,sp:13,hp:5,drops});
+gzPlanes.push({id:GZS.raidN*100+GZS.seq++,x,y,z,dir,sp:13,hp:5,drops});
+}
+function gzAddWave(){
+const dir=Math.random()<.5?1:-1;
+for(let i=0;i<10;i++){const row=(i/5)|0,col=i%5,x=GZ.x+(col-2)*3.7+(Math.random()-.5),y=29+row*2.5+Math.random()*.5,z=GZ.z-dir*(GZ.hz+50+row*14);gzAddPlane(dir,x,y,z)}
 }
 function gzStartRaid(){
-GZS.raid=true;GZS.ending=false;GZS.raidN++;GZS.seq=0;GZS.hurt=0;GZS.raidT=23;GZS.waveT=6;
-const n=2+Math.floor(Math.random()*2);for(let k=0;k<n;k++)gzAddPlane();
+GZS.raid=true;GZS.ending=false;GZS.raidN++;GZS.seq=0;GZS.hurt=0;GZS.raidT=44;GZS.waveT=14;gzAddWave();
 sfx.siren();
 }
 function gzBoom(x,y,z){
@@ -2896,7 +2898,7 @@ for(let i=gzBombs.length-1;i>=0;i--){const b=gzBombs[i];b.vy-=22*dt;b.y+=b.vy*dt
 const iy=gzImpactY(b.x,b.z);if(b.y<=iy){gzBombs.splice(i,1);gzBoom(b.x,iy,b.z)}}
 for(let i=gzFx.length-1;i>=0;i--){const f=gzFx[i];f.t+=dt;if(f.t>=f.life){gzFx.splice(i,1);continue}if(f.t<0)continue;
 f.x+=f.vx*dt;f.y+=f.vy*dt;f.z+=f.vz*dt;if(f.k===0){f.vx*=.9;f.vz*=.9;f.vy-=6*dt}else if(f.k===1){f.vx*=.97;f.vz*=.97}else f.vy-=.4*dt}
-if(GZS.raid){GZS.raidT-=dt;GZS.waveT-=dt;if(GZS.waveT<=0&&GZS.raidT>0&&gzPlanes.length<3){gzAddPlane();if(Math.random()<.45)gzAddPlane();GZS.waveT=5+Math.random()*3}if(GZS.raidT<=0){GZS.raid=false;GZS.ending=true}}
+if(GZS.raid){GZS.raidT-=dt;GZS.waveT-=dt;if(GZS.waveT<=0&&GZS.raidT>0&&!gzPlanes.length&&!gzBombs.length){gzAddWave();GZS.waveT=14}if(GZS.raidT<=0){GZS.raid=false;GZS.ending=true}}
 if(GZS.ending&&!gzPlanes.length&&!gzBombs.length)gzEndRaid();
 gzHud();
 }
