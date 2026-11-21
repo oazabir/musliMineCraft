@@ -92,7 +92,7 @@ function gzAddPlane(){
  const dir=Math.random()<.5?1:-1,x=GZ.x+(Math.random()*2-1)*(GZ.hx-3),drops=[];
  for(let j=0;j<3+Math.floor(Math.random()*3);j++)drops.push(GZ.z+(Math.random()*2-1)*(GZ.hz-3));
  drops.sort((a,b)=>dir*(a-b));
- gzPlanes.push({id:GZS.raidN*100+GZS.seq++,x,y:29+Math.random()*5,z:GZ.z-dir*(GZ.hz+48+Math.random()*22),dir,sp:13,drops});
+ gzPlanes.push({id:GZS.raidN*100+GZS.seq++,x,y:29+Math.random()*5,z:GZ.z-dir*(GZ.hz+48+Math.random()*22),dir,sp:13,hp:5,drops});
 }
 function gzStartRaid(){
  GZS.raid=true;GZS.ending=false;GZS.raidN++;GZS.seq=0;GZS.hurt=0;GZS.raidT=23;GZS.waveT=6;
@@ -219,7 +219,7 @@ function gzShoot(o,d,max){
   if(ok&&hi>=0&&lo<best){best=lo;hit=i}
  }
  if(hit<0)return false;
- const a=gzPlanes[hit];if(a.hit)return false;a.hit=true;a.vx=(Math.random()<.5?-1:1)*(3+Math.random()*2);a.turnDir=a.vx>0?1:-1;a.yawOff=0;a.vy=-1.5;a.fallT=0;a.smokeT=0;a.roll=a.vx>0?-.35:.35;
+ const a=gzPlanes[hit];if(a.hit)return false;a.hp--;if(a.hp>0)return true;a.hit=true;a.vx=(Math.random()<.5?-1:1)*(3+Math.random()*2);a.turnDir=a.vx>0?1:-1;a.yawOff=0;a.vy=-1.5;a.fallT=0;a.smokeT=0;a.roll=a.vx>0?-.35:.35;
  for(let i=gzBombs.length-1;i>=0;i--)if(gzBombs[i].pid===a.id)gzBombs.splice(i,1);
  toast('Drone hit. Smoke trail!');return true;
 }
