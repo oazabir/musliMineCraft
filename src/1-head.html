@@ -36,10 +36,9 @@ svg.i.s{fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke
 #mgHint{position:absolute;left:50%;bottom:calc(var(--sb) + 94px);transform:translateX(-50%);display:none;background:rgba(8,61,68,.9);color:#fff;border:2px solid var(--gold);border-radius:5px;padding:7px 12px;font-weight:800;font-size:14px;z-index:5;pointer-events:none;white-space:nowrap}#mgHint.on{display:block}
 #hud{position:absolute;left:0;top:0;right:0;padding:calc(var(--st) + 8px) calc(var(--sr) + 10px) 0 calc(var(--sl) + 10px);pointer-events:none;display:flex;flex-direction:column;gap:8px;align-items:center}
 #hud>*{pointer-events:auto}
-#map{position:absolute;left:calc(var(--sl) + 10px);top:calc(var(--st) + 10px);width:150px;height:112px;padding:5px;background:#d9c28f;border:3px solid #55452c;box-shadow:inset 0 0 0 2px #f2e4be,0 3px 9px #0008;z-index:4;cursor:pointer;touch-action:manipulation}
+#map{position:absolute;left:calc(var(--sl) + 10px);top:calc(var(--st) + 8px);width:122px;height:100px;padding:4px;z-index:4}
 #map canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
-#map.open{left:50%;top:50%;transform:translate(-50%,-50%);width:min(90vw,720px);height:min(82vh,620px);padding:8px}
-#map:after{content:'MAP';position:absolute;right:5px;bottom:3px;font-size:9px;font-weight:900;letter-spacing:1px;color:#55452c;text-shadow:0 1px #f2e4be}
+#map span{position:absolute;right:6px;bottom:6px;background:#302b21;color:#fff4d5;padding:2px 5px;font:bold 11px monospace}
 #top{display:flex;gap:8px;width:100%;max-width:560px;align-items:center}
 .chip{background:rgba(8,61,68,.82);color:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:16px;display:flex;align-items:center;gap:6px;border:2px solid var(--gold);min-height:44px;white-space:nowrap}
 .chip svg{color:var(--gold)}
@@ -190,6 +189,39 @@ svg.i.s{fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke
 #helpout{position:absolute;left:50%;top:56%;transform:translateX(-50%);display:none;z-index:5}
 #helpout.on{display:block}
 @media (max-height:480px){#mission .md{display:none}}
+/* Cut limestone, glazed tiles and dark inventory slots. */
+:root{--ui-edge:#302820;--ui-light:#fff0c9;--ui-stone:#d7bd88;--ui-grout:#927751;--ui-green:#2e694a;--ui-teal:#234d50}
+.btn,.btn.alt,.chip,.ans,#map,#btnJump,#btnMode,.mtog{border-radius:0;border:2px solid var(--ui-edge);box-shadow:inset 0 2px #fff4,inset 0 -4px #0004,0 3px #221c16b0;text-shadow:0 1px #0008}
+.btn,.btn.alt,.ans,#btnJump,#btnMode{background:var(--ui-stone);color:#302820;text-shadow:none}
+.btn:not(.alt),#btnMode.place,#btnJump,#wready .btn.play{background:var(--ui-green);color:#fff8e8;text-shadow:0 2px #193526}
+#btnMode.break{color:#fff9e5}#wready .btn.play{animation:none;border-color:#172b21}#wready .btn.alt{color:#302820;text-shadow:none}
+.btn:active,.ans:active,#map:active,#wready .btn.play:active{transform:translateY(2px);box-shadow:inset 0 2px #0003,0 1px #221c16b0}
+.btn:hover,.chip:hover:is(button),.ans:hover:is(:enabled),#map:hover{filter:brightness(1.13)}
+button:focus-visible{outline:3px solid #ffdd72;outline-offset:2px}
+.chip,#map,#lockhint,#mgHint{background:var(--ui-teal);color:#fff4d5;border-color:var(--ui-edge)}
+#mission,#panel,#toast,#worldMap{background:#f1e0b7;border:3px solid var(--ui-edge);border-radius:0;box-shadow:inset 0 0 0 2px var(--ui-light),0 5px #201a16b0,0 10px 24px #1d181555}
+#mission{border-left:7px solid var(--ui-green)}#mission .bar,.why,.skill,.tag,#lockhint,#mgHint,#wbadge,#wfeat span{border-radius:0}
+#mission .bar{background:#bbaa83;box-shadow:inset 0 2px #654f303e}#mission .bar i{background:repeating-linear-gradient(90deg,#32704f 0 8px,#3f845c 8px 10px)}
+#hotbar{gap:3px;padding:4px;background:#322b24;border:2px solid #1d1815;border-radius:0;box-shadow:inset 0 2px #78664c,0 4px #221c16b0}
+.slot{border-radius:0;border:2px solid #241f1a;background:#625849;box-shadow:inset 2px 2px #342c24,inset -2px -2px #8a775d}
+.slot.sel{border-color:#ffe39a;background:#355b49;box-shadow:inset 2px 2px #20392c,inset -2px -2px #5d8f72}.slot.locked{background:#493f35}.slot canvas{width:32px;height:32px}
+.slot .no{font-family:monospace}.slot:focus-visible{outline-offset:-4px}#selName{bottom:calc(var(--sb) + 76px)}
+#panel{border-top:7px solid var(--ui-grout)}#panel h2,.wtag,#worldMap h2{font-family:Georgia,serif}#panel .row{gap:12px}
+#wbadge,#wfeat span{background:#2f3a34;border-color:#a88a53}#wfeat span{box-shadow:inset 0 1px #fff3}#wfill{border-radius:0}#wready .btn{font-weight:800}
+#worldMap{padding:12px;width:min(850px,calc(100% - var(--sl) - var(--sr) - 24px));max-height:calc(100% - var(--st) - var(--sb) - 24px);color:#302820;overflow:auto;overscroll-behavior:contain;touch-action:pan-y}
+#worldMap::backdrop{background:#1b211dcc}#worldMap header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+#worldMap h2{margin:0;font-size:clamp(21px,4vw,28px)}#worldMap .btn{min-height:36px}
+.mapLayout{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,.62fr);gap:12px;align-items:start}
+#mapChart{position:relative;width:100%;max-width:min(52vh,100%);aspect-ratio:1;margin:0 auto;border:2px solid #67543a;background:#8fa7a2}
+#worldCanvas{display:block;width:100%;height:100%;image-rendering:pixelated}#mapPins{position:absolute;inset:0;pointer-events:none}
+.mapPin{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;padding:0;pointer-events:auto;border:2px solid #302820;background:#fff0c9;color:#302820;font:bold 11px monospace;box-shadow:0 2px #30282088}
+.mapPin:hover,.mapPin:focus-visible{z-index:2;background:#30634a;color:#fff6de}.mapNorth{position:absolute;top:5px;right:6px;font:bold 12px monospace;color:#2f2a20;background:#f1e0b7;padding:3px 4px;pointer-events:none}
+#mapPlaces{display:grid;gap:4px;max-height:52vh;overflow:auto;touch-action:pan-y;padding:2px 4px 3px 2px}
+.mapPlace{display:grid;grid-template-columns:23px 1fr;align-items:center;gap:8px;text-align:left;min-height:43px;padding:4px 6px;background:#e4cc9b;border:1px solid #a1875c;color:#302820;box-shadow:inset 0 1px #fff7}
+.mapPlace:hover,.mapPlace:focus-visible{background:#315e49;color:#fff3d1}.mapPlace b{display:block;font-size:13px;line-height:1.2}.mapPlace small{display:block;font-size:11px}.mapPlace i{font:bold 13px monospace;text-align:center;border:1px solid;padding:2px}
+@media(max-width:830px){#top{padding-left:118px;max-width:678px}#map{width:112px;height:48px}}
+@media(max-width:520px){#top{padding-left:72px}#map{width:66px;height:48px}#rank{display:none}.mapLayout{grid-template-columns:1fr;gap:8px}#mapChart{max-width:min(43vh,100%)}#mapPlaces{max-height:29vh}}
+@media(max-height:430px){#mapChart{max-width:min(67vh,100%)}#mapPlaces{max-height:66vh}}
 </style>
 </head>
 <body>
@@ -236,7 +268,9 @@ svg.i.s{fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke
 <div id="cross"></div>
 <div id="mgHint">Aim with mouse · Hold left click: fire · Right click: leave</div>
 <div id="tags"></div>
-<button id="map" aria-label="Expand world map"><canvas id="mapCanvas" width="256" height="192"></canvas></button>
+<button id="map" aria-label="Expand world map" aria-haspopup="dialog" aria-controls="worldMap"><canvas id="mapCanvas" width="120" height="96"></canvas><span>Map</span></button>
+<dialog id="worldMap" aria-labelledby="mapTitle"><header><h2 id="mapTitle">World map</h2><button class="btn alt sm" id="mapClose" autofocus>Close map</button></header>
+<div class="mapLayout"><div id="mapChart"><canvas id="worldCanvas" width="384" height="384" aria-label="Terrain and player position"></canvas><div id="mapPins"></div><span class="mapNorth" aria-hidden="true">↑ N</span></div><div id="mapPlaces" aria-label="Travel destinations"></div></div></dialog>
 <div id="hud">
  <div id="top">
   <button class="chip" id="btnStats" aria-label="My skills"><svg class="i"><use href="#star5"/></svg><span id="starN">0</span><span id="rank">Apprentice</span></button>

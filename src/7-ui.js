@@ -28,17 +28,83 @@ function confetti(){
   $('app').appendChild(d);setTimeout(()=>d.remove(),3200)}
 }
 function updateHud(){$('starN').textContent=S.stars;$('rank').textContent=rankOf(S.stars)}
-const mapCanvas=$('mapCanvas'),mapCtx=mapCanvas.getContext('2d');let mapT=0;
-function drawMap(now){if(now-mapT<250)return;mapT=now;const c=mapCtx,w=mapCanvas.width,h=mapCanvas.height,full=$('map').classList.contains('open');
- c.fillStyle='#d5c18f';c.fillRect(0,0,w,h);
- for(let y=0;y<h;y+=12)for(let x=0;x<w;x+=12)if(hash2(x,y,SEED+72)>.62){c.fillStyle='#c8b17b';c.fillRect(x,y,12,12)}
- c.strokeStyle='#78603b';c.lineWidth=2;c.strokeRect(1,1,w-2,h-2);
- const points=[['Abu Dhabi',SPAWN.x,SPAWN.z],['Grand Mosque',SPAWN.x-108,SPAWN.z-29],['Louvre Abu Dhabi',SPAWN.x+10,SPAWN.z-93],['Qatar',SPAWN.x-370,SPAWN.z-385],['Doha',SPAWN.x-355,SPAWN.z-365],['Saudi Arabia',SPAWN.x-520,SPAWN.z+245],['Masjid al-Haram and Kaaba',SPAWN.x-520,SPAWN.z+245]];
- for(const [name,x,z] of points){const mx=x/WX*w,mz=z/WZ*h;c.fillStyle=name==='Abu Dhabi'?'#d74b31':name.includes('Kaaba')?'#27231e':'#f5e7c5';c.strokeStyle='#342a20';c.lineWidth=2;c.beginPath();c.arc(mx,mz,full?5:4,0,Math.PI*2);c.fill();c.stroke();if(full){c.font='bold 12px system-ui';c.fillStyle='#342a20';c.fillText(name,mx+8,mz+4)}}
- const px=player.x/WX*w,pz=player.z/WZ*h;c.fillStyle='#164d38';c.beginPath();c.moveTo(px,pz-6);c.lineTo(px-4,pz+4);c.lineTo(px+4,pz+4);c.closePath();c.fill();
+const mapDialog=$('worldMap'),mapCtx=$('mapCanvas').getContext('2d'),worldCtx=$('worldCanvas').getContext('2d');
+let mapTerrain=null,mapT=-1000;
+const mapPins=[];
+function makeMapTerrain(){
+ const cv=document.createElement('canvas');cv.width=cv.height=128;
+ const c=cv.getContext('2d'),im=c.createImageData(128,128),data=im.data;
+ for(let iy=0;iy<128;iy++)for(let ix=0;ix<128;ix++){
+  const x=(ix+.5)*WX/128,z=(iy+.5)*WZ/128,h=raw(x,z),i=(iy*128+ix)*4;
+  const tone=h<WL+.5?[91,137,145]:h>25?[172,136,96]:G.om>.52?[147,158,103]:[216,190,137];
+  const shade=clamp(Math.round(h-WL),-10,10)+(ix%16===0||iy%16===0?-10:0);
+  data[i]=tone[0]+shade;data[i+1]=tone[1]+shade;data[i+2]=tone[2]+shade;data[i+3]=255;
+ }
+ c.putImageData(im,0,0);return cv;
 }
-function setMapOpen(open){const m=$('map');m.classList.toggle('open',open);m.setAttribute('aria-label',open?'Click a place to travel':'Expand world map');mapT=0}
-$('map').onclick=e=>{const m=$('map');if(!m.classList.contains('open')){setMapOpen(true);return}const r=mapCanvas.getBoundingClientRect(),x=clamp(Math.floor((e.clientX-r.left)/r.width*WX),5,WX-5),z=clamp(Math.floor((e.clientY-r.top)/r.height*WZ),5,WZ-5);setMapOpen(false);if(!playing){toast('Start playing before travelling.');return}if(!teleport(x,z,player.yaw,player.pitch)){toast('Could not find a safe place nearby.');return}toast('Travelled to map location.')};
+function drawMapView(c,x0,z0,sx,sz,mini){
+ const w=c.canvas.width,h=c.canvas.height;
+ c.fillStyle='#675b47';c.fillRect(0,0,w,h);c.imageSmoothingEnabled=false;
+ c.drawImage(mapTerrain,-x0/sx*w,-z0/sz*h,WX/sx*w,WZ/sz*h);
+ if(mini)for(const p of MAP_PLACES){
+  const x=(p.x-x0)/sx*w,z=(p.z-z0)/sz*h;if(x<3||z<3||x>w-3||z>h-3)continue;
+  c.fillStyle='#382c20';c.fillRect(x-3,z-3,6,6);c.fillStyle='#ffe1a1';c.fillRect(x-2,z-2,4,4);
+ }
+ if(!mini){
+  c.strokeStyle='#493b2d';c.lineWidth=1.5;
+  for(const {place,x,z} of mapPins){
+   const px=place.x/WX*w,pz=place.z/WZ*h;
+   c.beginPath();c.moveTo(px,pz);c.lineTo(x*w,z*h);c.stroke();c.fillStyle='#493b2d';c.fillRect(px-2,pz-2,4,4);
+  }
+ }
+ const x=clamp((player.x-x0)/sx*w,7,w-7),z=clamp((player.z-z0)/sz*h,7,h-7);
+ c.save();c.translate(x,z);c.rotate(-player.yaw);c.beginPath();c.moveTo(0,-8);c.lineTo(5,5);c.lineTo(0,3);c.lineTo(-5,5);c.closePath();
+ c.strokeStyle='#17322c';c.lineWidth=3;c.stroke();c.fillStyle='#7cf3c4';c.fill();c.restore();
+}
+function drawMap(now){
+ if(!playing||now-mapT<100)return;mapT=now;
+ if(!mapTerrain)mapTerrain=makeMapTerrain();
+ drawMapView(mapCtx,player.x-160,player.z-128,320,256,true);
+ if(mapDialog.open)drawMapView(worldCtx,0,0,WX,WZ,false);
+}
+function layoutMapPins(){
+ const chart=$('mapPins'),w=chart.clientWidth,h=chart.clientHeight;if(!w||!h)return;
+ const used=[];
+ for(const pin of mapPins){
+  const px=pin.place.x/WX*w,pz=pin.place.z/WZ*h;let best=null,bestDist=Infinity;
+  for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){
+   const x=clamp(px+12+dx*24,12,w-12),z=clamp(pz-12+dz*24,12,h-12);
+   const d=(dx*24)**2+(dz*24)**2;
+   if(d>=bestDist||used.some(p=>Math.abs(x-p[0])<23&&Math.abs(z-p[1])<23))continue;
+   best=[x,z];bestDist=d;
+  }
+  const [x,z]=best||[px,pz];used.push([x,z]);pin.x=x/w;pin.z=z/h;
+  pin.el.style.left=`${pin.x*100}%`;pin.el.style.top=`${pin.z*100}%`;
+ }
+}
+function setMapOpen(open){
+ if(!open){if(mapDialog.open)mapDialog.close();return}
+ if(mapDialog.open||!playing||curModal||FLY||TP)return;
+ wantLock=false;MG.fireHeld=false;input.keys.clear();input.jx=input.jy=0;input.jump=false;aim=null;
+ if(document.pointerLockElement)document.exitPointerLock();
+ mapDialog.showModal();layoutMapPins();mapT=-1000;drawMap(performance.now());
+}
+function mapTravel(p){
+ if(!playing||!mapDialog.open)return;
+ if(MG.on)leaveMachinePost();
+ const g=p.gate;
+ const arrived=g?teleport(g.x+g.nx*2.8,g.z+g.nz*2.8,Math.atan2(-g.nx,-g.nz),-.08,g.base+1):spawnPlayer();
+ setMapOpen(false);toast(arrived?`Arrived at ${p.name}`:'Could not find a safe place nearby.');
+}
+for(let i=0;i<MAP_PLACES.length;i++){
+ const p=MAP_PLACES[i],pin=document.createElement('button'),row=document.createElement('button');
+ pin.className='mapPin';pin.textContent=i+1;pin.title=p.name;pin.setAttribute('aria-label',`Travel to ${p.name}`);
+ mapPins.push({el:pin,place:p,x:p.x/WX,z:p.z/WZ});
+ row.className='mapPlace';row.innerHTML=`<i aria-hidden="true">${i+1}</i><span><b>${p.name}</b><small>${p.region}</small></span>`;
+ pin.onclick=row.onclick=()=>mapTravel(p);$('mapPins').appendChild(pin);$('mapPlaces').appendChild(row);
+}
+$('map').onclick=()=>setMapOpen(true);$('mapClose').onclick=()=>setMapOpen(false);
+window.addEventListener('resize',()=>{if(mapDialog.open)layoutMapPins()});
 function updateMode(){
  const b=$('btnMode');b.className=S.mode;
  b.innerHTML=`<svg class="i s"><use href="#${S.mode==='place'?'plus':'pick'}"/></svg>${S.mode==='place'?'Place':'Break'}`;
@@ -84,6 +150,7 @@ function startScreen(){
 function howCard(){
  const how=touchMode?['Drag the round pad to walk. Drag anywhere else to look.','Tap a block to break or place it. Use the Place / Break button to switch.','Follow the glowing blueprint, open the glowing chests, and tap a builder to build together.','Swim east to the Open Air Prison, or tap My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.']
   :['Click the game to look around. Move with W A S D and jump with Space.','Left click breaks a block. Right click places one. Keys 1 to 9 pick a block.','Follow the glowing blueprint, open the glowing chests, and click a builder to build together.','Swim east to the Open Air Prison, or open My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.'];
+ how.push(`${touchMode?'Tap Map':'Press M'} to travel to landmarks. The gates just north of spawn also take you there.`);
  modal(`<svg class="motif i"><use href="#star8"/></svg><h2>How to play</h2><ul class="how">${how.map(h=>`<li>${h}</li>`).join('')}</ul><div class="row"><button class="btn" data-a="ok">Got it</button></div>`,p=>{p.querySelector('[data-a=ok]').onclick=closeModal});
 }
 function startPlay(){
@@ -229,14 +296,14 @@ let noLock=false,aim=null,aimTime=0,hintTimer=0;
 /* wantLock: the mouse should be captured whenever no card is open. Esc clears it, so the player is never forced back in. */
 let wantLock=false;
 function relock(){
- if(!wantLock||touchMode||noLock||!playing||curModal||document.pointerLockElement)return;
+ if(!wantLock||touchMode||noLock||!playing||curModal||mapDialog.open||document.pointerLockElement)return;
  try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}
 }
 document.addEventListener('pointerlockchange',()=>{
  const h=$('lockhint');clearTimeout(hintTimer);
  if(document.pointerLockElement===canvas){
   /* a card opened while the lock request was pending: give the mouse back so its buttons can be clicked */
-  if(curModal){document.exitPointerLock();return}
+  if(curModal||mapDialog.open){document.exitPointerLock();return}
   h.classList.add('on');hintTimer=setTimeout(()=>h.classList.remove('on'),6000);
  }else{
   h.classList.remove('on');
@@ -247,7 +314,7 @@ document.addEventListener('pointerlockchange',()=>{
 const locked=()=>document.pointerLockElement===canvas;
 function look(dx,dy){const k=.0016*S.settings.sens;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.45,1.45);if(MG.on){player.x=MG_POST.x+Math.sin(player.yaw)*MG_RADIUS;player.z=MG_POST.z+Math.cos(player.yaw)*MG_RADIUS;player.vx=player.vy=player.vz=0}}
 function act(px,py,button){
- if(!playing||curModal||FLY||TP)return;
+ if(!playing||curModal||mapDialog.open||FLY||TP)return;
  if(MG.on){if(button===2)leaveMachinePost();return}
  const r=playerRay(px,py),mode=button===0?'break':button===2?'place':S.mode;
  const hit=cast(r.o,r.d,REACH,mode==='place'?S.sel:0,mode==='break'),bp=botPick(r.o,r.d);
@@ -272,7 +339,7 @@ const looks=new Map();
 function aimAt(px,py){aim=[px,py];aimTime=performance.now()}
 canvas.addEventListener('pointerdown',e=>{
  if(e.pointerType==='mouse'&&touchMode)setTouch(false);
- if(curModal||!playing)return;
+ if(curModal||mapDialog.open||!playing)return;
  if(e.pointerType==='mouse'&&!noLock&&!locked()){wantLock=true;tryLock();return}
  if(locked()){if(MG.on&&e.button===0){MG.fireHeld=true;MG.fireT=MG_RATE;machineFire()}else act(undefined,undefined,e.button);return}
  canvas.setPointerCapture(e.pointerId);
@@ -302,6 +369,8 @@ document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault
 document.addEventListener('pointerlockerror',()=>{noLock=true});
 window.addEventListener('keydown',e=>{
  const k=e.key.toLowerCase();
+ if(k==='m'&&!e.repeat&&playing&&!curModal){setMapOpen(!mapDialog.open);return}
+ if(mapDialog.open)return;
  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
  input.keys.add(k);
  if(playing&&!curModal&&k>='1'&&k<='9')selectBlock(HOTBAR_IDS[+k-1]);
@@ -400,7 +469,7 @@ function frame(now){
  requestAnimationFrame(frame);
  if(document.hidden){last=now;return}
  const dt=Math.min(.05,(now-last)/1000||0);last=now;
- if(playing&&!curModal){
+ if(playing&&!curModal&&!mapDialog.open){
  if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
   activeSec+=dt;if(activeSec>=BREAK_SECONDS){activeSec=0;breakReminder()}
   edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on)portalTick(dt);saveTick(dt);
@@ -416,7 +485,7 @@ function frame(now){
  $('building').style.display=playing&&player.hold?'block':'none';
  drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);updatePortalLabels();museumHud(dt);fillExGeo(now);uiWater();
  hitView=null;
- if(playing&&!curModal){
+ if(playing&&!curModal&&!mapDialog.open){
   let r=null;
   if(locked())r=playerRay();
   else if(aim&&now-aimTime<(touchMode?600:5000))r=playerRay(aim[0],aim[1]);

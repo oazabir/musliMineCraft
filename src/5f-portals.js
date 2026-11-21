@@ -8,22 +8,27 @@ const PS=.6,PR=2.7*PS,PSEG=40,PRING=9,PHS=48,PHR=PR-.5*PS;
 let PORT=null;
 function portalList(){
  if(PORT)return PORT;
- const mk=(x,z,nx,nz,name,to)=>{const n=Math.hypot(nx,nz)||1;nx/=n;nz/=n;const cx=Math.floor(x)+.5,cz=Math.floor(z)+.5;
-  const base=Math.max(WL+1,groundTop(Math.floor(x),Math.floor(z)));
+ const mk=(x,z,nx,nz,name,to,level)=>{const n=Math.hypot(nx,nz)||1;nx/=n;nz/=n;const cx=Math.floor(x)+.5,cz=Math.floor(z)+.5;
+  const base=level??Math.max(WL+1,groundTop(Math.floor(x),Math.floor(z)));
   return{x:cx,z:cz,nx,nz,tx:-nz,tz:nx,base,cy:base+1+PR-.05,name,to,spin:Math.random()*6,act:0,kw:0}};
- const sx=START.x+.5,sz=START.z+.5,toS=(x,z)=>[sx-x,sz-z];
- /* 0-2 stand around the start and face it; 3-5 stand at the places, face them, and lead back */
- const haram=fixedList().find(l=>l.t==='haram');
- PORT=[mk(1027,1006,...toS(1027,1006),'Museum of Islamic Heritage',4),mk(998,1006,...toS(998,1006),'Grand Mosque',5),
-  mk(1026,1041,...toS(1026,1041),'Open Air Prison',6),
-  mk(1035,1006,...toS(1035,1006),'Masjid al-Haram and the Kaaba',7),
-  /* beside each place, never on its entrance path: east of the museum's avenue and south of the Grand Mosque's
-     plaza, each turned to face its building */
-  mk(museumLm().x+20,museumLm().z+52,-20,-79,'the start',0),mk(950,1019,916-950,995-1019,'the start',1),mk(GZ.x,GZ.z+GZ.hz-3,0,-1,'the start',2),
-  mk(haram.x+30,haram.z+4,-1,0,'the start',3)];
+ const haram=lmOf('haram'),museum=museumLm();
+ const hub=(i,name,to)=>mk(GATE_HUB.x+i*GATE_HUB.step,GATE_HUB.z,0,1,name,to,GATE_HUB.y);
+ /* Keep the original four pairs at their existing indices. */
+ PORT=[hub(0,'Museum of Islamic Heritage',4),hub(1,'Grand Mosque',5),hub(2,'Open Air Prison',6),hub(3,'Masjid al-Haram and the Kaaba',7),
+  mk(museum.x+20,museum.z+52,-20,-79,'the start',0),mk(950,1019,916-950,995-1019,'the start',1),
+  mk(GZ.x,GZ.z+GZ.hz-3,0,-1,'the start',2),mk(haram.x+haram.ex+8,haram.z+4,-1,0,'the start',3)];
+ for(let i=0;i<FEATURED_LMS.length;i++){
+  const f=FEATURED_LMS[i],l=lmOf(f.t),j=PORT.length;
+  const dx=f.t==='petra'?8:l.ex+10,dz=l.ez+10;
+  PORT.push(hub(i+4,f.name,j+1),mk(l.x+dx,l.z+dz,-dx,-dz,'the start',j));
+ }
  return PORT;
 }
 portalList();
+const MAP_PLACES=[{name:'Abu Dhabi spawn',region:'Abu Dhabi, UAE',x:START.x,z:START.z},
+ ...[['Abu Dhabi, UAE',museumLm()],['Abu Dhabi, UAE',lmOf('mosque',0)],['Island',GZ],['Makkah, Saudi Arabia',lmOf('haram')]]
+ .map(([region,l],i)=>({name:PORT[i].name,region,x:l.x,z:l.z,gate:PORT[PORT[i].to]})),
+ ...FEATURED_LMS.map(f=>{const l=lmOf(f.t),p=PORT.find(g=>g.name===f.name);return{name:f.name,region:f.region,x:l.x,z:l.z,gate:PORT[p.to]}})];
 /* the gate's marble pad (5 x 9, carved border) with the space above it cleared */
 function portalPad(x,z,m){for(const p of PORT){const dx=x+.5-p.x,dz=z+.5-p.z;if(Math.abs(dx*p.tx+dz*p.tz)<=2.6+m&&Math.abs(dx*p.nx+dz*p.nz)<=4.1+m)return p}return null}
 function genPortals(x0,z0){
@@ -35,7 +40,7 @@ function genPortals(x0,z0){
   }}
 }
 /* --- drawing: opaque ring parts, the translucent horizon, and additive glow --- */
-const PO=new Float32Array(7*36*320),PT=new Float32Array(7*3*7200),PA=new Float32Array(7*3*2400);
+const PO=new Float32Array(7*36*89*GATE_HUB.count),PT=new Float32Array(7*6*PRING*PHS*GATE_HUB.count),PA=new Float32Array(7*6*(PHS+18)*GATE_HUB.count);
 let pBuf=null,pN=[0,0,0],pTime=0;
 const PBC=new Float32Array(24),PLIT=[1,1,1];
 function pbox(o,cx,cy,cz,ux,uy,uz,vx,vy,vz,wx,wy,wz,hu,hv,hw,r,g,b,lit){
@@ -54,14 +59,14 @@ function ptri(A,o,ax,ay,az,bx,by,bz,cx,cy,cz,c1,c2,c3){
 const HC=[];for(let i=0;i<=PRING;i++){HC.push([]);for(let s=0;s<=PHS;s++)HC[i].push([0,0,0,[0,0,0,0]])}
 function portalGeo(p,t,o){
  const C=[p.x,p.cy,p.z],T=[p.tx,0,p.tz],N=[p.nx,0,p.nz];
- const near=Math.hypot(player.x-p.x,player.z-p.z)<14;
- for(let k=0;k<PSEG;k++){
-  const th=k/PSEG*6.2832,c=Math.cos(th),s=Math.sin(th),rx=T[0]*c,ry=s,rz=T[2]*c,vx=-T[0]*s,vy=c,vz=-T[2]*s,sh=k%2?.04:0;
-  o[0]=pbox(o[0],C[0]+rx*PR,C[1]+ry*PR,C[2]+rz*PR,rx,ry,rz,vx,vy,vz,N[0],0,N[2],.3*PS,PR*.082,.34*PS,.34+sh,.37+sh,.42+sh);
+ const near=Math.hypot(player.x-p.x,player.z-p.z)<14,step=near?1:2,rings=near?PRING:4,sides=near?PHS:PHS/2;
+ for(let k=0;k<PSEG;k+=step){
+  const th=k/PSEG*6.2832,c=Math.cos(th),s=Math.sin(th),rx=T[0]*c,ry=s,rz=T[2]*c,vx=-T[0]*s,vy=c,vz=-T[2]*s,sh=k%4<2?.04:0;
+  o[0]=pbox(o[0],C[0]+rx*PR,C[1]+ry*PR,C[2]+rz*PR,rx,ry,rz,vx,vy,vz,N[0],0,N[2],.3*PS,PR*.082*step,.34*PS,.34+sh,.37+sh,.42+sh);
   /* the inner glyph ring turns; every fourth glyph glows */
   const t2=th+p.spin,c2=Math.cos(t2),s2=Math.sin(t2),Rx=T[0]*c2,Ry=s2,Rz=T[2]*c2,Vx=-T[0]*s2,Vy=c2,Vz=-T[2]*s2,ri=PR-.42*PS;
   const g=k%4===0,pul=.65+.35*Math.sin(t*3+k);
-  o[0]=pbox(o[0],C[0]+Rx*ri,C[1]+Ry*ri,C[2]+Rz*ri,Rx,Ry,Rz,Vx,Vy,Vz,N[0],0,N[2],.13*PS,ri*.077,.26*PS,g?.3*pul+.1:.5,g?.8*pul+.1:.47,g?1:.42,g);
+  o[0]=pbox(o[0],C[0]+Rx*ri,C[1]+Ry*ri,C[2]+Rz*ri,Rx,Ry,Rz,Vx,Vy,Vz,N[0],0,N[2],.13*PS,ri*.077*step,.26*PS,g?.3*pul+.1:.5,g?.8*pul+.1:.47,g?1:.42,g);
  }
  for(let j=0;j<9;j++){
   const th=1.5708+j*.6981,c=Math.cos(th),s=Math.sin(th),rx=T[0]*c,ry=s,rz=T[2]*c,vx=-T[0]*s,vy=c,vz=-T[2]*s;
@@ -70,19 +75,19 @@ function portalGeo(p,t,o){
  }
  /* event horizon: rings of rippling blue that burst out along the normal when the gate opens */
  const kw=p.kw>0?Math.sin(Math.min(1,p.kw)*3.1416)*3.2*PS:0;
- for(let i=0;i<=PRING;i++){const r=PHR*i/PRING,q=1-r/PHR;
-  for(let s=0;s<=PHS;s++){const ph=s/PHS*6.2832,w=Math.sin(r*4.6-t*5+Math.sin(ph*3+t*1.3)*.9),k=.5+.5*w,bl=kw*q*q+(near?.04*w:0);
+ for(let i=0;i<=rings;i++){const r=PHR*i/rings,q=1-r/PHR;
+  for(let s=0;s<=sides;s++){const ph=s/sides*6.2832,w=Math.sin(r*4.6-t*5+Math.sin(ph*3+t*1.3)*.9),k=.5+.5*w,bl=kw*q*q+(near?.04*w:0);
    const H=HC[i][s];H[0]=C[0]+T[0]*Math.cos(ph)*r+N[0]*bl;H[1]=C[1]+Math.sin(ph)*r;H[2]=C[2]+T[2]*Math.cos(ph)*r+N[2]*bl;
    const ctr=q*q*.35;H[3][0]=.08+.42*k+ctr;H[3][1]=.3+.55*k+ctr;H[3][2]=.85+.15*k;H[3][3]=.78+.12*q+(p.act>0?.1:0)}}
- for(let i=0;i<PRING;i++)for(let s=0;s<PHS;s++){const a=HC[i][s],b=HC[i][s+1],c=HC[i+1][s+1],d=HC[i+1][s];
+ for(let i=0;i<rings;i++)for(let s=0;s<sides;s++){const a=HC[i][s],b=HC[i][s+1],c=HC[i+1][s+1],d=HC[i+1][s];
   o[1]=ptri(PT,o[1],a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2],a[3],b[3],c[3]);o[1]=ptri(PT,o[1],a[0],a[1],a[2],c[0],c[1],c[2],d[0],d[1],d[2],a[3],c[3],d[3])}
  /* additive halo around the ring and drifting sparkles on the horizon */
  const hi=[.35,.75,1,.3+(p.act>0?.45:0)+.08*Math.sin(t*2)],ho=[.35,.75,1,0];
- for(let s=0;s<PHS;s++){const a0=s/PHS*6.2832,a1=(s+1)/PHS*6.2832,r0=PR+.35*PS,r1=PR+1.4*PS;
+ for(let s=0;s<sides;s++){const a0=s/sides*6.2832,a1=(s+1)/sides*6.2832,r0=PR+.35*PS,r1=PR+1.4*PS;
   const P=(a,r)=>[C[0]+T[0]*Math.cos(a)*r,C[1]+Math.sin(a)*r,C[2]+T[2]*Math.cos(a)*r];
   const A=P(a0,r0),Bp=P(a1,r0),Cc=P(a1,r1),D=P(a0,r1);
   o[2]=ptri(PA,o[2],...A,...Bp,...Cc,hi,hi,ho);o[2]=ptri(PA,o[2],...A,...Cc,...D,hi,ho,ho)}
- for(let k=0;k<18;k++){const h=hash2(k,p.to,9),a=h*6.2832+t*(.2+h*.3),r=PHR*((h*7.3+t*.15)%1),sz=.025+.025*h,f=.06+.02*Math.sin(t*3+k);
+ for(let k=0;k<(near?18:0);k++){const h=hash2(k,p.to,9),a=h*6.2832+t*(.2+h*.3),r=PHR*((h*7.3+t*.15)%1),sz=.025+.025*h,f=.06+.02*Math.sin(t*3+k);
   const x=C[0]+T[0]*Math.cos(a)*r+N[0]*f,y=C[1]+Math.sin(a)*r,z=C[2]+T[2]*Math.cos(a)*r+N[2]*f,cl=[.85,.97,1,.55];
   o[2]=ptri(PA,o[2],x-T[0]*sz,y-sz,z-T[2]*sz,x+T[0]*sz,y-sz,z+T[2]*sz,x+T[0]*sz,y+sz,z+T[2]*sz,cl,cl,cl);
   o[2]=ptri(PA,o[2],x-T[0]*sz,y-sz,z-T[2]*sz,x+T[0]*sz,y+sz,z+T[2]*sz,x-T[0]*sz,y+sz,z-T[2]*sz,cl,cl,cl)}
@@ -169,20 +174,25 @@ function tpStep(dt){
 let ptEls=null;
 function updatePortalLabels(){
  if(!ptEls){ptEls=[];const box=$('tags');for(let i=0;i<3;i++){const d=document.createElement('div');d.className='ntag portal';d.style.display='none';d.innerHTML='<span></span>';box.appendChild(d);ptEls.push({d,s:d.firstChild,txt:'',shown:false,w:0})}}
- const on=playing&&!curModal&&!FLY&&!TP,list=[];
- if(on)for(const p of PORT){const d=Math.hypot(p.x-player.x,p.z-player.z);if(d<34)list.push([d,p])}
+ const on=playing&&!curModal&&!mapDialog.open&&!FLY&&!TP,list=[];
+ if(on)for(const p of PORT){
+  const d=Math.hypot(p.x-player.x,p.z-player.z);if(d>=34)continue;
+  const center=project(p.x,p.cy,p.z);if(!center)continue;
+  const x=(center[0]*.5+.5)*vw,y=(.5-center[1]*.5)*vh;
+  if(x<-60||x>vw+60||y<-40||y>vh+40)continue;
+  const top=project(p.x,p.cy+PR+.9,p.z);
+  list.push([d,p,x,top?(.5-top[1]*.5)*vh:y]);
+ }
  list.sort((a,b)=>a[0]-b[0]);
  for(let i=0;i<ptEls.length;i++){
   const E=ptEls[i],it=list[i];let show=false;
-  if(it){const p=it[1],q=project(p.x,p.cy+PR+.9,p.z);
-   if(q){const x=(q[0]*.5+.5)*vw,y=(.5-q[1]*.5)*vh;
-    if(x>-60&&x<vw+60&&y>-40&&y<vh){show=true;
-     if(!E.shown){E.shown=true;E.d.style.display='block';E.w=0}
-     const txt=p.name==='the start'?'Portal back to the start':`Portal to ${p.name}`;
-     if(txt!==E.txt){E.txt=txt;E.s.textContent=txt;E.w=0}
-     if(!E.w)E.w=E.d.offsetWidth;
-     E.d.style.transform=`translate(${clamp(x-E.w/2,6,vw-E.w-6)|0}px,${Math.max(hudBot,y-30)|0}px)`;
-    }}}
+  if(it){const [,p,x,y]=it;show=true;
+   if(!E.shown){E.shown=true;E.d.style.display='block';E.w=0}
+   const txt=p.name==='the start'?'Portal back to the start':`Portal to ${p.name}`;
+   if(txt!==E.txt){E.txt=txt;E.s.textContent=txt;E.w=0}
+   if(!E.w)E.w=E.d.offsetWidth;
+   E.d.style.transform=`translate(${clamp(x-E.w/2,6,vw-E.w-6)|0}px,${Math.max(hudBot,y-30)|0}px)`;
+  }
   if(!show&&E.shown){E.shown=false;E.d.style.display='none'}
  }
 }

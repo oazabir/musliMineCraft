@@ -221,7 +221,8 @@ function silMuseum(l,add,pk,lod){
  A(-5,30,-11,5,30,-5,1);A(-3,30,-13,3,30,-3,1);A(-2,31,-10,2,31,-6,3);pk.push([0,-8-MZC,31]);
 }
 const BMAT={11:4,23:5,12:6,14:3};
-const SILF={mosque:silMosque,charbagh:silCharbagh,village:silVillage,caravan:silCaravan,museum:silMuseum};
+const SILF={mosque:silMosque,charbagh:silCharbagh,village:silVillage,caravan:silCaravan,museum:silMuseum,
+ burj:silBurjKhalifa,sail:silBurjAlArab,dohaMia:silDohaMia,petra:silPetraTreasury,kuwait:silKuwaitTowers,hegra:silHegraTomb};
 const isIslamic=l=>!!SILF[l.t];
 /* local cell -> world cell (inverse of the generator's rotation) */
 function lm2w(l,lx,lz,out){let dx,dz;switch(l.o){case 0:dx=lx;dz=lz;break;case 1:dx=-lz;dz=lx;break;case 2:dx=-lx;dz=-lz;break;default:dx=lz;dz=-lx}out[0]=l.x+dx;out[1]=l.z+dz}

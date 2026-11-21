@@ -2979,6 +2979,8 @@ class TestOpenAirPrison:
         _fill_hut(g)
         s0 = g.stars()
         g.ev("__prisonRaid()")
+        g.ev("__prisonStep(.01)")
+        assert g.ev("__prison().planes") == 5, "A drone wave sends five drones at a time"
         g.ev("(()=>{for(let k=0;k<1200;k++){__prisonStep(.1);const s=__prison();if(s.raidN===1&&!s.raid)return}})()")
         s = g.ev("__prison()")
         assert s["raidN"] == 1 and not s["raid"], f"Expected the raid to finish, observed {s}"
@@ -3164,13 +3166,19 @@ class TestPortals:
     def test_gates_around_the_start_and_a_gate_home_at_each_place(self, loaded):
         g = loaded
         P = g.ev("__portals()")
-        assert len(P) == 8
-        start = P[:4]
-        assert [p["name"] for p in start] == ["Museum of Islamic Heritage", "Grand Mosque", "Open Air Prison", "Masjid al-Haram and the Kaaba"]
+        start = [p for p in P if p["name"] != "the start"]
+        assert [p["name"] for p in start] == [
+            "Museum of Islamic Heritage", "Grand Mosque", "Open Air Prison", "Masjid al-Haram and the Kaaba",
+            "Burj Khalifa", "Burj Al Arab", "Museum of Islamic Art", "The Treasury at Petra", "Kuwait Towers", "Hegra",
+        ]
+        assert len(P) == 2 * len(start)
+        assert len({(p["z"], p["base"], p["nx"], p["nz"]) for p in start}) == 1, "Spawn gates share one level and face the same way"
+        assert [b["x"] - a["x"] for a, b in zip(start, start[1:])] == [6] * (len(start) - 1)
+        assert all(P[P[i]["to"]]["to"] == i for i in range(len(P))), "Every gate must link back to its partner"
         for p in start:
             d = math.hypot(p["x"] - 1025.5, p["z"] - 1024.5)
             assert d < 40, f"Expected the {p['name']} gate near the start, observed {d:.0f} blocks away"
-        assert all(p["name"] == "the start" for p in P[4:])
+        assert all(P[p["to"]]["name"] == "the start" for p in start)
         r = g.ev("""(()=>{const out=[];for(const p of __portals()){const x=Math.floor(p.x),z=Math.floor(p.z);forceLoad(x>>4,z>>4,0);
           out.push({pad:getB(x,p.base,z),air:[1,2,3,4,5,6].every(k=>!getB(x,p.base+k,z))})}return out})()""")
         assert all(x["pad"] == g.ev("B.MARBLE") and x["air"] for x in r), f"Every gate stands on a marble pad with open space above, observed {r}"
@@ -3182,7 +3190,7 @@ class TestPortals:
         assert abs(h["px"]-h["x"]) > h["ex"] and abs(h["pz"]-h["z"]) < h["ez"], "The Haram return gate stands beside the Kaaba courtyard"
         assert g.ev("(()=>{const l=fixedList().find(l=>l.t==='haram');return protectedLandmarkBlock(l.x,l.y0+1,l.z)})()"), "Masjid al-Haram and the Kaaba are protected from breaking"
 
-    @pytest.mark.parametrize("i", [0, 1, 2, 3], ids=["museum", "mosque", "prison", "haram"])
+    @pytest.mark.parametrize("i", [0, 1, 2, 3, 8, 12, 18], ids=["museum", "mosque", "prison", "haram", "burj", "doha", "hegra"])
     def test_walking_into_a_start_gate_warps_the_player_to_its_place(self, desktop, i):
         g = desktop
         g.ev("S.gz.seen=true")
@@ -3213,6 +3221,20 @@ class TestPortals:
         g.ev(f"__tp({p['x']}+{p['nx']}*9,{p['z']}+{p['nz']}*9,Math.atan2({p['nx']},{p['nz']}),.1,true)")
         g.wait("[...document.querySelectorAll('.ntag.portal')].some(e=>e.style.display==='block')", "the gate label", timeout=8000)
         assert "Portal to Museum of Islamic Heritage" in g.ev("[...document.querySelectorAll('.ntag.portal')].map(e=>e.textContent).join('|')")
+
+    def test_map_pin_travels_to_the_named_gate(self, desktop):
+        g = desktop
+        g.page.keyboard.press("m")
+        g.page.get_by_role("dialog", name="World map").wait_for(state="visible")
+        assert g.ev("mapPins.length === MAP_PLACES.length && mapPins.length === 11")
+        g.page.keyboard.press("Escape")
+        g.page.get_by_role("dialog", name="World map").wait_for(state="hidden")
+        g.page.get_by_role("button", name="Expand world map").click()
+        g.page.get_by_role("button", name="Travel to The Treasury at Petra").click()
+        g.page.get_by_role("dialog", name="World map").wait_for(state="hidden")
+        r = g.ev("""(()=>{const p=MAP_PLACES.find(p=>p.name==='The Treasury at Petra').gate;
+          return [Math.hypot(player.x-p.x,player.z-p.z),collides(player.x,player.y,player.z)]})()""")
+        assert 1.5 < r[0] < 4.5 and not r[1], f"Expected dry land beside Petra's gate, observed {r}"
 
     def test_signs_and_builders_keep_off_the_gate_pads(self, started):
         g = started

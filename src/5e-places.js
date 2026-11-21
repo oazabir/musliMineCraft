@@ -1,6 +1,7 @@
 /* ===== 8d. Places: signposts to the nearest places, quests, and the quest flight ===== */
 const MQ_NAME=['Grand Mosque','Blue Mosque','Turquoise Mosque','Green Mosque'];
-const LM_NAME={museum:'Museum of Islamic Heritage',charbagh:'Charbagh Garden',village:'Village',caravan:'Caravanserai',orchard:'Orchard',vineyard:'Vineyard',flowers:'Flower Garden'};
+const LM_NAME={museum:'Museum of Islamic Heritage',charbagh:'Charbagh Garden',village:'Village',caravan:'Caravanserai',orchard:'Orchard',vineyard:'Vineyard',flowers:'Flower Garden',haram:'Masjid al-Haram and the Kaaba'};
+for(const f of FEATURED_LMS)LM_NAME[f.t]=f.name;
 const lmName=l=>l.t==='mosque'?(l.id<100?MQ_NAME[l.v]:'Mosque'):LM_NAME[l.t];
 let placeBase=null;
 function placesNear(x,z){

@@ -290,7 +290,13 @@ const LMT={
  orchard:{fn:orchard,p:()=>({hx:14,hz:11,h:7})},
  vineyard:{fn:vineyard,p:()=>({hx:15,hz:11,h:5})},
  flowers:{fn:flowers,p:()=>({hx:10,hz:10,h:5,ymin:-1})}
- ,haram:{fn:haram,p:()=>({hx:22,hz:22,h:16,ymin:0})}
+ ,haram:{fn:haram,p:()=>({hx:22,hz:22,h:16,ymin:0})},
+ burj:{fn:burjKhalifa,p:()=>({hx:9,hz:10,h:31,top:31,y0:15,ymin:0})},
+ sail:{fn:burjAlArab,p:()=>({hx:16,hz:20,h:31,top:31,y0:15,ymin:-2})},
+ dohaMia:{fn:dohaMia,p:()=>({hx:19,hz:20,h:26,top:26,ymin:0})},
+ petra:{fn:petraTreasury,p:()=>({hx:19,hz:20,h:27,top:27,ymin:0})},
+ kuwait:{fn:kuwaitTowers,p:()=>({hx:20,hz:15,h:31,top:31,y0:15,ymin:-1})},
+ hegra:{fn:hegraTomb,p:()=>({hx:12,hz:15,h:24,top:24,ymin:0})}
 };
 let lmId=0;
 function makeLm(type,v,o,x,z,fixed,id){
@@ -303,12 +309,23 @@ function makeLm(type,v,o,x,z,fixed,id){
  return{t:type,v,o,x,z,hx,hz,ex,ez,y0,h:P.h,ymin:P.ymin||0,P,fn:T0.fn,tp:P.top2||null,id:id};
 }
 /* Abu Dhabi's central district, then smaller landmark clusters across the Gulf. */
+const FEATURED_LMS=[
+ {t:'burj',name:'Burj Khalifa',region:'Dubai, UAE',dx:85,dz:-110},
+ {t:'sail',name:'Burj Al Arab',region:'Dubai, UAE',dx:190,dz:-80},
+ {t:'dohaMia',name:'Museum of Islamic Art',region:'Doha, Qatar',dx:-275,dz:-405},
+ {t:'petra',name:'The Treasury at Petra',region:'Petra, Jordan',dx:-745,dz:-155},
+ {t:'kuwait',name:'Kuwait Towers',region:'Kuwait City, Kuwait',dx:-525,dz:-615},
+ {t:'hegra',name:'Hegra',region:'AlUla, Saudi Arabia',dx:-390,dz:135}
+];
 const FIXED=[['mosque',0,3,-108,-29],['mosque',1,2,-30,108],['mosque',2,0,-46,-100],['mosque',3,2,59,95],['museum',0,0,10,-93],['charbagh',0,0,-91,43],['village',0,0,118,21],['caravan',0,0,97,-68],
  ['orchard',0,0,58,62],['vineyard',0,1,-48,62],['flowers',0,0,6,52],
  /* Qatar, north-west across the Gulf: a compact Doha skyline and grand mosque. */
  ['museum',0,0,-355,-365],['mosque',1,1,-390,-330],['village',0,0,-330,-410],
  /* Saudi Arabia to the west and south-west: oasis town, caravan stop and mosques. */
- ['haram',0,0,-520,245],['mosque',0,0,-520,220],['village',0,0,-565,300],['caravan',0,0,-485,330],['charbagh',0,0,-610,235]];
+ ['haram',0,0,-520,245],['mosque',0,0,-520,220],['village',0,0,-565,300],['caravan',0,0,-485,330],['charbagh',0,0,-610,235],
+ ...FEATURED_LMS.map(l=>[l.t,0,0,l.dx,l.dz])];
+const GATE_HUB={x:1006,z:1006,step:6,y:16,count:4+FEATURED_LMS.length};
+const hubDist=(x,z)=>Math.max(GATE_HUB.x-3-x,x-(GATE_HUB.x+(GATE_HUB.count-1)*GATE_HUB.step+3),Math.abs(z-GATE_HUB.z)-4,0);
 const SPAWN_PALMS=[[-17,7],[-7,-13],[-21,-10],[-2,12]];
 /* an open avenue in front of the grand mosque (kept free of trees) with a few palms that frame it from the sides */
 const inAvenue=(x,z)=>x>=928&&x<=1002&&z>=984&&z<=1006;
@@ -327,6 +344,7 @@ function lmCell(rx,rz){
    const t=hash2(rx,rz,SEED+12),v3=hash2(rx,rz,SEED+15),o=Math.floor(hash2(rx,rz,SEED+16)*4);
    const ty=t<.26?'mosque':t<.4?'charbagh':t<.58?'village':t<.68?'caravan':t<.8?'orchard':t<.9?'vineyard':'flowers';
    l=makeLm(ty,v3<.34?1:v3<.67?2:3,o,x,z,false,100+rx*64+rz);
+   if(l&&FEATURED_LMS.some(f=>Math.abs(x-SPAWN.x-f.dx)<l.ex+LMT[f.t].p(0).hx+22&&Math.abs(z-SPAWN.z-f.dz)<l.ez+LMT[f.t].p(0).hz+22))l=null;
   }
  }
  lmMemo.set(k,l);return l;
@@ -345,6 +363,7 @@ function colInfo(x,z){
   if(d<8){h=lerp(h,l.y0,1-smooth(d/8));if(dx<=0&&dz<=0)fl=1}}
  const dp=Math.hypot(Math.max(PLOT.x0-x,0,x-PLOT.x1),Math.max(PLOT.z0-z,0,z-PLOT.z1));
  h=lerp(PLOT_Y,h,smooth(clamp(dp/8,0,1)));
+ const hd=hubDist(x,z);if(hd<4){h=lerp(GATE_HUB.y,h,smooth(hd/4));if(hd===0)fl=1}
  CI.top=clamp(Math.round(h),2,H-12);CI.fl=fl;CI.plot=dp===0?1:0;
  if(dp<4)CI.fl=Math.max(CI.fl,1);
  return CI.top;
@@ -383,7 +402,8 @@ function genChunk(c){
   const hill=hm>.3&&!CI.fl,plot=CI.plot;
   const rn=hash2(x,z,31);
   let sb=B.SAND,grass=false;
-  if(plot)sb=B.SANDSTONE;
+  if(hubDist(x,z)===0)sb=B.PATH;
+  else if(plot)sb=B.SANDSTONE;
   else if(hill){sb=top>=33?B.STONE:top%4<2?B.SANDSTONE:B.RROCK}
   else if(top>WL+1&&om>.36+.2*(rn-.5)){sb=B.GRASS;grass=true}
   else if(top>=WL+1&&hm>.14+.3*rn)sb=B.SANDSTONE;
@@ -417,7 +437,7 @@ function genChunk(c){
   if(CI.fl||CI.hm>.1||top<=WL+1||nearPlot(x,z,5)||gzD(x,z)<GZ.moat+2)continue;
   const sp=Math.hypot(x-SPAWN.x,z-SPAWN.z);if(sp<5)continue;
   const p=CI.om>.3? .04+.4*grove*sstep(.3,.6,CI.om):.01;
-  if(hs>p||inLm(x,z,11)||inAvenue(x,z))continue;
+  if(hs>p||inLm(x,z,11)||inAvenue(x,z)||hubDist(x,z)<5)continue;
   palm(x,z,top,hash2(gx,gz,SEED+63));
  }
  for(const p of SPAWN_PALMS){const x=SPAWN.x+p[0],z=SPAWN.z+p[1];if(x<x0-4||x>x0+19||z<z0-4||z>z0+19)continue;const top=colInfo(x,z);if(top<=WL+1||CI.fl)continue;palm(x,z,top,hash2(p[0],p[1],SEED+64))}
