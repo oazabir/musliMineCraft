@@ -8,7 +8,7 @@ function progObj(){
  const blocks=countBlocks();
  SV.sum={stars:S.stars,mission:Math.min(S.mission+1,MISSIONS.length),blocks,rank:rankOf(S.stars)};
  return{v:4,stars:S.stars,mission:S.mission,unlocked:S.unlocked,skills:S.skills,settings:S.settings,sel:S.sel,mode:S.mode,
-  pos:(playing||glide)?[player.x,player.y,player.z,player.yaw,player.pitch]:(SV.pos||null),day:(playing||glide)?dayT:(SV.dayKeep===undefined?dayT:SV.dayKeep),playT:Math.floor(S.playT),act:Math.floor(activeSec),
+  pos:(playing||glide)?(liftSavePos()||[player.x,player.y,player.z,player.yaw,player.pitch]):(SV.pos||null),day:(playing||glide)?dayT:(SV.dayKeep===undefined?dayT:SV.dayKeep),playT:Math.floor(S.playT),act:Math.floor(activeSec),
   pass:S.pass,passFl:S.passFl,title:S.title,gz:S.gz,q:S.q,bd:botSaveState(),sum:SV.sum,idb:PERSIST.ok?1:0,ts:Date.now()};
 }
 function saveProg(){if(SV.importing||SV.writer!==true)return false;try{localStorage.setItem(PROG_KEY,JSON.stringify(progObj()));return true}catch(e){return false}}
@@ -216,6 +216,7 @@ function saveTick(dt){
 /* a saved position that is now inside a block or water is moved upward; spawn only when nothing works */
 function restorePos(){
  const p=SV.pos;if(!p)return false;
+ if(liftRestorePos(p))return true;
  const ok=placeSafe(p[0],p[2],p[3],clamp(p[4],-1.45,1.45),p[1]);
  if(!ok)spawnPlayer();
  return ok;

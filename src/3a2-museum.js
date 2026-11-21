@@ -7,6 +7,10 @@ const EXP=[[0,-1,-17],[0,-1,-6],[0,-1,5],[0,1,-17],[0,1,-6],[0,1,5],[1,-1,-17],[
  [2,-1,-18],[2,-1,-11],[2,-1,-4],[2,-1,3],[2,1,-17],[2,1,-8],[2,1,1],[3,-1,-18],[3,-1,-11],[3,-1,-4],[3,-1,3],[3,1,-17],[3,1,-8],[3,1,1]];
 const EXK=new Map();EXP.forEach((e,i)=>EXK.set(e[0]*1000+(e[1]>0?200:0)+e[2]+100,i));
 const exAt=(f,mx,mz)=>{const v=EXK.get(f*1000+(mx>0?200:0)+mz+100);return v===undefined?-1:v};
+function galleryDivider(f,mx,mz){
+ if(f<2)return mz===-12||mz===0;
+ return mx<0?(mz===-15||mz===-8||mz===-1):(mz===-13||mz===-4);
+}
 const PLAQUE={mx:0,mz:15};
 function palmB(dx,y,dz,th){
  const a=dx<0?-dx:dx,b=dz<0?-dz:dz;
@@ -101,11 +105,18 @@ function mIn(mx,y,mz,ax,az,m){
    if(mz===11){ /* wall between the galleries and the south hall */
     if(f===0){if(ax<=4&&k<=4)return 0;}else if(ax<=1&&k<=4)return 0;
     return k===5?B.LIMEP:B.LIME}
-   if(ax===11&&mz<=10){const dz=mz+6,a=dz<0?-dz:dz;if(a<=1&&(k<=3||(a===0&&k===4)))return 0;return k===5||k===4&&a<=1?B.LIMEP:(k===3&&((mz+22)%6===0||(mz+22)%6===1))?B.LATTICE:B.LIME}
+   if(ax===11&&mz<=10){
+    const middle=exAt(f,mx,mz)>=0,side=exAt(f,mx,mz-1)>=0||exAt(f,mx,mz+1)>=0;
+    if((middle||side)&&(k<=3||middle&&k===4))return 0;
+    if(middle&&k===5)return B.LANTERN;
+    return k===5||k===4&&side?B.LIMEP:B.LIME;
+   }
    if(ax===11&&mz>=12&&mz<=14&&k<=4)return 0;
+   if(ax===11&&mz===15&&k===2)return B.LANTERN;
    return B.LIME}
   case 6:{
    if(ax===X){const e=exAt(f,mx,mz);if(e>=0)return k===1?B.LIMEP:k===2?B.GLASS:k===5&&0?B.LANTERN:-1}
+   if(galleryDivider(f,mx,mz))return k===5?B.LIMEP:B.LIME;
    if(k===5&&lantOn(ax,mz))return B.LANTERN;
    if(ax===12&&mz===-6)return -1;
    return -1}
@@ -122,14 +133,14 @@ function mIn(mx,y,mz,ax,az,m){
 function mCore(ax,mz,y){
  const v=ax-12,u=mz-12,r=y%6;
  if(y===0)return B.LIME;
- if(y===24)return v>=2&&v<=3?-1:B.LIME;
- if(v===0)return r===0?B.LIME:-1;
+ if(y===24)return u>=2&&v>=2&&v<=4?-1:B.LIMEP;
+ if(v===0)return r===0?B.LIMEP:-1;
  if(v<=3){
-  if(u<2)return r===v?B.LIME:-1;
-  if(v===1)return r===0?B.LIME:-1;
-  return r===7-v?B.LIME:-1;
+  if(u<2)return r===v?B.ARCH:-1;
+  if(v===1)return r===0?B.LIMEP:-1;
+  return r===7-v?B.ARCH:-1;
  }
- return r===3?B.LIME:-1;
+ return r===3?B.LIMEP:v===6&&r===5?B.LANTERN:-1;
 }
 function planter(ax,mz,x0,z0){return ax>=x0-1&&ax<=x0+1&&mz>=z0-1&&mz<=z0+1}
 function mTop(mx,y,mz,ax){
@@ -184,11 +195,12 @@ function domeRings(add,cx,cz,r,yb,mat,n){
 }
 function silMosque(l,add,pk,lod){
  const P=l.P,hw=P.hw,wh=P.wh,zc=P.zc,dr=P.dr,db=wh+P.dh+1;
- add(-hw,0,P.hb,hw,wh,P.hf,7);
+ add(-hw,0,P.hb,hw,wh,P.hf,P.white?2:7);
  add(-dr,wh+1,zc-dr,dr,wh+P.dh,zc+dr,1);
  domeRings(add,0,zc,dr,db,P.dome,lod?2:3);
  add(0,db+dr+1,zc,0,db+dr+3,zc,3);pk.push([0,zc,db+dr+3]);
- if(P.sd){const s=hw-3;for(const a of[-s,s])for(const b of[zc-s,zc+s])domeRings(add,a,b,3,wh+1,B.GOLD===P.dome?3:3,lod?1:2)}
+ if(P.sd){const s=hw-3;for(const a of[-s,s])for(const b of[zc-s,zc+s]){domeRings(add,a,b,3,wh+1,P.dome,lod?1:2);add(a,wh+5,b,a,wh+5,b,3)}}
+ if(P.white&&!lod)for(const x of[-hw,hw])for(let z=P.hf+5;z<P.fw;z+=5)domeRings(add,x,z,1.7,5,2,1);
  add(-hw,0,P.fw+1,hw,0,l.o&1?l.ex:l.ez,7);add(-hw,0,P.hf+1,-hw,4,P.fw,7);add(hw,0,P.hf+1,hw,4,P.fw,7);add(-hw,0,P.fw,hw,5,P.fw,7);
  const bal=P.mh-9;
  for(const m of P.mn){const cx=m[0]*(hw+3),cz=m[1];
@@ -220,7 +232,7 @@ function silMuseum(l,add,pk,lod){
  A(-9,25,-14,9,27,-2,1);A(-6,25,-17,6,27,1,1);A(-7,28,-13,7,29,-3,1);A(-5,28,-15,5,29,-1,1);
  A(-5,30,-11,5,30,-5,1);A(-3,30,-13,3,30,-3,1);A(-2,31,-10,2,31,-6,3);pk.push([0,-8-MZC,31]);
 }
-const BMAT={11:4,23:5,12:6,14:3};
+const BMAT={10:2,11:4,23:5,12:6,14:3};
 const SILF={mosque:silMosque,charbagh:silCharbagh,village:silVillage,caravan:silCaravan,museum:silMuseum,
  burj:silBurjKhalifa,sail:silBurjAlArab,dohaMia:silDohaMia,petra:silPetraTreasury,kuwait:silKuwaitTowers,hegra:silHegraTomb};
 const isIslamic=l=>!!SILF[l.t];

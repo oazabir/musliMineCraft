@@ -53,10 +53,14 @@ function minaret(mx,y,mz,P){
 function mosque(l,lx,y,lz){
  const P=l.P,hw=P.hw,wh=P.wh,ax=Math.abs(lx);let r;
  for(const m of P.mn){r=minaret(lx-m[0]*(hw+3),y,lz-m[1],P);if(r>=0)return r}
+ if(P.white&&ax>=hw+2&&ax<=hw+5&&lz>=P.hb+1&&lz<P.fw){
+  if(y===0)return ax===hw+3||ax===hw+4?B.WATER:B.MARBLE;
+  if(y===-1)return B.TURQ;
+ }
  const inHall=ax<=hw&&lz>=P.hb&&lz<=P.hf,dz=lz-P.zc,rr=lx*lx+dz*dz;
  if(inHall){
   const edge=ax===hw||lz===P.hb||lz===P.hf;
-  if(y===0)return edge?B.ARCH:(ax===hw-1||lz===P.hb+1||lz===P.hf-1)?B.MARBLE:B.CARPET;
+  if(y===0)return edge?B.ARCH:(ax===hw-1||lz===P.hb+1||lz===P.hf-1)?B.MARBLE:P.white&&(ax===0||((lz-P.hb)%4===0&&ax%3===0))?B.TURQ:B.CARPET;
   if(y<wh){
    if(edge){
     if(lz===P.hf){r=portal(ax,y);if(r>=0)return r}
@@ -86,13 +90,18 @@ function mosque(l,lx,y,lz){
  /* courtyard and apron */
  if(ax>hw||lz<=P.hf)return -1;
  if(lz>P.fw){return y===0&&ax<=3?B.PATH:-1}
+ if(P.white){
+  const col=((lz-P.hf)%5+5)%5,near=Math.min(col,5-col),petal=Math.abs(ax-4);
+  if(y===0){if(ax===hw||lz===P.fw)return B.ARCH;if(petal+near===1)return B.TURQ;if(petal===0&&near===0)return B.GOLD;if(petal===2&&near===0)return B.GREEN;return B.MARBLE}
+  if(y>=5&&ax>=hw-1&&lz<P.fw){if(y===8&&ax===hw&&col===0)return B.GOLD;const cap=dome(ax-hw,y-5,near,1.7,B.MARBLE,B.MARBLE);if(cap>=0)return cap}
+ }
  if(y===0){
   const fz=(P.hf+1+P.fw)>>1,fx=Math.abs(lx),fd=Math.abs(lz-fz);
   if(Math.max(fx,fd)<=1)return B.WATER;if(Math.max(fx,fd)===2&&fx+fd<4)return B.ARCH;
   if(ax===hw||lz===P.fw)return B.ARCH;
   return (lx&3)===0&&(lz&3)===0?B.STAR:(lx&3)===2&&(lz&3)===2?B.BLUE:B.MARBLE}
  const fz=(P.hf+1+P.fw)>>1,fx=Math.abs(lx),fd=Math.abs(lz-fz);
- if(Math.max(fx,fd)<=2&&!(fx===2&&fd===2)){
+ if(!P.white&&Math.max(fx,fd)<=2&&!(fx===2&&fd===2)){
   if(Math.max(fx,fd)===2)return y===1?B.ARCH:-1;
   if(fx===0&&fd===0)return y<=3?B.ARCH:y===4||y===5?B.WATER:-1;
   return -1}
@@ -108,12 +117,12 @@ function mosque(l,lx,y,lz){
  return -1;
 }
 const MQ=[
- {hw:8,cd:14,wh:9,dr:7,dh:2,dome:B.GOLD,acc:B.GOLD,mh:32,sd:1,mn:[[-1,0],[1,0],[-1,1],[1,1]]},
+ {hw:8,cd:14,wh:9,dr:7,dh:2,dome:B.MARBLE,acc:B.MARBLE,mh:32,sd:1,white:true,ymin:-1,mn:[[-1,0],[1,0],[-1,1],[1,1]]},
  {hw:6,cd:9,wh:8,dr:5,dh:2,dome:B.BLUE,acc:B.TURQ,mh:24,sd:0,mn:[[-1,0],[1,0]]},
  {hw:4,cd:6,wh:6,dr:3,dh:1,dome:B.TURQ,acc:B.BLUE,mh:18,sd:0,mn:[[1,0]]},
  {hw:5,cd:8,wh:7,dr:4,dh:2,dome:B.GREEN,acc:B.GOLD,mh:22,sd:0,mn:[[-1,0],[1,1]]}];
 for(const P of MQ){P.hx=P.hw+5;P.hz=Math.ceil((2*P.hw+P.cd+5)/2);P.hb=-P.hz+1;P.zc=P.hb+P.hw;P.hf=P.hb+2*P.hw;P.fw=P.hf+P.cd;P.h=Math.max(P.mh,P.wh+P.dh+P.dr+5);P.top=P.mh-1;
- P.mn=P.mn.map(m=>[m[0],m[1]?P.hb+1:P.hf])}
+ P.mn=P.mn.map(m=>[m[0],m[1]?P.hb+1:(P.white?P.fw-1:P.hf)])}
 /* --- charbagh --- */
 function charbagh(l,lx,y,lz){
  const ax=Math.abs(lx),az=Math.abs(lz),m=Math.max(ax,az);
@@ -499,7 +508,10 @@ function genChunk(c){
  }
  genSigns(x0,z0);genPortals(x0,z0);genMachinePost(x0,z0);
  /* player and bot edits */
- if(!c.pure)for(const mp of [bedits.get(c.key),edits.get(c.key)])if(mp)for(const [i,b] of mp){v[i]=b;const y=i>>8;if(b&&y>c.my)c.my=y}
+ if(!c.pure)for(const mp of [bedits.get(c.key),edits.get(c.key)])if(mp)for(const [i,b] of mp){
+  const y=i>>8;if(liftProtected(x0+(i&15),y,z0+((i>>4)&15)))continue;
+  v[i]=b;if(b&&y>c.my)c.my=y;
+ }
  for(let y=1;y<H-1;y++){const o=y<<8;for(let i=0;i<256;i++)if(v[o+i]===B.CHEST&&c.chests.length<8)c.chests.push([x0+(i&15),y,z0+(i>>4)])}
  gc=null;
 }

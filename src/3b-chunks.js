@@ -65,7 +65,7 @@ function clearEdit(x,y,z){
 function unloadAll(){while(loaded.length)unloadChunk(loaded[loaded.length-1]);qList.length=0;qPos=0;qCx=-9999}
 /* ---- edits ---- */
 function setBlock(x,y,z,b,who){
- if(!inb(x,y,z)||y>=H-1)return false;
+ if(!inb(x,y,z)||y>=H-1||liftProtected(x,y,z))return false;
  const k=(x>>4)+(z>>4)*NC,li=(y<<8)|((z&15)<<4)|(x&15),bot=who===1;
  if(!bot){const bm=bedits.get(k);if(bm&&bm.has(li)){bm.delete(li);PERSIST.botDirty=true}}
  const mp=bot?bedits:edits;let m=mp.get(k);if(!m){m=new Map();mp.set(k,m)}m.set(li,b);if(!bot){PERSIST.dirty.add(k);PERSIST.cnt++}

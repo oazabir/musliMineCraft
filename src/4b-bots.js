@@ -360,7 +360,8 @@ function haramDraw(){
  const tm=performance.now()*.001,lim2=farFog*farFog*1.1,eye=cam.e,fw=cam.fw,base=l.y0+1;
  const k={x:l.x+.5,y:l.y0+4.5,z:l.z+.5,yaw:0};
  if(botN+36*52<botGeo.length/7){part(k,0,0,0,3.54,3.54,3.54,[.055,.055,.055]);
-  const band=l.y0+5.4,gold=[.83,.64,.22],dark=[.5,.33,.1];
+  const band=l.y0+5.4,gold=[.83,.64,.22],dark=[.5,.33,.1],foot=[.73,.71,.65],low=base-k.y+.09;
+  part(k,0,low,3.52,3.63,.09,.18,foot);part(k,3.52,low,0,.18,.09,3.52,foot);part(k,-3.52,low,0,.18,.09,3.52,foot);
   part(k,0,band-k.y,-3.56,3.55,.12,.025,gold);part(k,0,band-k.y,3.56,3.55,.12,.025,gold);part(k,3.56,band-k.y,0,.025,.12,3.55,gold);part(k,-3.56,band-k.y,0,.025,.12,3.55,gold);
   const door={x:k.x+3.57,y:base+1.5,z:k.z,yaw:0};part(door,0,1.35,0,.035,.87,.58,dark);part(door,0,1.35,-.015,.04,.76,.47,gold);
   const stone={x:k.x+3.58,y:base+.48,z:k.z+3.53,yaw:0};part(stone,0,0,0,.23,.24,.065,[.76,.76,.72]);part(stone,0,0,-.045,.17,.18,.035,[.008,.008,.008]);
@@ -452,7 +453,7 @@ function fillBotGeo(){
   drawBotFig(b);
  }
  haramDraw();
- gzDraw();machinePostDraw();
+ gzDraw();machinePostDraw();liftDraw();
 }
 function botPick(o,d){
  let best=null,bt=1e9;

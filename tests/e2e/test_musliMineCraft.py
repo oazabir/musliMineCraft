@@ -1659,6 +1659,28 @@ class TestSkyline:
 
 
 class TestMuseum:
+    @pytest.mark.parametrize("which", ["heritage", "doha"])
+    def test_continuous_stairs_reach_the_roof_and_exhibit_rooms(self, started, which):
+        result = started.ev("""(which)=>{
+          const doha=which==='doha',l=lmOf(doha?'dohaMia':'museum');
+          const cell=(x,y,z)=>{const b=l.fn(l,x,y,doha?z:z-MZC);return b>0&&DEFS[b].solid};
+          const clear=(x,y,z)=>!cell(x,y,z)&&!cell(x,y+1,z);
+          const start=doha?[-3,1,19]:[0,1,22],todo=[start],seen=new Set([start.join()]);
+          const width=doha?19:23,last=doha?20:23;
+          for(let i=0;i<todo.length;i++){
+            const [x,y,z]=todo[i];
+            for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]])for(const dy of [0,1,-1]){
+              const a=x+dx,b=y+dy,c=z+dz,key=[a,b,c].join();
+              if(Math.abs(a)>width||Math.abs(c)>last||b<1||b>25||seen.has(key)||!cell(a,b-1,c)||!clear(a,b,c))continue;
+              if(dy>0&&!clear(x,b,z)||dy<0&&!clear(a,y,c))continue;
+              seen.add(key);todo.push([a,b,c]);
+            }
+          }
+          const rooms=doha?DOHA_MIA_ROOMS.map(([y,w,n,e,s,d])=>[d-3,y+1,s+1]):EXP.map(([f,s,z])=>[s*(f<2?20:16),f*6+1,z]);
+          return{roof:todo.some(p=>p[1]===(doha?24:25)),missing:rooms.filter(p=>!seen.has(p.join()))};
+        }""", which)
+        assert result["roof"] and not result["missing"], f"Expected a walkable route to the roof and all display rooms, observed {result}"
+
     def test_museum_has_26_exhibits_on_four_floors(self, started):
         m = started.ev("__mus()")
         assert len(m["ex"]) == 26, f"observed {len(m['ex'])} exhibits"
@@ -3160,6 +3182,28 @@ def _walk_into_gate(g, i):
     finally:
         g.page.keyboard.up("w")
     return a
+
+
+class TestTowerElevators:
+    @pytest.mark.parametrize("type_", ["burj", "sail"])
+    def test_take_elevator_and_return_to_the_lobby(self, desktop, type_):
+        g = desktop
+        stops = g.ev("""(type)=>{
+          const e=LIFT_SITES.find(e=>e.type===type),p=e.stops[0];
+          forceLoad(Math.floor(p.x/16),Math.floor(p.z/16),2);
+          Object.assign(player,{x:p.x,y:p.y,z:p.z,yaw:p.yaw,pitch:0,vy:0,ground:true,hold:false});
+          return e.stops.map(s=>({...s,clear:liftStanding(s),open:[s.y,s.y+1].every(y=>getB(Math.floor(e.shaft.x),y,Math.floor(e.shaft.z))===B.AIR)}));
+        }""", type_)
+        assert len(stops) == 3 and all(s["clear"] and s["open"] for s in stops), f"Expected usable elevator landings, observed {stops}"
+        for stop in (stops[-1], stops[0]):
+            g.page.keyboard.press("e")
+            control = g.page.locator("#panel").get_by_role("button", name=stop["name"], exact=True)
+            control.wait_for(state="visible")
+            g.modal_ready()
+            control.click()
+            g.wait(f"!LIFT_RIDE&&Math.hypot(player.x-{stop['x']},player.y-{stop['y']},player.z-{stop['z']})<.05"
+                   f"&&!collides(player.x,player.y,player.z)&&solidAt({int(stop['x'])},{stop['y']-1},{int(stop['z'])})",
+                   "the elevator to arrive on a clear landing", timeout=8000, observe="[player.x,player.y,player.z,LIFT_RIDE?.t]")
 
 
 class TestPortals:

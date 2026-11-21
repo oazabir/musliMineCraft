@@ -18,7 +18,7 @@ musliMineCraft embedding API (single file, no network):
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <title>musliMineCraft</title>
-<style>:root{--sand:#f6e8c6;--sand2:#ead29c;--teal:#0e5a63;--deep:#083d44;--emerald:#1f8a5b;--gold:#e3b23c;--ink:#1b2a2d;--clay:#b8532f;--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--deep);touch-action:none;overscroll-behavior:none;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--ink)}#app{position:fixed;left:0;top:0;width:100%;height:100%;overflow:hidden}#gl{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none;outline:none}button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulation}svg.i{width:1.2em;height:1.2em;fill:currentColor;vertical-align:-.2em}svg.i.s{fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}#cross{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;display:none;pointer-events:none}#cross:before,#cross:after{content:"";position:absolute;background:#fff;box-shadow:0 0 3px #000}#cross:before{left:10px;top:3px;width:2px;height:16px}#cross:after{left:3px;top:10px;width:16px;height:2px}.desk #cross.on{display:block}#mgHint{position:absolute;left:50%;bottom:calc(var(--sb) + 94px);transform:translateX(-50%);display:none;background:rgba(8,61,68,.9);color:#fff;border:2px solid var(--gold);border-radius:5px;padding:7px 12px;font-weight:800;font-size:14px;z-index:5;pointer-events:none;white-space:nowrap}#mgHint.on{display:block}#hud{position:absolute;left:0;top:0;right:0;padding:calc(var(--st) + 8px) calc(var(--sr) + 10px) 0 calc(var(--sl) + 10px);pointer-events:none;display:flex;flex-direction:column;gap:8px;align-items:center}#hud>*{pointer-events:auto}#map{position:absolute;left:calc(var(--sl) + 10px);top:calc(var(--st) + 8px);width:122px;height:100px;padding:4px;z-index:4}#map canvas{display:block;width:100%;height:100%;image-rendering:pixelated}#map span{position:absolute;right:6px;bottom:6px;background:#302b21;color:#fff4d5;padding:2px 5px;font:bold 11px monospace}#top{display:flex;gap:8px;width:100%;max-width:560px;align-items:center}.chip{background:rgba(8,61,68,.82);color:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:16px;display:flex;align-items:center;gap:6px;border:2px solid var(--gold);min-height:44px;white-space:nowrap}.chip svg{color:var(--gold)}#clock{margin-left:auto}#btnSet,#btnQuest{flex:0 0 48px;width:48px;height:48px;padding:0;justify-content:center}#btnStats{min-width:0;overflow:hidden}#rank{overflow:hidden;text-overflow:ellipsis}#clock{flex:0 0 auto}#building{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);display:none;font-size:20px;padding:12px 22px}@media (max-width:420px){.chip{font-size:13px;padding:6px 9px;gap:4px}#btnSet,#btnQuest{flex-basis:44px;width:44px;height:44px}#top{gap:6px}#panel h1{font-size:32px!important;letter-spacing:0!important}#welcome h1{font-size:34px}}#mission{width:100%;max-width:560px;background:var(--sand);border:3px solid var(--gold);border-radius:16px;padding:8px 12px;box-shadow:0 3px 10px rgba(0,0,0,.35);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}#mission .mt{font-weight:800;font-size:17px;color:var(--deep);flex:1;min-width:0}#mission .mc{font-weight:800;font-size:17px;color:var(--emerald)}#mission .bar{flex-basis:100%;height:10px;background:var(--sand2);border-radius:6px;overflow:hidden}#mission .bar i{display:block;height:100%;width:0;background:var(--emerald);transition:width .3s}#mission .md{flex-basis:100%;font-size:14px;line-height:1.3;margin:0}.btn{background:linear-gradient(180deg,#368c52 0%,#26713d 48%,#1d5a33 49%,#1d5a33 100%);color:#fff;border-radius:5px;padding:12px 20px;font-weight:800;font-size:18px;min-height:48px;border:3px solid #173f29;box-shadow:inset 0 3px 0 rgba(255,255,255,.22),inset 0 -4px 0 rgba(0,0,0,.2),0 4px 0 #102f20,0 6px 10px rgba(0,0,0,.25);text-shadow:0 2px 0 rgba(0,0,0,.35);transition:filter .12s,transform .08s,box-shadow .08s}.btn.alt{background:linear-gradient(180deg,#f4dfad 0%,#e5c77f 48%,#d1aa58 49%,#d1aa58 100%);color:#493819;border-color:#775b2c;box-shadow:inset 0 3px 0 rgba(255,255,255,.38),inset 0 -4px 0 rgba(90,59,20,.17),0 4px 0 #513c1e,0 6px 10px rgba(0,0,0,.2);text-shadow:0 1px rgba(255,255,255,.5)}.btn.sm{padding:6px 14px;font-size:15px;min-height:40px}.btn:active{transform:scale(.96)}#joy{position:absolute;left:calc(var(--sl) + 14px);bottom:calc(var(--sb) + 88px);width:132px;height:132px;border-radius:50%;background:rgba(8,61,68,.35);border:3px solid rgba(246,232,198,.7);touch-action:none;display:none}#knob{position:absolute;left:36px;top:36px;width:60px;height:60px;border-radius:50%;background:rgba(246,232,198,.9);border:3px solid var(--gold)}#btnJump{position:absolute;right:calc(var(--sr) + 16px);bottom:calc(var(--sb) + 92px);width:84px;height:84px;border-radius:50%;background:rgba(14,90,99,.9);color:#fff;font-weight:800;font-size:16px;border:3px solid var(--gold);display:none}#btnMode{position:absolute;right:calc(var(--sr) + 12px);bottom:calc(var(--sb) + 186px);min-width:116px;height:56px;border-radius:16px;font-weight:800;font-size:18px;color:#fff;border:3px solid #fff;display:none;align-items:center;justify-content:center;gap:8px}#btnMode.place{background:var(--emerald)}#btnMode.break{background:var(--clay)}.touch #joy,.touch #btnJump,.touch #btnMode{display:flex}#btnJump{align-items:center;justify-content:center}#hotbar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 8px);max-width:calc(100% - var(--sl) - var(--sr) - 16px);display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:6px;background:rgba(8,61,68,.82);border-radius:16px;border:3px solid var(--gold);touch-action:pan-x;scrollbar-width:none}#hotbar::-webkit-scrollbar{display:none}.slot{flex:0 0 54px;width:54px;height:54px;border-radius:10px;background:rgba(246,232,198,.18);border:3px solid transparent;position:relative;padding:0;display:flex;align-items:center;justify-content:center}.slot canvas{width:38px;height:38px;image-rendering:pixelated}.slot.sel{border-color:var(--gold);background:rgba(246,232,198,.45)}.slot.locked canvas{opacity:.35}.slot .lk{position:absolute;right:2px;bottom:2px;color:#fff;font-size:15px;filter:drop-shadow(0 0 2px #000)}.slot .no{position:absolute;left:3px;top:0;font-size:11px;color:#fff;font-weight:700}.touch .slot .no{display:none}#selName{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 76px);padding:3px 12px;min-height:0;font-size:14px;border-width:2px}#toast{position:absolute;left:50%;top:38%;transform:translate(-50%,-10px);background:var(--sand);border:3px solid var(--gold);border-radius:14px;padding:10px 18px;font-weight:800;font-size:18px;color:var(--deep);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:86%;text-align:center}#toast.on{opacity:1;transform:translate(-50%,0)}#lockhint{position:absolute;left:50%;top:calc(50% + 44px);transform:translateX(-50%);background:rgba(8,61,68,.82);color:#f6e8c6;border:2px solid var(--gold);border-radius:12px;padding:6px 14px;font-weight:800;font-size:15px;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap}#lockhint.on{opacity:1}#modal{position:fixed;z-index:70;left:0;top:0;right:0;bottom:0;background:rgba(5,35,40,.6);display:none;align-items:center;justify-content:center;padding:calc(var(--st) + 10px) calc(var(--sr) + 10px) calc(var(--sb) + 10px) calc(var(--sl) + 10px);touch-action:manipulation}#modal.on{display:flex}#panel{background:var(--sand);border:4px solid var(--gold);border-radius:22px;padding:18px 20px;width:min(480px,100%);max-height:100%;overflow-y:auto;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5);font-size:18px;line-height:1.4;touch-action:pan-y}#panel h1{margin:0;font-size:46px;color:var(--deep);letter-spacing:1px}#panel h2{margin:4px 0 8px;font-size:26px;color:var(--deep)}#panel .ar{font-size:36px;color:var(--teal);margin:0 0 6px;font-weight:700}#panel p{margin:6px 0}#panel .motif{width:56px;height:56px;color:var(--teal)}#panel .how{text-align:left;margin:10px 0;padding:0;list-style:none}#panel .how li{padding:4px 0 4px 26px;position:relative;font-size:17px}#panel .how li:before{content:"";position:absolute;left:2px;top:11px;width:12px;height:12px;background:var(--gold);transform:rotate(45deg)}#panel .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;align-items:center}.tag{display:inline-block;background:var(--teal);color:#fff;border-radius:999px;padding:2px 14px;font-weight:700;font-size:15px}.glyph{font-size:96px;line-height:1.1;color:var(--deep);font-weight:700}.q{font-size:22px;font-weight:700;margin:8px 0;color:var(--deep)}.ans{display:block;width:100%;margin:8px 0;padding:14px;font-size:20px;font-weight:800;border-radius:14px;background:#fff;border:3px solid var(--teal);color:var(--deep);min-height:56px}.ans.ok{background:#bfe9cf;border-color:var(--emerald)}.ans.bad{background:#f5c9bb;border-color:var(--clay)}.why{background:var(--sand2);border-radius:12px;padding:8px 12px;margin-top:8px;font-size:17px}.skill{display:flex;justify-content:space-between;padding:8px 12px;margin:5px 0;background:var(--sand2);border-radius:12px;font-weight:700}.skill b{color:var(--emerald)}.confetti{position:absolute;top:-30px;width:22px;height:22px;color:var(--gold);pointer-events:none;animation:fall 2.4s ease-in forwards;z-index:9}@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}@media (max-height:480px){#mission .md{display:none}#hotbar{padding:3px 6px}.slot{flex-basis:50px;width:50px;height:50px}#selName{display:none}#btnMode{bottom:calc(var(--sb) + 84px);right:calc(var(--sr) + 110px);}#joy{bottom:calc(var(--sb) + 84px);width:110px;height:110px}#knob{left:25px;top:25px}#btnJump{bottom:calc(var(--sb) + 84px);width:76px;height:76px}#panel{padding:12px 16px}#panel h1{font-size:34px}.glyph{font-size:64px}.chip{min-height:38px;padding:4px 12px}#btnSet{width:42px;height:42px}}#app.pre>*:not(#gl){display:none!important}#welcome{position:fixed;left:0;top:0;width:100%;height:100%;z-index:50;color:#f6e8c6;text-align:center;overflow:hidden;background:#083d44;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}#welcome.live{background:transparent}#welcome{transition:opacity .5s}#wscene{position:absolute;left:0;top:0;width:100%;height:100%;transition:opacity .8s ease;display:block}#welcome.live #wscene{opacity:0;pointer-events:none}#wshot{position:absolute;left:0;top:0;width:100%;height:100%;background-color:#083d44;background-size:cover;background-position:50% 92%;background-repeat:no-repeat;transition:opacity .8s ease}#welcome.live #wshot{opacity:0;pointer-events:none}#wshade{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;background:linear-gradient(180deg,rgba(3,28,34,.6) 0,rgba(3,28,34,.3) 17%,rgba(3,28,34,0) 33%,rgba(3,28,34,0) 62%,rgba(3,28,34,.16) 76%,rgba(3,28,34,.42) 100%)}.wc{position:absolute;left:0;top:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:calc(var(--st) + 14px) calc(var(--sr) + 16px) calc(var(--sb) + 14px) calc(var(--sl) + 16px)}.wtop{width:min(520px,100%)}.wtitle{display:block;width:min(86vw,540px);height:auto;margin:0 auto;overflow:visible;filter:drop-shadow(0 2px 0 #7a5410) drop-shadow(0 4px 0 #5a3c0a) drop-shadow(0 9px 7px rgba(0,0,0,.5))}.wtag{margin:10px 0 0;font-size:20px;font-weight:700;letter-spacing:.5px;color:#f6e8c6;text-shadow:0 2px 6px rgba(0,0,0,.6)}.wbot{width:min(420px,100%);display:flex;flex-direction:column;gap:10px;align-items:stretch}#wbadge{align-self:center;display:none;background:rgba(8,61,68,.82);border:2px solid #e3b23c;border-radius:999px;padding:3px 14px;font-weight:800;font-size:15px}#wsum{display:none;font-size:16px;font-weight:700;color:#f6e8c6;text-shadow:0 2px 5px rgba(0,0,0,.7)}#wtrack{height:16px;background:rgba(246,232,198,.18);border:2px solid #e3b23c;border-radius:10px;overflow:hidden}#wfill{display:block;height:100%;width:0;background:linear-gradient(90deg,#e3b23c,#f6d97a);border-radius:8px;transition:width .3s}#wlab{display:flex;justify-content:space-between;margin-top:6px;font-size:15px;font-weight:700;text-shadow:0 2px 5px rgba(0,0,0,.7)}#wready{display:none}#wready .col{display:flex;flex-direction:column;gap:9px}#wready .btn{width:100%;text-shadow:none}#wready .btn.play{font-size:22px;min-height:56px;background:linear-gradient(180deg,#14808b,#0e5a63);animation:wpulse 2.2s ease-in-out infinite}#wready .r2{display:flex;gap:9px}#wready .r2 .btn{flex:1;padding:6px 10px;min-height:40px;font-size:15px}#wtip{min-height:40px;font-size:14px;line-height:1.3;color:#ead29c;text-shadow:0 2px 5px rgba(0,0,0,.7);transition:opacity .4s}#wmsg{display:none;font-size:15px;font-weight:700;background:rgba(8,61,68,.85);border:2px solid #e3b23c;border-radius:12px;padding:8px 12px}.wstar{display:block;width:34px;height:34px;margin:0 auto 2px;color:#e3b23c;filter:drop-shadow(0 2px 0 #5a3c0a);animation:wspin 26s linear infinite}@keyframes wspin{to{transform:rotate(360deg)}}.tc{animation:tdrop .6s cubic-bezier(.2,.9,.3,1.25) var(--d,0s) both}@keyframes tdrop{0%{transform:translateY(-9px);opacity:0}55%{transform:translateY(.6px);opacity:1}78%{transform:translateY(-.3px)}100%{transform:none;opacity:1}}.wshine{transform:skewX(-18deg);animation:wsh 6.5s ease-in-out 2.4s infinite}@keyframes wsh{0%,55%{transform:translateX(0) skewX(-18deg)}100%{transform:translateX(68px) skewX(-18deg)}}#wfx{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:hidden}#wglow{position:absolute;right:-25%;top:2%;width:85%;height:52%;background:radial-gradient(circle,rgba(255,226,150,.5),rgba(255,226,150,0) 66%);animation:wglow 9s ease-in-out infinite}@keyframes wglow{0%,100%{opacity:.55}50%{opacity:1}}.bd{position:absolute;left:-12px;width:6px;height:2px;background:#17303a;opacity:.72;animation:wfly 38s linear infinite}.bd:after{content:"";position:absolute;left:1px;top:-2px;width:4px;height:2px;background:#17303a}@keyframes wfly{0%{transform:translate(0,0)}25%{transform:translate(28vw,-9px)}50%{transform:translate(56vw,3px)}75%{transform:translate(84vw,-7px)}100%{transform:translate(112vw,1px)}}.wmote{position:absolute;width:3px;height:3px;border-radius:50%;background:#ffe9a8;box-shadow:0 0 6px 2px rgba(255,214,120,.65);opacity:0;animation:wrise 7s ease-in infinite}@keyframes wrise{0%{opacity:0;transform:translate(0,0)}18%{opacity:.95}100%{opacity:0;transform:translate(16px,-96px)}}#wfeat{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}#wfeat span{display:inline-flex;align-items:center;gap:3px;background:rgba(8,61,68,.72);border:1.5px solid #e3b23c;border-radius:999px;padding:3px 7px;font-size:11px;font-weight:800;color:#f6e8c6;white-space:nowrap}#wfeat svg{width:11px;height:11px;color:#e3b23c}#wready .btn.play{min-height:62px;font-size:25px;letter-spacing:.5px;animation:wpulse 2s ease-in-out infinite;transition:transform .08s}#wready .btn.play:active{transform:translateY(3px) scale(.97)}#wready .btn:active{transform:translateY(2px)}@keyframes wpulse{0%,100%{box-shadow:0 0 0 0 rgba(227,178,60,.7),0 0 14px 2px rgba(227,178,60,.35)}50%{box-shadow:0 0 0 11px rgba(227,178,60,0),0 0 26px 7px rgba(255,214,120,.55)}}.wcl{animation:wcloud 70s linear infinite alternate}@keyframes wcloud{to{transform:translateX(46px)}}@media (prefers-reduced-motion:reduce){#welcome *{animation:none!important}.wshine{display:none}}@media (orientation:landscape) and (max-height:520px){.wc{flex-direction:row;align-items:flex-end;justify-content:space-between}.wtop{width:min(46%,420px);align-self:flex-start;text-align:left}.wtitle{width:100%;margin:0}.wbot{width:min(340px,48%);gap:6px}#wready .btn.play{min-height:48px;font-size:19px}#wready .r2 .btn{min-height:40px;font-size:15px}#wtip,#wfeat{display:none}.wtag{font-size:16px}.wstar{display:none}}@keyframes wtw{0%,100%{opacity:.35}50%{opacity:1}}.wst{animation:wtw 3.4s ease-in-out infinite}.wst:nth-child(2n){animation-delay:1.3s}.wst:nth-child(3n){animation-delay:2.2s}@keyframes wsh{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}.wsh{animation:wsh 6s ease-in-out infinite}#tags{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:hidden}.ntag{position:absolute;left:0;top:0;display:none;text-align:center;will-change:transform}.ntag span{display:inline-block;background:rgba(8,61,68,.82);color:#fff;border:2px solid var(--gold);border-radius:999px;padding:2px 10px;font-weight:700;font-size:13px;white-space:nowrap}.ntag img.pt{width:24px;height:24px;border-radius:50%;border:2px solid var(--gold);vertical-align:middle;margin:-2px 6px -2px -6px;image-rendering:pixelated}.ntag i{font-style:normal}.portrait{display:block;width:64px;height:64px;margin:0 auto 4px;border-radius:50%;border:3px solid var(--gold);image-rendering:pixelated}.ntag.tgc span{font-size:11px;padding:0 7px;border-width:1px;opacity:.9}.ntag.tgc img.pt{display:none}.ntag .hb{display:none;pointer-events:auto;margin:4px auto 0;background:var(--emerald);color:#fff;border:2px solid #fff;border-radius:999px;padding:6px 14px;font-weight:800;font-size:14px;min-height:36px}.qlist{display:flex;flex-direction:column;gap:8px;margin:10px 0}.qitem{display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left;background:#fff8e6;border:2px solid var(--gold);border-radius:14px;padding:10px 12px;color:var(--deep);min-height:44px}.qitem b{font-size:17px}.qitem span{grid-column:1;font-size:14px;color:#3d4a4c}.qitem em{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-weight:800;font-size:14px;color:var(--teal);white-space:nowrap}.qitem.ok{background:#e9f6ee;border-color:#2a9d6b}.qitem.ok em{color:#1f7a50}.ntag.sign span{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-radius:12px;padding:5px 10px;background:rgba(92,60,32,.9);border-color:#e3c27a;pointer-events:none}.ntag.sign em{font-style:normal;font-size:13px;font-weight:700;white-space:nowrap}.ntag.sign i{display:inline-block;width:16px;margin-right:6px;text-align:center;font-style:normal;font-weight:900;color:#ffe08a}#warp{position:fixed;left:0;top:0;width:100%;height:100%;z-index:60;pointer-events:none;display:none;opacity:0;overflow:hidden;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.96) 0,rgba(170,232,255,.88) 14%,rgba(60,140,240,.62) 38%,rgba(10,30,90,.35) 70%,rgba(5,15,50,.15) 100%)}#warp i{position:absolute;left:-50%;top:-50%;width:200%;height:200%;background:repeating-conic-gradient(from 0deg,rgba(190,240,255,0) 0deg 5deg,rgba(210,245,255,.55) 5deg 6deg,rgba(190,240,255,0) 6deg 11deg);-webkit-mask-image:radial-gradient(circle,transparent 6%,#000 34%);mask-image:radial-gradient(circle,transparent 6%,#000 34%);animation:wspin 1.1s linear infinite}#warp b{position:absolute;left:0;top:0;width:100%;height:100%;background:repeating-radial-gradient(circle at 50% 50%,rgba(255,255,255,0) 0 26px,rgba(170,235,255,.45) 29px 32px,rgba(255,255,255,0) 35px 58px);animation:wzoom .45s linear infinite}@keyframes wspin{to{transform:rotate(360deg)}}@keyframes wzoom{from{transform:scale(1)}to{transform:scale(1.6)}}@media (prefers-reduced-motion:reduce){#warp i,#warp b{animation:none}}#app.warping #tags{display:none}.ntag.portal span{background:rgba(14,70,120,.9);border-color:#8fdcff;font-size:14px;pointer-events:none}#gzchip{display:none;font-size:14px;min-height:36px;padding:4px 12px;white-space:normal;line-height:1.15;text-align:center}#gzchip.raid{background:rgba(150,40,30,.92);border-color:#ffb08a}#joinchip{display:none;gap:10px;font-size:15px;padding:4px 8px 4px 14px;min-height:40px;border-color:#6fd0ff}#mission .mtog{flex:0 0 36px;width:36px;height:36px;border-radius:50%;background:var(--sand2);color:var(--deep);font-weight:800;font-size:18px;padding:0;border:2px solid var(--teal);line-height:1}#mission.min{padding:4px 10px;gap:2px 8px;flex-wrap:nowrap}#mission.min .mt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 0}#mission .mc{flex:0 0 auto}#mission .btn.sm{flex:0 0 auto}#mission .mtog{flex:0 0 36px}#mission.min .bar,#mission.min .md{display:none}#mchips{display:none;gap:8px;width:100%;max-width:560px;align-items:center;justify-content:flex-start}#floorchip{display:none;font-size:14px;min-height:36px;padding:4px 12px;white-space:normal;line-height:1.15}#btnPass{font-size:14px;min-height:36px;padding:4px 12px;background:rgba(14,90,99,.92);color:#fff}.mlab{z-index:3}.mlab .hb{display:none;pointer-events:auto}.exw{position:relative;width:min(300px,70vw,52vh);margin:0 auto 6px}.exw .exc{width:100%;margin:0}.exi{position:absolute;left:0;top:0;width:100%;height:100%;box-sizing:border-box;object-fit:contain;border-radius:14px;border:3px solid var(--gold);background:var(--sand2);opacity:0;transition:opacity .6s}.exi.on{opacity:1}.exph{font-size:12px;color:#456;margin:0 0 6px}.exph .cr{margin:4px 0}.exph .src{color:var(--emerald);font-weight:700}.exph .srcu{word-break:break-all}.seg{display:inline-flex;border:2px solid var(--gold);border-radius:999px;overflow:hidden}.seg button{border:0;background:#fff;color:#083d44;font-weight:700;font-size:13px;padding:5px 14px;min-height:32px}.seg button.on{background:var(--gold)}.exc{display:block;width:min(300px,70vw);height:auto;margin:0 auto 6px;border-radius:14px;border:3px solid var(--gold);background:var(--sand2)}.sm{font-size:15px}.pfl{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;text-align:left;margin:10px 0 4px;font-size:16px}.pfl span{font-size:14px;flex:1}.pfl i{font-style:normal;font-weight:800;color:var(--emerald)}.pgrid{display:flex;flex-wrap:wrap;gap:6px}.stamp{width:44px;height:44px;border-radius:10px;border:3px dashed var(--teal);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--teal);font-size:15px;background:rgba(255,255,255,.4)}.stamp.on{border-style:solid;border-color:var(--gold);background:var(--teal);color:var(--gold)}#uw{position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(24,96,180,.38);display:none;pointer-events:none}#helpout{position:absolute;left:50%;top:56%;transform:translateX(-50%);display:none;z-index:5}#helpout.on{display:block}@media (max-height:480px){#mission .md{display:none}}/* Cut limestone, glazed tiles and dark inventory slots. */:root{--ui-edge:#302820;--ui-light:#fff0c9;--ui-stone:#d7bd88;--ui-grout:#927751;--ui-green:#2e694a;--ui-teal:#234d50}.btn,.btn.alt,.chip,.ans,#map,#btnJump,#btnMode,.mtog{border-radius:0;border:2px solid var(--ui-edge);box-shadow:inset 0 2px #fff4,inset 0 -4px #0004,0 3px #221c16b0;text-shadow:0 1px #0008}.btn,.btn.alt,.ans,#btnJump,#btnMode{background:var(--ui-stone);color:#302820;text-shadow:none}.btn:not(.alt),#btnMode.place,#btnJump,#wready .btn.play{background:var(--ui-green);color:#fff8e8;text-shadow:0 2px #193526}#btnMode.break{color:#fff9e5}#wready .btn.play{animation:none;border-color:#172b21}#wready .btn.alt{color:#302820;text-shadow:none}.btn:active,.ans:active,#map:active,#wready .btn.play:active{transform:translateY(2px);box-shadow:inset 0 2px #0003,0 1px #221c16b0}.btn:hover,.chip:hover:is(button),.ans:hover:is(:enabled),#map:hover{filter:brightness(1.13)}button:focus-visible{outline:3px solid #ffdd72;outline-offset:2px}.chip,#map,#lockhint,#mgHint{background:var(--ui-teal);color:#fff4d5;border-color:var(--ui-edge)}#mission,#panel,#toast,#worldMap{background:#f1e0b7;border:3px solid var(--ui-edge);border-radius:0;box-shadow:inset 0 0 0 2px var(--ui-light),0 5px #201a16b0,0 10px 24px #1d181555}#mission{border-left:7px solid var(--ui-green)}#mission .bar,.why,.skill,.tag,#lockhint,#mgHint,#wbadge,#wfeat span{border-radius:0}#mission .bar{background:#bbaa83;box-shadow:inset 0 2px #654f303e}#mission .bar i{background:repeating-linear-gradient(90deg,#32704f 0 8px,#3f845c 8px 10px)}#hotbar{gap:3px;padding:4px;background:#322b24;border:2px solid #1d1815;border-radius:0;box-shadow:inset 0 2px #78664c,0 4px #221c16b0}.slot{border-radius:0;border:2px solid #241f1a;background:#625849;box-shadow:inset 2px 2px #342c24,inset -2px -2px #8a775d}.slot.sel{border-color:#ffe39a;background:#355b49;box-shadow:inset 2px 2px #20392c,inset -2px -2px #5d8f72}.slot.locked{background:#493f35}.slot canvas{width:32px;height:32px}.slot .no{font-family:monospace}.slot:focus-visible{outline-offset:-4px}#selName{bottom:calc(var(--sb) + 76px)}#panel{border-top:7px solid var(--ui-grout)}#panel h2,.wtag,#worldMap h2{font-family:Georgia,serif}#panel .row{gap:12px}#wbadge,#wfeat span{background:#2f3a34;border-color:#a88a53}#wfeat span{box-shadow:inset 0 1px #fff3}#wfill{border-radius:0}#wready .btn{font-weight:800}#worldMap{padding:12px;width:min(850px,calc(100% - var(--sl) - var(--sr) - 24px));max-height:calc(100% - var(--st) - var(--sb) - 24px);color:#302820;overflow:auto;overscroll-behavior:contain;touch-action:pan-y}#worldMap::backdrop{background:#1b211dcc}#worldMap header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}#worldMap h2{margin:0;font-size:clamp(21px,4vw,28px)}#worldMap .btn{min-height:36px}.mapLayout{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,.62fr);gap:12px;align-items:start}#mapChart{position:relative;width:100%;max-width:min(52vh,100%);aspect-ratio:1;margin:0 auto;border:2px solid #67543a;background:#8fa7a2}#worldCanvas{display:block;width:100%;height:100%;image-rendering:pixelated}#mapPins{position:absolute;inset:0;pointer-events:none}.mapPin{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;padding:0;pointer-events:auto;border:2px solid #302820;background:#fff0c9;color:#302820;font:bold 11px monospace;box-shadow:0 2px #30282088}.mapPin:hover,.mapPin:focus-visible{z-index:2;background:#30634a;color:#fff6de}.mapNorth{position:absolute;top:5px;right:6px;font:bold 12px monospace;color:#2f2a20;background:#f1e0b7;padding:3px 4px;pointer-events:none}#mapPlaces{display:grid;gap:4px;max-height:52vh;overflow:auto;touch-action:pan-y;padding:2px 4px 3px 2px}.mapPlace{display:grid;grid-template-columns:23px 1fr;align-items:center;gap:8px;text-align:left;min-height:43px;padding:4px 6px;background:#e4cc9b;border:1px solid #a1875c;color:#302820;box-shadow:inset 0 1px #fff7}.mapPlace:hover,.mapPlace:focus-visible{background:#315e49;color:#fff3d1}.mapPlace b{display:block;font-size:13px;line-height:1.2}.mapPlace small{display:block;font-size:11px}.mapPlace i{font:bold 13px monospace;text-align:center;border:1px solid;padding:2px}@media(max-width:830px){#top{padding-left:118px;max-width:678px}#map{width:112px;height:48px}}@media(max-width:520px){#top{padding-left:72px}#map{width:66px;height:48px}#rank{display:none}.mapLayout{grid-template-columns:1fr;gap:8px}#mapChart{max-width:min(43vh,100%)}#mapPlaces{max-height:29vh}}@media(max-height:430px){#mapChart{max-width:min(67vh,100%)}#mapPlaces{max-height:66vh}}</style>
+<style>:root{--sand:#f6e8c6;--sand2:#ead29c;--teal:#0e5a63;--deep:#083d44;--emerald:#1f8a5b;--gold:#e3b23c;--ink:#1b2a2d;--clay:#b8532f;--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--deep);touch-action:none;overscroll-behavior:none;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--ink)}#app{position:fixed;left:0;top:0;width:100%;height:100%;overflow:hidden}#gl{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none;outline:none}button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulation}svg.i{width:1.2em;height:1.2em;fill:currentColor;vertical-align:-.2em}svg.i.s{fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}#cross{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;display:none;pointer-events:none}#cross:before,#cross:after{content:"";position:absolute;background:#fff;box-shadow:0 0 3px #000}#cross:before{left:10px;top:3px;width:2px;height:16px}#cross:after{left:3px;top:10px;width:16px;height:2px}.desk #cross.on{display:block}#mgHint{position:absolute;left:50%;bottom:calc(var(--sb) + 94px);transform:translateX(-50%);display:none;background:rgba(8,61,68,.9);color:#fff;border:2px solid var(--gold);border-radius:5px;padding:7px 12px;font-weight:800;font-size:14px;z-index:5;pointer-events:none;white-space:nowrap}#mgHint.on{display:block}#hud{position:absolute;left:0;top:0;right:0;padding:calc(var(--st) + 8px) calc(var(--sr) + 10px) 0 calc(var(--sl) + 10px);pointer-events:none;display:flex;flex-direction:column;gap:8px;align-items:center}#hud>*{pointer-events:auto}#map{position:absolute;left:calc(var(--sl) + 10px);top:calc(var(--st) + 8px);width:122px;height:100px;padding:4px;z-index:4}#map canvas{display:block;width:100%;height:100%;image-rendering:pixelated}#liftChip[hidden]{display:none}.liftFloors{display:grid;gap:8px;margin:14px auto;width:min(100%,300px)}.liftFloors button:disabled{opacity:.65;cursor:default}.lifting button:not(#liftChip){pointer-events:none}#map span{position:absolute;right:6px;bottom:6px;background:#302b21;color:#fff4d5;padding:2px 5px;font:bold 11px monospace}#top{display:flex;gap:8px;width:100%;max-width:560px;align-items:center}.chip{background:rgba(8,61,68,.82);color:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:16px;display:flex;align-items:center;gap:6px;border:2px solid var(--gold);min-height:44px;white-space:nowrap}.chip svg{color:var(--gold)}#clock{margin-left:auto}#btnSet,#btnQuest{flex:0 0 48px;width:48px;height:48px;padding:0;justify-content:center}#btnStats{min-width:0;overflow:hidden}#rank{overflow:hidden;text-overflow:ellipsis}#clock{flex:0 0 auto}#building{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);display:none;font-size:20px;padding:12px 22px}@media (max-width:420px){.chip{font-size:13px;padding:6px 9px;gap:4px}#btnSet,#btnQuest{flex-basis:44px;width:44px;height:44px}#top{gap:6px}#panel h1{font-size:32px!important;letter-spacing:0!important}#welcome h1{font-size:34px}}#mission{width:100%;max-width:560px;background:var(--sand);border:3px solid var(--gold);border-radius:16px;padding:8px 12px;box-shadow:0 3px 10px rgba(0,0,0,.35);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}#mission .mt{font-weight:800;font-size:17px;color:var(--deep);flex:1;min-width:0}#mission .mc{font-weight:800;font-size:17px;color:var(--emerald)}#mission .bar{flex-basis:100%;height:10px;background:var(--sand2);border-radius:6px;overflow:hidden}#mission .bar i{display:block;height:100%;width:0;background:var(--emerald);transition:width .3s}#mission .md{flex-basis:100%;font-size:14px;line-height:1.3;margin:0}.btn{background:linear-gradient(180deg,#368c52 0%,#26713d 48%,#1d5a33 49%,#1d5a33 100%);color:#fff;border-radius:5px;padding:12px 20px;font-weight:800;font-size:18px;min-height:48px;border:3px solid #173f29;box-shadow:inset 0 3px 0 rgba(255,255,255,.22),inset 0 -4px 0 rgba(0,0,0,.2),0 4px 0 #102f20,0 6px 10px rgba(0,0,0,.25);text-shadow:0 2px 0 rgba(0,0,0,.35);transition:filter .12s,transform .08s,box-shadow .08s}.btn.alt{background:linear-gradient(180deg,#f4dfad 0%,#e5c77f 48%,#d1aa58 49%,#d1aa58 100%);color:#493819;border-color:#775b2c;box-shadow:inset 0 3px 0 rgba(255,255,255,.38),inset 0 -4px 0 rgba(90,59,20,.17),0 4px 0 #513c1e,0 6px 10px rgba(0,0,0,.2);text-shadow:0 1px rgba(255,255,255,.5)}.btn.sm{padding:6px 14px;font-size:15px;min-height:40px}.btn:active{transform:scale(.96)}#joy{position:absolute;left:calc(var(--sl) + 14px);bottom:calc(var(--sb) + 88px);width:132px;height:132px;border-radius:50%;background:rgba(8,61,68,.35);border:3px solid rgba(246,232,198,.7);touch-action:none;display:none}#knob{position:absolute;left:36px;top:36px;width:60px;height:60px;border-radius:50%;background:rgba(246,232,198,.9);border:3px solid var(--gold)}#btnJump{position:absolute;right:calc(var(--sr) + 16px);bottom:calc(var(--sb) + 92px);width:84px;height:84px;border-radius:50%;background:rgba(14,90,99,.9);color:#fff;font-weight:800;font-size:16px;border:3px solid var(--gold);display:none}#btnMode{position:absolute;right:calc(var(--sr) + 12px);bottom:calc(var(--sb) + 186px);min-width:116px;height:56px;border-radius:16px;font-weight:800;font-size:18px;color:#fff;border:3px solid #fff;display:none;align-items:center;justify-content:center;gap:8px}#btnMode.place{background:var(--emerald)}#btnMode.break{background:var(--clay)}.touch #joy,.touch #btnJump,.touch #btnMode{display:flex}#btnJump{align-items:center;justify-content:center}#hotbar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 8px);max-width:calc(100% - var(--sl) - var(--sr) - 16px);display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:6px;background:rgba(8,61,68,.82);border-radius:16px;border:3px solid var(--gold);touch-action:pan-x;scrollbar-width:none}#hotbar::-webkit-scrollbar{display:none}.slot{flex:0 0 54px;width:54px;height:54px;border-radius:10px;background:rgba(246,232,198,.18);border:3px solid transparent;position:relative;padding:0;display:flex;align-items:center;justify-content:center}.slot canvas{width:38px;height:38px;image-rendering:pixelated}.slot.sel{border-color:var(--gold);background:rgba(246,232,198,.45)}.slot.locked canvas{opacity:.35}.slot .lk{position:absolute;right:2px;bottom:2px;color:#fff;font-size:15px;filter:drop-shadow(0 0 2px #000)}.slot .no{position:absolute;left:3px;top:0;font-size:11px;color:#fff;font-weight:700}.touch .slot .no{display:none}#selName{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 76px);padding:3px 12px;min-height:0;font-size:14px;border-width:2px}#toast{position:absolute;left:50%;top:38%;transform:translate(-50%,-10px);background:var(--sand);border:3px solid var(--gold);border-radius:14px;padding:10px 18px;font-weight:800;font-size:18px;color:var(--deep);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:86%;text-align:center}#toast.on{opacity:1;transform:translate(-50%,0)}#lockhint{position:absolute;left:50%;top:calc(50% + 44px);transform:translateX(-50%);background:rgba(8,61,68,.82);color:#f6e8c6;border:2px solid var(--gold);border-radius:12px;padding:6px 14px;font-weight:800;font-size:15px;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap}#lockhint.on{opacity:1}#modal{position:fixed;z-index:70;left:0;top:0;right:0;bottom:0;background:rgba(5,35,40,.6);display:none;align-items:center;justify-content:center;padding:calc(var(--st) + 10px) calc(var(--sr) + 10px) calc(var(--sb) + 10px) calc(var(--sl) + 10px);touch-action:manipulation}#modal.on{display:flex}#panel{background:var(--sand);border:4px solid var(--gold);border-radius:22px;padding:18px 20px;width:min(480px,100%);max-height:100%;overflow-y:auto;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5);font-size:18px;line-height:1.4;touch-action:pan-y}#panel h1{margin:0;font-size:46px;color:var(--deep);letter-spacing:1px}#panel h2{margin:4px 0 8px;font-size:26px;color:var(--deep)}#panel .ar{font-size:36px;color:var(--teal);margin:0 0 6px;font-weight:700}#panel p{margin:6px 0}#panel .motif{width:56px;height:56px;color:var(--teal)}#panel .how{text-align:left;margin:10px 0;padding:0;list-style:none}#panel .how li{padding:4px 0 4px 26px;position:relative;font-size:17px}#panel .how li:before{content:"";position:absolute;left:2px;top:11px;width:12px;height:12px;background:var(--gold);transform:rotate(45deg)}#panel .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;align-items:center}.tag{display:inline-block;background:var(--teal);color:#fff;border-radius:999px;padding:2px 14px;font-weight:700;font-size:15px}.glyph{font-size:96px;line-height:1.1;color:var(--deep);font-weight:700}.q{font-size:22px;font-weight:700;margin:8px 0;color:var(--deep)}.ans{display:block;width:100%;margin:8px 0;padding:14px;font-size:20px;font-weight:800;border-radius:14px;background:#fff;border:3px solid var(--teal);color:var(--deep);min-height:56px}.ans.ok{background:#bfe9cf;border-color:var(--emerald)}.ans.bad{background:#f5c9bb;border-color:var(--clay)}.why{background:var(--sand2);border-radius:12px;padding:8px 12px;margin-top:8px;font-size:17px}.skill{display:flex;justify-content:space-between;padding:8px 12px;margin:5px 0;background:var(--sand2);border-radius:12px;font-weight:700}.skill b{color:var(--emerald)}.confetti{position:absolute;top:-30px;width:22px;height:22px;color:var(--gold);pointer-events:none;animation:fall 2.4s ease-in forwards;z-index:9}@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}@media (max-height:480px){#mission .md{display:none}#hotbar{padding:3px 6px}.slot{flex-basis:50px;width:50px;height:50px}#selName{display:none}#btnMode{bottom:calc(var(--sb) + 84px);right:calc(var(--sr) + 110px);}#joy{bottom:calc(var(--sb) + 84px);width:110px;height:110px}#knob{left:25px;top:25px}#btnJump{bottom:calc(var(--sb) + 84px);width:76px;height:76px}#panel{padding:12px 16px}#panel h1{font-size:34px}.glyph{font-size:64px}.chip{min-height:38px;padding:4px 12px}#btnSet{width:42px;height:42px}}#app.pre>*:not(#gl){display:none!important}#welcome{position:fixed;left:0;top:0;width:100%;height:100%;z-index:50;color:#f6e8c6;text-align:center;overflow:hidden;background:#083d44;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}#welcome.live{background:transparent}#welcome{transition:opacity .5s}#wscene{position:absolute;left:0;top:0;width:100%;height:100%;transition:opacity .8s ease;display:block}#welcome.live #wscene{opacity:0;pointer-events:none}#wshot{position:absolute;left:0;top:0;width:100%;height:100%;background-color:#083d44;background-size:cover;background-position:50% 92%;background-repeat:no-repeat;transition:opacity .8s ease}#welcome.live #wshot{opacity:0;pointer-events:none}#wshade{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;background:linear-gradient(180deg,rgba(3,28,34,.6) 0,rgba(3,28,34,.3) 17%,rgba(3,28,34,0) 33%,rgba(3,28,34,0) 62%,rgba(3,28,34,.16) 76%,rgba(3,28,34,.42) 100%)}.wc{position:absolute;left:0;top:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:calc(var(--st) + 14px) calc(var(--sr) + 16px) calc(var(--sb) + 14px) calc(var(--sl) + 16px)}.wtop{width:min(520px,100%)}.wtitle{display:block;width:min(86vw,540px);height:auto;margin:0 auto;overflow:visible;filter:drop-shadow(0 2px 0 #7a5410) drop-shadow(0 4px 0 #5a3c0a) drop-shadow(0 9px 7px rgba(0,0,0,.5))}.wtag{margin:10px 0 0;font-size:20px;font-weight:700;letter-spacing:.5px;color:#f6e8c6;text-shadow:0 2px 6px rgba(0,0,0,.6)}.wbot{width:min(420px,100%);display:flex;flex-direction:column;gap:10px;align-items:stretch}#wbadge{align-self:center;display:none;background:rgba(8,61,68,.82);border:2px solid #e3b23c;border-radius:999px;padding:3px 14px;font-weight:800;font-size:15px}#wsum{display:none;font-size:16px;font-weight:700;color:#f6e8c6;text-shadow:0 2px 5px rgba(0,0,0,.7)}#wtrack{height:16px;background:rgba(246,232,198,.18);border:2px solid #e3b23c;border-radius:10px;overflow:hidden}#wfill{display:block;height:100%;width:0;background:linear-gradient(90deg,#e3b23c,#f6d97a);border-radius:8px;transition:width .3s}#wlab{display:flex;justify-content:space-between;margin-top:6px;font-size:15px;font-weight:700;text-shadow:0 2px 5px rgba(0,0,0,.7)}#wready{display:none}#wready .col{display:flex;flex-direction:column;gap:9px}#wready .btn{width:100%;text-shadow:none}#wready .btn.play{font-size:22px;min-height:56px;background:linear-gradient(180deg,#14808b,#0e5a63);animation:wpulse 2.2s ease-in-out infinite}#wready .r2{display:flex;gap:9px}#wready .r2 .btn{flex:1;padding:6px 10px;min-height:40px;font-size:15px}#wtip{min-height:40px;font-size:14px;line-height:1.3;color:#ead29c;text-shadow:0 2px 5px rgba(0,0,0,.7);transition:opacity .4s}#wmsg{display:none;font-size:15px;font-weight:700;background:rgba(8,61,68,.85);border:2px solid #e3b23c;border-radius:12px;padding:8px 12px}.wstar{display:block;width:34px;height:34px;margin:0 auto 2px;color:#e3b23c;filter:drop-shadow(0 2px 0 #5a3c0a);animation:wspin 26s linear infinite}@keyframes wspin{to{transform:rotate(360deg)}}.tc{animation:tdrop .6s cubic-bezier(.2,.9,.3,1.25) var(--d,0s) both}@keyframes tdrop{0%{transform:translateY(-9px);opacity:0}55%{transform:translateY(.6px);opacity:1}78%{transform:translateY(-.3px)}100%{transform:none;opacity:1}}.wshine{transform:skewX(-18deg);animation:wsh 6.5s ease-in-out 2.4s infinite}@keyframes wsh{0%,55%{transform:translateX(0) skewX(-18deg)}100%{transform:translateX(68px) skewX(-18deg)}}#wfx{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:hidden}#wglow{position:absolute;right:-25%;top:2%;width:85%;height:52%;background:radial-gradient(circle,rgba(255,226,150,.5),rgba(255,226,150,0) 66%);animation:wglow 9s ease-in-out infinite}@keyframes wglow{0%,100%{opacity:.55}50%{opacity:1}}.bd{position:absolute;left:-12px;width:6px;height:2px;background:#17303a;opacity:.72;animation:wfly 38s linear infinite}.bd:after{content:"";position:absolute;left:1px;top:-2px;width:4px;height:2px;background:#17303a}@keyframes wfly{0%{transform:translate(0,0)}25%{transform:translate(28vw,-9px)}50%{transform:translate(56vw,3px)}75%{transform:translate(84vw,-7px)}100%{transform:translate(112vw,1px)}}.wmote{position:absolute;width:3px;height:3px;border-radius:50%;background:#ffe9a8;box-shadow:0 0 6px 2px rgba(255,214,120,.65);opacity:0;animation:wrise 7s ease-in infinite}@keyframes wrise{0%{opacity:0;transform:translate(0,0)}18%{opacity:.95}100%{opacity:0;transform:translate(16px,-96px)}}#wfeat{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}#wfeat span{display:inline-flex;align-items:center;gap:3px;background:rgba(8,61,68,.72);border:1.5px solid #e3b23c;border-radius:999px;padding:3px 7px;font-size:11px;font-weight:800;color:#f6e8c6;white-space:nowrap}#wfeat svg{width:11px;height:11px;color:#e3b23c}#wready .btn.play{min-height:62px;font-size:25px;letter-spacing:.5px;animation:wpulse 2s ease-in-out infinite;transition:transform .08s}#wready .btn.play:active{transform:translateY(3px) scale(.97)}#wready .btn:active{transform:translateY(2px)}@keyframes wpulse{0%,100%{box-shadow:0 0 0 0 rgba(227,178,60,.7),0 0 14px 2px rgba(227,178,60,.35)}50%{box-shadow:0 0 0 11px rgba(227,178,60,0),0 0 26px 7px rgba(255,214,120,.55)}}.wcl{animation:wcloud 70s linear infinite alternate}@keyframes wcloud{to{transform:translateX(46px)}}@media (prefers-reduced-motion:reduce){#welcome *{animation:none!important}.wshine{display:none}}@media (orientation:landscape) and (max-height:520px){.wc{flex-direction:row;align-items:flex-end;justify-content:space-between}.wtop{width:min(46%,420px);align-self:flex-start;text-align:left}.wtitle{width:100%;margin:0}.wbot{width:min(340px,48%);gap:6px}#wready .btn.play{min-height:48px;font-size:19px}#wready .r2 .btn{min-height:40px;font-size:15px}#wtip,#wfeat{display:none}.wtag{font-size:16px}.wstar{display:none}}@keyframes wtw{0%,100%{opacity:.35}50%{opacity:1}}.wst{animation:wtw 3.4s ease-in-out infinite}.wst:nth-child(2n){animation-delay:1.3s}.wst:nth-child(3n){animation-delay:2.2s}@keyframes wsh{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}.wsh{animation:wsh 6s ease-in-out infinite}#tags{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:hidden}.ntag{position:absolute;left:0;top:0;display:none;text-align:center;will-change:transform}.ntag span{display:inline-block;background:rgba(8,61,68,.82);color:#fff;border:2px solid var(--gold);border-radius:999px;padding:2px 10px;font-weight:700;font-size:13px;white-space:nowrap}.ntag img.pt{width:24px;height:24px;border-radius:50%;border:2px solid var(--gold);vertical-align:middle;margin:-2px 6px -2px -6px;image-rendering:pixelated}.ntag i{font-style:normal}.portrait{display:block;width:64px;height:64px;margin:0 auto 4px;border-radius:50%;border:3px solid var(--gold);image-rendering:pixelated}.ntag.tgc span{font-size:11px;padding:0 7px;border-width:1px;opacity:.9}.ntag.tgc img.pt{display:none}.ntag .hb{display:none;pointer-events:auto;margin:4px auto 0;background:var(--emerald);color:#fff;border:2px solid #fff;border-radius:999px;padding:6px 14px;font-weight:800;font-size:14px;min-height:36px}.qlist{display:flex;flex-direction:column;gap:8px;margin:10px 0}.qitem{display:grid;grid-template-columns:1fr auto;gap:2px 10px;text-align:left;background:#fff8e6;border:2px solid var(--gold);border-radius:14px;padding:10px 12px;color:var(--deep);min-height:44px}.qitem b{font-size:17px}.qitem span{grid-column:1;font-size:14px;color:#3d4a4c}.qitem em{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-weight:800;font-size:14px;color:var(--teal);white-space:nowrap}.qitem.ok{background:#e9f6ee;border-color:#2a9d6b}.qitem.ok em{color:#1f7a50}.ntag.sign span{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-radius:12px;padding:5px 10px;background:rgba(92,60,32,.9);border-color:#e3c27a;pointer-events:none}.ntag.sign em{font-style:normal;font-size:13px;font-weight:700;white-space:nowrap}.ntag.sign i{display:inline-block;width:16px;margin-right:6px;text-align:center;font-style:normal;font-weight:900;color:#ffe08a}#warp{position:fixed;left:0;top:0;width:100%;height:100%;z-index:60;pointer-events:none;display:none;opacity:0;overflow:hidden;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.96) 0,rgba(170,232,255,.88) 14%,rgba(60,140,240,.62) 38%,rgba(10,30,90,.35) 70%,rgba(5,15,50,.15) 100%)}#warp i{position:absolute;left:-50%;top:-50%;width:200%;height:200%;background:repeating-conic-gradient(from 0deg,rgba(190,240,255,0) 0deg 5deg,rgba(210,245,255,.55) 5deg 6deg,rgba(190,240,255,0) 6deg 11deg);-webkit-mask-image:radial-gradient(circle,transparent 6%,#000 34%);mask-image:radial-gradient(circle,transparent 6%,#000 34%);animation:wspin 1.1s linear infinite}#warp b{position:absolute;left:0;top:0;width:100%;height:100%;background:repeating-radial-gradient(circle at 50% 50%,rgba(255,255,255,0) 0 26px,rgba(170,235,255,.45) 29px 32px,rgba(255,255,255,0) 35px 58px);animation:wzoom .45s linear infinite}@keyframes wspin{to{transform:rotate(360deg)}}@keyframes wzoom{from{transform:scale(1)}to{transform:scale(1.6)}}@media (prefers-reduced-motion:reduce){#warp i,#warp b{animation:none}}#app.warping #tags{display:none}.ntag.portal span{background:rgba(14,70,120,.9);border-color:#8fdcff;font-size:14px;pointer-events:none}#gzchip{display:none;font-size:14px;min-height:36px;padding:4px 12px;white-space:normal;line-height:1.15;text-align:center}#gzchip.raid{background:rgba(150,40,30,.92);border-color:#ffb08a}#joinchip{display:none;gap:10px;font-size:15px;padding:4px 8px 4px 14px;min-height:40px;border-color:#6fd0ff}#mission .mtog{flex:0 0 36px;width:36px;height:36px;border-radius:50%;background:var(--sand2);color:var(--deep);font-weight:800;font-size:18px;padding:0;border:2px solid var(--teal);line-height:1}#mission.min{padding:4px 10px;gap:2px 8px;flex-wrap:nowrap}#mission.min .mt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 0}#mission .mc{flex:0 0 auto}#mission .btn.sm{flex:0 0 auto}#mission .mtog{flex:0 0 36px}#mission.min .bar,#mission.min .md{display:none}#mchips{display:none;gap:8px;width:100%;max-width:560px;align-items:center;justify-content:flex-start}#floorchip{display:none;font-size:14px;min-height:36px;padding:4px 12px;white-space:normal;line-height:1.15}#btnPass{font-size:14px;min-height:36px;padding:4px 12px;background:rgba(14,90,99,.92);color:#fff}.mlab{z-index:3}.mlab .hb{display:none;pointer-events:auto}.exw{position:relative;width:min(300px,70vw,52vh);margin:0 auto 6px}.exw .exc{width:100%;margin:0}.exi{position:absolute;left:0;top:0;width:100%;height:100%;box-sizing:border-box;object-fit:contain;border-radius:14px;border:3px solid var(--gold);background:var(--sand2);opacity:0;transition:opacity .6s}.exi.on{opacity:1}.exph{font-size:12px;color:#456;margin:0 0 6px}.exph .cr{margin:4px 0}.exph .src{color:var(--emerald);font-weight:700}.exph .srcu{word-break:break-all}.seg{display:inline-flex;border:2px solid var(--gold);border-radius:999px;overflow:hidden}.seg button{border:0;background:#fff;color:#083d44;font-weight:700;font-size:13px;padding:5px 14px;min-height:32px}.seg button.on{background:var(--gold)}.exc{display:block;width:min(300px,70vw);height:auto;margin:0 auto 6px;border-radius:14px;border:3px solid var(--gold);background:var(--sand2)}.sm{font-size:15px}.pfl{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;text-align:left;margin:10px 0 4px;font-size:16px}.pfl span{font-size:14px;flex:1}.pfl i{font-style:normal;font-weight:800;color:var(--emerald)}.pgrid{display:flex;flex-wrap:wrap;gap:6px}.stamp{width:44px;height:44px;border-radius:10px;border:3px dashed var(--teal);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--teal);font-size:15px;background:rgba(255,255,255,.4)}.stamp.on{border-style:solid;border-color:var(--gold);background:var(--teal);color:var(--gold)}#uw{position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(24,96,180,.38);display:none;pointer-events:none}#helpout{position:absolute;left:50%;top:56%;transform:translateX(-50%);display:none;z-index:5}#helpout.on{display:block}@media (max-height:480px){#mission .md{display:none}}/* Cut limestone, glazed tiles and dark inventory slots. */:root{--ui-edge:#302820;--ui-light:#fff0c9;--ui-stone:#d7bd88;--ui-grout:#927751;--ui-green:#2e694a;--ui-teal:#234d50}.btn,.btn.alt,.chip,.ans,#map,#btnJump,#btnMode,.mtog{border-radius:0;border:2px solid var(--ui-edge);box-shadow:inset 0 2px #fff4,inset 0 -4px #0004,0 3px #221c16b0;text-shadow:0 1px #0008}.btn,.btn.alt,.ans,#btnJump,#btnMode{background:var(--ui-stone);color:#302820;text-shadow:none}.btn:not(.alt),#btnMode.place,#btnJump,#wready .btn.play{background:var(--ui-green);color:#fff8e8;text-shadow:0 2px #193526}#btnMode.break{color:#fff9e5}#wready .btn.play{animation:none;border-color:#172b21}#wready .btn.alt{color:#302820;text-shadow:none}.btn:active,.ans:active,#map:active,#wready .btn.play:active{transform:translateY(2px);box-shadow:inset 0 2px #0003,0 1px #221c16b0}.btn:hover,.chip:hover:is(button),.ans:hover:is(:enabled),#map:hover{filter:brightness(1.13)}button:focus-visible{outline:3px solid #ffdd72;outline-offset:2px}.chip,#map,#lockhint,#mgHint{background:var(--ui-teal);color:#fff4d5;border-color:var(--ui-edge)}#mission,#panel,#toast,#worldMap{background:#f1e0b7;border:3px solid var(--ui-edge);border-radius:0;box-shadow:inset 0 0 0 2px var(--ui-light),0 5px #201a16b0,0 10px 24px #1d181555}#mission{border-left:7px solid var(--ui-green)}#mission .bar,.why,.skill,.tag,#lockhint,#mgHint,#wbadge,#wfeat span{border-radius:0}#mission .bar{background:#bbaa83;box-shadow:inset 0 2px #654f303e}#mission .bar i{background:repeating-linear-gradient(90deg,#32704f 0 8px,#3f845c 8px 10px)}#hotbar{gap:3px;padding:4px;background:#322b24;border:2px solid #1d1815;border-radius:0;box-shadow:inset 0 2px #78664c,0 4px #221c16b0}.slot{border-radius:0;border:2px solid #241f1a;background:#625849;box-shadow:inset 2px 2px #342c24,inset -2px -2px #8a775d}.slot.sel{border-color:#ffe39a;background:#355b49;box-shadow:inset 2px 2px #20392c,inset -2px -2px #5d8f72}.slot.locked{background:#493f35}.slot canvas{width:32px;height:32px}.slot .no{font-family:monospace}.slot:focus-visible{outline-offset:-4px}#selName{bottom:calc(var(--sb) + 76px)}#panel{border-top:7px solid var(--ui-grout)}#panel h2,.wtag,#worldMap h2{font-family:Georgia,serif}#panel .row{gap:12px}#wbadge,#wfeat span{background:#2f3a34;border-color:#a88a53}#wfeat span{box-shadow:inset 0 1px #fff3}#wfill{border-radius:0}#wready .btn{font-weight:800}#worldMap{padding:12px;width:min(850px,calc(100% - var(--sl) - var(--sr) - 24px));max-height:calc(100% - var(--st) - var(--sb) - 24px);color:#302820;overflow:auto;overscroll-behavior:contain;touch-action:pan-y}#worldMap::backdrop{background:#1b211dcc}#worldMap header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}#worldMap h2{margin:0;font-size:clamp(21px,4vw,28px)}#worldMap .btn{min-height:36px}.mapLayout{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,.62fr);gap:12px;align-items:start}#mapChart{position:relative;width:100%;max-width:min(52vh,100%);aspect-ratio:1;margin:0 auto;border:2px solid #67543a;background:#8fa7a2}#worldCanvas{display:block;width:100%;height:100%;image-rendering:pixelated}#mapPins{position:absolute;inset:0;pointer-events:none}.mapPin{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;padding:0;pointer-events:auto;border:2px solid #302820;background:#fff0c9;color:#302820;font:bold 11px monospace;box-shadow:0 2px #30282088}.mapPin:hover,.mapPin:focus-visible{z-index:2;background:#30634a;color:#fff6de}.mapNorth{position:absolute;top:5px;right:6px;font:bold 12px monospace;color:#2f2a20;background:#f1e0b7;padding:3px 4px;pointer-events:none}#mapPlaces{display:grid;gap:4px;max-height:52vh;overflow:auto;touch-action:pan-y;padding:2px 4px 3px 2px}.mapPlace{display:grid;grid-template-columns:23px 1fr;align-items:center;gap:8px;text-align:left;min-height:43px;padding:4px 6px;background:#e4cc9b;border:1px solid #a1875c;color:#302820;box-shadow:inset 0 1px #fff7}.mapPlace:hover,.mapPlace:focus-visible{background:#315e49;color:#fff3d1}.mapPlace b{display:block;font-size:13px;line-height:1.2}.mapPlace small{display:block;font-size:11px}.mapPlace i{font:bold 13px monospace;text-align:center;border:1px solid;padding:2px}@media(max-width:830px){#top{padding-left:118px;max-width:678px}#map{width:112px;height:48px}}@media(max-width:520px){#top{padding-left:72px}#map{width:66px;height:48px}#rank{display:none}.mapLayout{grid-template-columns:1fr;gap:8px}#mapChart{max-width:min(43vh,100%)}#mapPlaces{max-height:29vh}}@media(max-height:430px){#mapChart{max-width:min(67vh,100%)}#mapPlaces{max-height:66vh}}</style>
 </head>
 <body>
 <div id="welcome"><svg id="wscene" viewBox="0 0 400 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -77,6 +77,7 @@ musliMineCraft embedding API (single file, no network):
  <div id="mission"></div>
  <div class="chip" id="joinchip"></div>
  <div class="chip" id="gzchip" role="status"></div>
+ <button class="chip" id="liftChip" type="button" hidden aria-label="Elevator floors"></button>
  <div id="mchips"><button class="chip" id="btnPass" aria-label="Museum Passport">Passport</button><div class="chip" id="floorchip"></div></div>
 </div>
 <div id="uw"></div><button class="btn" id="helpout">Swim to shore</button>
@@ -225,11 +226,16 @@ GHOST_COL[b]=c?[r/c/255,gg/c/255,bb/c/255]:[1,1,1]}
 atlasCanvas=cv;
 }
 const BURJ_MASS=[
-[-3,-3,3,3,21],[-2,-2,2,2,24],[-1,-1,1,1,27],[0,0,0,0,31],
-[-2,2,2,8,8],[-1,2,1,6,13],[-1,2,1,4,16],
-[-6,-3,-2,0,13],[-8,-4,-5,-1,7],[-5,-3,-2,-1,17],
-[2,-3,6,0,15],[5,-4,8,-1,10],[2,-3,4,-1,19]
+[-3,-3,3,3,20],[-2,-2,2,2,25],[-1,-1,1,1,27],[0,0,0,0,31],
+[-2,2,2,8,8],[-2,2,2,6,12],[-1,2,1,5,15],[-1,2,1,4,18],
+[-6,-4,-2,0,13],[-8,-5,-5,-2,7],[-5,-3,-2,-1,17],
+[2,-4,6,0,15],[5,-5,8,-2,10],[2,-3,4,-1,19]
 ];
+const BURJ_LIFT={shaft:[0,0],stops:[
+{name:'Lobby',x:0,y:1,z:1,yaw:Math.PI},
+{name:'At the Top · Levels 124–125',x:0,y:18,z:1,yaw:Math.PI},
+{name:'At the Top SKY · Level 148',x:0,y:23,z:1,yaw:Math.PI}
+]};
 const BURJ_STRIDE=21,BURJ_CENTER=10;
 const burjFootprint=new Uint8Array(BURJ_STRIDE*BURJ_STRIDE);
 for(const [x0,z0,x1,z1,top] of BURJ_MASS)for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++){
@@ -246,60 +252,111 @@ if(ax>=4&&ax<=8&&lz>=3&&lz<=9)return B.ARCH;
 if(ax<=2&&lz>=3)return ax===2?B.ARCH:B.PATH;
 return (lx+lz)%2===0?B.MARBLE:B.LIME;
 }
+if(ax===0&&lz===0&&y<=24)return B.AIR;
+if(ax===0&&lz===1&&y>=4&&y<=22&&(y<18||y>19))return B.LIMEP;
+if(y>=18&&y<=19&&lx===-3&&(lz===-2||lz===-1))return B.AIR;
+if(y>=17&&y<=18&&lx>=-6&&lx<=-4&&lz>=-3&&lz<=0){
+if(y===17)return B.MARBLE;
+if(lx===-6||lz===-3||lz===0)return B.GLASS;
+}
+if(y>=22&&y<=23&&ax<=2&&lz>=3&&lz<=4){
+if(y===22)return B.MARBLE;
+if(lz===4||ax===2)return B.GLASS;
+}
+if(y>=23&&y<=24&&ax<=1&&lz===2)return B.AIR;
 if(y>top)return y===1&&ax===3&&lz===9?B.LANTERN:-1;
 if(y>=28)return y===31?B.LANTERN:B.MARBLE;
-if(y<=3&&ax<=1&&lz>=4)return 0;
+if(y<=3&&ax<=1&&lz>=4)return B.AIR;
 const edge=burjFootprint[i-1]<y||burjFootprint[i+1]<y||
 (burjFootprint[i-BURJ_STRIDE]||0)<y||(burjFootprint[i+BURJ_STRIDE]||0)<y;
 if(y<=3){
 if(edge)return (lx%3===0&&lz%3===0)?B.MARBLE:B.GLASS;
 if(y===3&&ax===2&&lz>=-2&&lz<=3&&lz%3===0)return B.LANTERN;
-return 0;
+if(ax<=1&&lz<=0&&lz>=-1)return B.LIMEP;
+return B.AIR;
+}
+if((ax<=3&&az<=3&&y>=17&&y<=19)||(ax<=2&&az<=2&&y>=22&&y<=24)){
+const lower=y<=19,floor=lower?17:22,limit=lower?3:2;
+if(y===floor)return ax===2&&lz===0?B.LANTERN:B.MARBLE;
+if(ax===limit||az===limit)return (lx+lz)%4===0?B.LIMEP:B.GLASS;
+return ax<=1&&lz<=0&&lz>=-1?B.LIMEP:B.AIR;
 }
 if(y===top||y===4||y%5===0)return B.MARBLE;
 if(!edge)return B.STONE;
-return (lx+lz)%3===0?B.LIMEP:(lx-lz)%4===0?B.GLASS:B.TURQ;
+return (lx+lz)%3===0?B.LIMEP:(lx-lz)%4===0?B.TURQ:B.GLASS;
 }
 function silBurjKhalifa(l,add,pk,lod){
 add(-9,0,-10,9,0,10,2);
 for(let i=0;i<BURJ_MASS.length;i++){
 const [x0,z0,x1,z1,top]=BURJ_MASS[i];
-const bottom=i===0?1:i===1?22:i===2?25:i===3?28:1;
+const bottom=i===0?1:i===1?21:i===2?26:i===3?28:1;
 add(x0,bottom,z0,x1,top,z1,i===3?2:23);
 }
+if(!lod){add(-6,17,-3,-4,17,0,2);add(-2,22,3,2,22,4,2);add(-2,23,4,2,23,4,23)}
 pk.push([0,0,31]);
 }
+const ARAB_LIFT={shaft:[1,5],stops:[
+{name:'Atrium lobby',x:0,y:1,z:5,yaw:Math.PI},
+{name:'Skyview lounge',x:0,y:20,z:5,yaw:Math.PI},
+{name:'Helipad level',x:0,y:23,z:5,yaw:0}
+]};
 const BAA_W=[8,8,9,9,9,9,9,9,9,9,9,9,9,8,8,8,7,7,6,6,5,5,4,4,3,2,1];
 const BAA_EDGE=[-8,-9,-10,-11,-11,-12,-12,-12,-12,-12,-12,-11,-11,-11,-10,-10,-9,-8,-8,-7,-6,-5,-4,-3,-1,1,3];
+function burjArabLiftBlock(x,y,z){
+if(y<1||y>25)return -1;
+if(x===1&&z===5)return 0;
+if(x===0&&z===5){
+if(y===19||y===22)return B.MARBLE;
+if(ARAB_LIFT.stops.some(s=>y===s.y||y===s.y+1))return 0;
+return y%4===0?B.GOLD:B.GLASS;
+}
+if((x===2&&z===5)||(x===1&&(z===4||z===6)))return y%4===0?B.MARBLE:B.GLASS;
+return -1;
+}
 function burjAlArab(l,x,y,z){
-const ax=Math.abs(x),bridge=ax<=3&&z>=9,island=x*x*144+z*z*225<=32400;
+const ax=Math.abs(x),bridgeCenter=Math.max(0,Math.floor((z-9)*(z-9)/29)),bax=Math.abs(x-bridgeCenter);
+const bridge=z>=9&&bax<=3,island=x*x*144+z*z*225<=32400,terrace=z<=-12&&z>=-18&&ax<=Math.min(9,z+25);
 if(y<=0){
-if(bridge)return y===0?(ax===3?B.ARCH:B.PATH):ax===2&&z%5===0?B.STONE:B.WATER;
+if(bridge)return y===0?(bax===3?B.ARCH:B.PATH):bax===2&&z%5===0?B.STONE:B.WATER;
+if(terrace){if(y<0)return B.SANDSTONE;
+if(z>=-17&&z<=-14&&ax>=3&&ax<=7)return z===-17||z===-14||ax===3||ax===7?B.TURQ:B.WATER;
+return z===-18?B.ARCH:B.PATH}
 if(!island){if(ax>=15||z>=19||z<=-19)return -1;return y>=-1?B.WATER:B.SAND;}
 if(y<0)return B.SANDSTONE;
 if(x*x+z*z<=4)return B.WATER;
 if(x*x+z*z<=10)return B.TURQ;
-return z>=4&&ax<=2?B.PATH:((x+z)&3)===0?B.LIMEP:B.MARBLE;
+if(z>=4&&ax<=2)return ax===2?B.GOLD:B.PATH;
+return ((x+z)&3)===0?B.LIMEP:B.MARBLE;
 }
-if(bridge&&ax===3&&z>12&&z<20&&y===1)return z%4===0?B.LANTERN:B.LATTICE;
-const pad=z+13;
-if(y===21&&x*x+pad*pad<=16){
-if(x*x+pad*pad>=10)return B.MARBLE;
-return ax===1||ax===0&&pad===0?B.MARBLE:B.GREEN;
+const lift=burjArabLiftBlock(x,y,z);if(lift>=0)return lift;
+if(bridge&&bax===3&&z>12&&z<20&&y===1)return z%4===0?B.LANTERN:B.LATTICE;
+if(terrace&&z===-18&&ax%4===0&&y===1)return B.LANTERN;
+const pad=z+13,padR=x*x+pad*pad;
+if(y===22&&padR<=20){
+if(padR>=15)return B.GOLD;
+return ax===1&&Math.abs(pad)<=1||ax===0&&pad===0?B.MARBLE:B.GREEN;
 }
-if(ax<=1&&z>=-12&&z<=-5&&y===21)return B.MARBLE;
-if(z>=8&&z<=12&&ax<=4&&y>=19&&y<=22){
-if(y===19||y===22)return B.MARBLE;
-if(ax===4||z===12)return x%3===0?B.LIME:B.GLASS;
+if(z>=-11&&z<=4&&ax<=1&&y>=21&&y<=24){
+if(y===22||y===21&&z>=-9&&z%3===0)return B.MARBLE;
+if(y===23&&ax===1&&padR>20)return B.GLASS;
+if(y>=23)return 0;
+}
+if(z>=6&&z<=12&&ax<=4&&y>=19&&y<=22){
+if(y===19||y===22)return ax===4||z===12?B.MARBLE:B.LIMEP;
+if(ax===4||z===12)return x%3===0&&ax!==0?B.LIME:B.GLASS;
+if(y===20&&ax===2&&(z===8||z===10))return B.SHELF;
+if(y===20&&ax===3&&z%2)return B.CARPET;
+return 0;
 }
 if(y>=28)return ax===0&&z===5?(y===31?B.LANTERN:B.MARBLE):-1;
 if(y<=5&&z>=4&&z<=10&&ax<=4){
-if(y===5)return ax===4||z===10?B.MARBLE:B.LIMEP;
-if(ax===4&&z===9)return y===4?B.LANTERN:B.ARCH;
+if(y===5&&z>=8)return ax===4||z===10?B.MARBLE:B.LIMEP;
+if(ax===4&&z>=7&&z<=9)return y===4?B.LANTERN:y<=3?B.GLASS:B.ARCH;
+if(ax===3&&z>=7&&z<=9&&y===1)return B.BLUE;
 if(y<=4&&ax<=2)return 0;
 }
 if(z>=4&&z<=7&&ax<=1)return x===0&&z===7&&y<26&&y%5!==0?B.GLASS:B.MARBLE;
-if(ax===3&&z===2&&y<=10)return y%5===0?B.LANTERN:B.GOLD;
+if(ax===3&&z===2&&y<=17)return y%5===0?B.LANTERN:B.GOLD;
 const width=BAA_W[y-1],edge=BAA_EDGE[y-1];
 if(ax>width||z<edge||z>6)return -1;
 const sail=edge+Math.floor(ax*ax/(width*2));
@@ -307,21 +364,23 @@ if(z===sail){if(y%6===0||ax===width||ax===0)return B.MARBLE;return y%6===1?B.GLA
 if(z<sail)return -1;
 const wing=Math.max(2,Math.round(width*(6-z)/(6-edge)));
 if(ax===wing)return y%5===0?B.MARBLE:((y+z)%6===0?B.BLUE:B.GLASS);
-if(ax===wing+1&&ax<=width&&(y%6<2||Math.abs(z-2-y%8)<1))return B.MARBLE;
-if(ax===wing-1&&y%5===0&&z<3)return y%10===0?B.TURQ:B.BLUE;
+if(ax===wing+1&&ax<=width&&(y%6<2||Math.abs(z-(5-y*.55))<1))return B.MARBLE;
+if(ax>2&&ax<wing&&y%4===0&&z<3)return B.ARCH;
+if(ax===wing-1&&ax>2&&y%4===1&&y>2&&z<3)return y%8===1?B.TURQ:B.GLASS;
 if(y===26&&ax<=wing&&z>=sail)return B.MARBLE;
 return -1;
 }
 function silBurjAlArab(l,add,pk,lod){
-add(-13,0,-9,13,0,9,1);add(-3,0,8,3,0,20,1);
+add(-13,0,-9,13,0,9,1);add(-9,0,-18,9,0,-10,1);
+add(-3,0,8,3,0,14,1);add(-2,0,15,5,0,17,1);add(0,0,18,7,0,20,1);
 const step=lod?5:3;
 for(let y=1;y<=27;y+=step){
 const end=Math.min(27,y+step-1),at=(y+end-2)>>1,w=BAA_W[at],edge=BAA_EDGE[at];
 add(-w,y,edge,w,end,edge,2);add(-w,y,edge+1,w,end,3,4);
 }
-add(-1,1,4,1,27,7,2);add(0,28,5,0,31,5,2);
-add(-3,21,-16,3,21,-10,2);add(-1,21,-12,1,21,-5,2);
-add(-4,19,8,4,22,12,4);pk.push([0,5,31]);
+add(-1,1,4,2,27,7,2);add(0,28,5,0,31,5,2);
+add(-3,22,-16,3,22,-10,2);add(-1,22,-12,1,22,-5,2);
+add(-4,19,6,4,22,12,4);pk.push([0,5,31]);
 }
 const DOHA_MIA_TIERS=[
 [11,-13,10,5,23], [10,-13,9,10,21], [8,-13,6,15,17],
@@ -330,50 +389,111 @@ const DOHA_MIA_TIERS=[
 function dohaMiaTier(t,x,z){
 return x<=t[0]&&z>=t[1]&&z<=t[2]&&x+Math.abs(z-((t[1]+t[2])>>1))<=t[4];
 }
+function dohaMiaEdge(t,x,z){
+return !dohaMiaTier(t,x+1,z)||!dohaMiaTier(t,x,z-1)||!dohaMiaTier(t,x,z+1);
+}
+const DOHA_MIA_STEPS=new Int8Array(41*41);
+for(const [floor,pair,steps] of [
+[0,true,[[7,4,6],[6,5,6],[5,5,6],[4,5,6],[3,4,6]]],
+[5,false,[[2,4,5],[1,4,5],[0,4,5],[-1,4,5],[-2,4,5]]],
+[10,false,[[-3,4,5],[-4,4,5],[-5,4,5],[-6,4,5],[-7,4,5]]],
+[15,false,[[-8,3,4],[-7,2,3],[-6,2,3],[-5,2,3],[-4,2,3]]],
+[20,false,[[-3,4,4],[-2,4,4],[-1,4,4]]]
+])for(let i=0;i<steps.length;i++){
+const [z,left,right]=steps[i];
+for(let x=left;x<=right;x++){
+const k=(z+20)*41+20;DOHA_MIA_STEPS[k+x]=floor+i+1;
+if(pair)DOHA_MIA_STEPS[k-x]=floor+i+1;
+}
+}
+const DOHA_MIA_ROOMS=[
+[0,-9,-8,-5,-2,-7,'ceramic'],[0,5,-8,9,-2,7,'lantern'],
+[5,-8,-10,-4,-3,-6,'astrolabe'],[5,6,-10,9,-3,7,'folio'],
+[10,-6,-8,-3,-2,-5,'textile'],[15,-5,-7,-2,-2,-4,'ceramic'],
+[20,-3,-3,-1,0,-2,'folio']
+];
+function dohaMiaArtifact(kind,x,y,z){
+if(kind==='textile'&&z===0&&Math.abs(x)<=1&&y>=1&&y<=3)return x===0&&y===2?B.STAR:B.CARPET;
+if(kind==='folio'&&z===0&&Math.abs(x)<=1&&y>=1&&y<=2)return y===2&&x===0?B.GOLD:B.BLUE;
+if(z!==1)return -1;
+if(y===1&&(x===0||kind==='ceramic'&&Math.abs(x)===1))return B.LIMEP;
+if(kind==='ceramic'&&y===2&&Math.abs(x)<=1)return x===0?B.BLUE:B.TURQ;
+if(kind==='ceramic'&&y===3&&x===0)return B.TURQ;
+if(kind==='lantern'&&y===2&&x===0)return B.LANTERN;
+if(kind==='astrolabe'){
+if(y===2&&Math.abs(x)<=1)return x===0?B.LATTICE:B.GOLD;
+if(y===3&&x===0)return B.GOLD;
+}
+return -1;
+}
+function dohaMiaRoom(x,y,z){
+for(const [floor,west,north,east,south,door,kind] of DOHA_MIA_ROOMS){
+const dy=y-floor;
+if(dy<0||dy>3||x<west||x>east||z<north||z>south)continue;
+if(dy===0)return B.MARBLE;
+if(z===south&&x===door)return B.AIR;
+const artifact=dohaMiaArtifact(kind,x-door,dy,z-north);
+if(artifact>=0)return artifact;
+if(x===west||x===east||z===north||z===south)return dy===3&&z===south?B.LATTICE:B.LIMEP;
+return B.AIR;
+}
+return -1;
+}
 function dohaMia(l,lx,y,z){
-const x=Math.abs(lx+3);
+const px=lx+3,x=Math.abs(px);
 if(lx>=12&&lx<=18&&z>=-8&&z<=7){
 if(y===0)return B.LIMEP;
 if(y===5)return B.LIME;
 if(y>5)return -1;
 if(lx===12&&(z===-1||z===0)&&y<=3)return B.AIR;
 if(lx===12||lx===18||z===-8||z===7)return y>=2&&y<=3&&z%3!==0?B.LATTICE:B.LIME;
+const artifact=dohaMiaArtifact('lantern',lx-15,y,z+6);
+if(artifact>=0)return artifact;
 return B.AIR;
 }
-if(lx>=9&&lx<=11&&z>=-9&&z<=8)return y===0?B.ARCH:-1;
+if(lx>=9&&lx<=11&&z>=-9&&z<=8)return y===0?(z%4===0?B.STAR:B.ARCH):-1;
 if(z>=11&&x<=7){
 if(y!==0)return y===1&&x===7&&z%4===0?B.LANTERN:-1;
 if(x>=4&&x<=6&&z>=13&&z<=19)return x===5&&z>=14&&z<=18?B.WATER:B.LIMEP;
 return x===0&&z%3===0?B.STAR:B.PATH;
 }
 const n=y<=5?0:y<=10?1:y<=15?2:y<=20?3:y<=23?4:5,t=DOHA_MIA_TIERS[n];
-if(y>t[3]||!dohaMiaTier(t,x,z))return -1;
+if(y>t[3])return -1;
+if(!dohaMiaTier(t,x,z)){
+const terrace=y===21?DOHA_MIA_TIERS[3]:y===24?DOHA_MIA_TIERS[4]:null;
+if(terrace&&dohaMiaTier(terrace,x,z)&&dohaMiaEdge(terrace,x,z))return B.LATTICE;
+return -1;
+}
 if(y===0){
 if(x+Math.abs(z+3)<=4)return (x+z)%2===0?B.STAR:B.ARCH;
+if(z>=7&&z<=9&&x>=4&&x<=6)return x===5?B.PATH:B.LIMEP;
 return (lx+z)&1?B.MARBLE:B.LIME;
 }
-if(z===10&&x<=3&&y<=4)return B.AIR;
-if(z===-13&&x<=4&&y>=2&&y<=14)return x===0||y%4===0?B.LIMEP:B.GLASS;
+if((z===10&&x<=3&&y<=4)||(z===1&&(x===2||px===3)&&y>=21&&y<=22))return B.AIR;
+if(z===-13&&x<=4&&y>=1&&y<=15)return x===0||y%5===0?B.LIMEP:B.GLASS;
 if(n===5&&y===26)return x+Math.abs(z+4)<=1?B.GLASS:B.LIMEP;
-const edge=!dohaMiaTier(t,x+1,z)||!dohaMiaTier(t,x,z-1)||!dohaMiaTier(t,x,z+1);
-if(edge){
+const step=DOHA_MIA_STEPS[(z+20)*41+px+20];
+if(px===4&&z===-4&&y>=21&&y<=23)return B.AIR;
+if(step&&y>=step-1&&y<=step+3)return y<step?B.MARBLE:y===step?B.LIMEP:B.AIR;
+if(dohaMiaEdge(t,x,z)){
 if(y===t[3])return B.LIMEP;
 if(n===4&&z===1&&x===2&&y===22)return B.GLASS;
 if(n<=1&&x===t[0]&&z%4===0&&y%5>=2&&y%5<=3)return B.LATTICE;
 return B.LIME;
 }
-if(n===0&&x>=6&&x<=7&&z>=5&&z<=9&&y<=10-z)return B.LIMEP;
-if(y===5&&z===5&&x>=5)return B.MARBLE;
-if(y===6&&x===5&&z===5)return B.LATTICE;
+const room=dohaMiaRoom(px,y,z);
+if(room>=0)return room;
+const floor=y%5===0&&y<=20;
+const atrium=x<3&&z>-9&&z<2&&!(y===20&&z>=0);
+if(floor)return atrium?B.AIR:(x===3&&z>-9&&z<2?B.LIMEP:B.MARBLE);
+if(y%5===1&&y>=6&&y<=16&&x===3&&z>-9&&z<2&&!(px>0&&z<=-4&&y===16))return B.LATTICE;
 if(y===t[3]&&n<5){
 if(!dohaMiaTier(DOHA_MIA_TIERS[n+1],x,z))return B.LIME;
-if(n<3&&(x>=8-n||z<=-10+n))return B.MARBLE;
+return x+Math.abs(z+4)<=1?B.AIR:B.MARBLE;
 }
-if(y===17&&x+Math.abs(z+4)===4)return B.LANTERN;
+if(y===17&&x+Math.abs(z+4)===2)return B.LANTERN;
 if(y>=18&&y<=25&&x===0&&z===-4)return B.LATTICE;
-if(y===1&&x===8&&z%4===0)return B.LIMEP;
-if(y===2&&x===8&&z%4===0)return B.TURQ;
-if(y===4&&x===9&&z%4===0)return B.LANTERN;
+if(y%5===4&&y<=19&&x>=4&&z%4===0&&z>-12)return B.LANTERN;
 return B.AIR;
 }
 function silDohaMia(l,add,pk,lod){
@@ -392,6 +512,7 @@ pk.push([-3,-4,26]);
 }
 const PETRA_X=19,PETRA_Z=20,PETRA_W=PETRA_X*2+1;
 const petraCliff=new Uint8Array(PETRA_W*(PETRA_Z*2+1));
+const PETRA_COLUMNS=[-8,-5,-2,2,5,8];
 for(let z=-PETRA_Z;z<=PETRA_Z;z++)for(let x=-PETRA_X;x<=PETRA_X;x++){
 const ax=Math.abs(x),bend=Math.round(Math.sin(z*.36)*1.5);
 const gap=z<7?12:z<14?12-(z-7):5;
@@ -406,33 +527,41 @@ const ax=Math.abs(lx),az=Math.abs(lz);
 if(ax>PETRA_X||az>PETRA_Z||y<0||y>27)return -1;
 const rock=petraCliff[(lz+PETRA_Z)*PETRA_W+lx+PETRA_X];
 if(y===0)return ax<=3&&lz>=-5?B.PATH:rock?B.RROCK:B.SANDSTONE;
-if(y<=2&&ax<=12&&lz>=-5&&lz<=2-y)return B.ARCH;
-if(ax<=3&&lz>=-12&&lz<=-3&&y>=3&&y<=7&&(ax<=1||lz<=-7))return 0;
-if(ax<=11&&lz>=-5&&lz<=-1){
-if(y>=3&&y<=9){
-const col=Math.min(Math.abs(ax-2),Math.abs(ax-6),Math.abs(ax-10));
-if(lz===-5)return (ax===4||ax===8)&&y>=5&&y<=7?B.RROCK:B.SANDSTONE;
-if(y===3||y>=8){
-if(col<=1&&lz>=-3)return y===8?B.LIMEP:B.ARCH;
-}else if(col===0&&(lz===-2||lz===-3))return lz===-2?B.ARCH:B.SANDSTONE;
-if(lz===-4&&((ax===2&&y<=8)||(ax<=3&&y===8)))return B.ARCH;
+if(y<=2&&ax<=9&&lz>=-7&&lz<=2-y)return B.ARCH;
+if(ax<=3&&lz>=-12&&lz<=-3&&y>=3&&y<=8&&(ax<=1||lz<=-7))return 0;
+if(ax<=9&&lz>=-5&&lz<=-1){
+const col=Math.min(Math.abs(ax-2),Math.abs(ax-5),Math.abs(ax-8));
+if(y>=3&&y<=12){
+if(y===3||y===11||y===12){
+if(col<=1&&(lz===-3||col===0&&lz===-2))return y===11&&col!==0?B.LIMEP:B.ARCH;
+}else if(col===0&&(lz===-3||lz===-2))return lz===-2||y===6?B.ARCH:B.SANDSTONE;
+if(lz===-4){
+if(ax===2&&y<=9||ax<=2&&(y===9||y===10))return B.ARCH;
+if((ax===4||ax===7)&&y>=6&&y<=8)return B.SANDSTONE;
 }
-if(y===10||y===11)return y===10&&(lx%3===0)?B.LIMEP:B.ARCH;
-if(y>=12&&y<=16&&ax<=11-(y-12)*2){
-if(lz<=-3)return ax>=10-(y-12)*2?B.ARCH:B.SANDSTONE;
-if(y===12)return B.ARCH;
+if(lz===-5)return (ax>=3&&ax<=4||ax>=6&&ax<=7)&&y>=5&&y<=9?B.RROCK:B.SANDSTONE;
 }
-if(y>=14&&y<=18&&ax>=4&&ax<=10&&lz<=-3){
-if(ax===4||ax===10||y===18)return B.ARCH;
-if(lz===-5)return y===16&&ax===7?B.LIMEP:B.RROCK;
+if(y===13)return lz<=-2?(lz===-2&&ax%3===1?B.LIMEP:B.ARCH):-1;
+if(y===14)return B.ARCH;
+if(y>=15&&y<=18&&ax<=9-(y-15)*2){
+const edge=ax>=8-(y-15)*2;
+if(lz<=-3||edge&&lz===-2)return edge||ax<=1&&y===16?B.ARCH:B.SANDSTONE;
 }
-if(y>=19&&y<=22&&ax>=4+(y-19)*2&&ax<=11&&lz<=-3)return B.ARCH;
+if(y>=17&&y<=22&&ax>=4&&lz<=-3){
+if(y<=20&&(ax===4||ax===8))return y===20?B.LIMEP:B.ARCH;
+if(y===21||y===22&&ax>=6)return B.ARCH;
+if(lz===-5&&y<=20)return ax===6&&y>=18?B.ARCH:B.RROCK;
+}
 }
 if(ax<=3&&lz>=-5&&lz<=0){
-const circle=lx*lx+(lz+3)*(lz+3);
-if(y>=16&&y<=20&&circle<=(y===16||y===20?10:7))return circle>=5?B.ARCH:B.SANDSTONE;
-if(y>=21&&y<=23&&circle<=(24-y)*(24-y))return B.ARCH;
-if(lz===-3&&y>=24&&y<=25&&ax<=(y===24?1:0))return B.LIMEP;
+const ring=lx*lx+(lz+3)*(lz+3);
+if(y===16&&ring<=10||y===21&&ring<=9)return B.ARCH;
+if(y>=17&&y<=20&&ring<=7){
+if(ring>=4)return y===20?B.LIMEP:B.ARCH;
+if(lz<=-3||lx===0&&y<=19)return B.SANDSTONE;
+}
+if(y>=22&&y<=24&&ring<=(25-y)*(25-y))return B.ARCH;
+if(lz===-3&&y>=25&&y<=26&&ax<=(y===25?1:0))return B.LIMEP;
 }
 if(y<=rock)return (y+(lx>>2)-(lz>>2))%7===0?B.SANDSTONE:B.RROCK;
 return -1;
@@ -441,110 +570,131 @@ function silPetraTreasury(l,add,pk,lod){
 add(-19,0,-20,19,23,-6,0);
 add(-19,0,-14,-13,21,12,0);add(13,0,-14,19,22,12,0);
 add(-17,0,13,-5,17,20,0);add(5,0,13,17,18,20,0);
-add(-12,0,-5,12,2,0,7);
-add(-11,3,-5,11,11,-5,7);add(-11,10,-4,11,11,-1,1);
-add(-10,12,-5,10,12,-2,1);add(-7,13,-5,7,14,-3,7);add(-3,15,-5,3,16,-3,7);
-add(-10,14,-5,-4,20,-3,7);add(4,14,-5,10,20,-3,7);
-add(-2,16,-5,2,21,-1,1);add(-1,22,-4,1,23,-2,1);add(0,24,-3,0,25,-3,7);
-if(!lod)for(const x of[-10,-6,-2,2,6,10])add(x,3,-3,x,9,-2,1);
-pk.push([0,-3,25]);
+add(-9,0,-5,9,2,0,7);
+add(-9,3,-5,-2,12,-5,7);add(2,3,-5,9,12,-5,7);add(-9,13,-5,9,14,-1,1);
+add(-9,15,-5,9,15,-2,1);add(-7,16,-5,7,17,-3,7);add(-3,18,-5,3,18,-3,1);
+add(-9,17,-5,-4,21,-3,7);add(4,17,-5,9,21,-3,7);
+add(-9,22,-5,-6,22,-3,1);add(6,22,-5,9,22,-3,1);
+add(-2,16,-5,2,21,-1,1);add(-2,22,-5,2,23,-1,1);add(-1,24,-4,1,25,-2,1);add(0,26,-3,0,26,-3,7);
+if(!lod)for(const x of PETRA_COLUMNS)add(x,3,-3,x,12,-2,1);
+pk.push([0,-3,26]);
 }
-const KUWAIT_MAIN={x:-7,z:0,h:31},KUWAIT_WATER={x:7,z:-4,h:25},KUWAIT_LIGHT={x:14,z:6,h:19};
-function kuwaitBulb(x,y,z,r,view){
+const KUWAIT_MAIN={x:-7,z:0,h:31},KUWAIT_WATER={x:7,z:-4,h:25},KUWAIT_LIGHT={x:14,z:6,h:17};
+const KT_RESTAURANT=13,KT_LOOKOUT=21,KT_RESERVOIR=16;
+function kuwaitBulb(x,y,z,r,room){
 const d2=x*x+y*y+z*z;
 if(d2>r*r+.5)return -1;
-if(d2<(r-.8)*(r-.8))return view&&y===0?B.MARBLE:-1;
-if(view&&y===1)return B.GLASS;
-if(view&&y===0)return B.MARBLE;
-const tile=((x+z+((y&1)<<1)+y)%8+8)%8;
-return tile<2?B.GREEN:tile<5?B.TURQ:tile<7?B.BLUE:B.MARBLE;
+const shell=d2>=(r-.8)*(r-.8);
+if(room===2&&y>=-1&&y<=2){
+if(y===-1)return B.MARBLE;
+if(shell)return ((x+z+y)&3)===0?B.LIMEP:B.GLASS;
+if(x===0&&z===0)return B.LIMEP;
+return B.AIR;
+}
+if(room===1&&y>=0){
+if(y===0)return B.MARBLE;
+if(shell&&y<=2)return ((x-z)&3)===0?B.LIMEP:B.GLASS;
+if(!shell)return y===1&&x===0&&Math.abs(z)===2?B.OLIVE:B.AIR;
+}
+if(!shell)return B.STONE;
+const tile=(((x+2*z+3*y+(y&1)*4)%12)+12)%12;
+return tile<3?B.GREEN:tile<7?B.TURQ:tile<10?B.BLUE:B.LIMEP;
 }
 function kuwaitTowers(l,x,y,z){
 const mainX=x-KUWAIT_MAIN.x,mainZ=z-KUWAIT_MAIN.z,waterX=x-KUWAIT_WATER.x,waterZ=z-KUWAIT_WATER.z,lightX=x-KUWAIT_LIGHT.x,lightZ=z-KUWAIT_LIGHT.z;
-const plaza=Math.abs(x)<=18&&Math.abs(z)<=14&&Math.abs(x)+Math.abs(z)<29;
-const avenue=Math.abs(mainX)<=2&&z>=4;
-if(y<0){if(plaza||avenue)return B.ARCH;return -1;}
+const oval=x*x*196+z*z*400,plaza=oval<=78400,avenue=Math.abs(mainX)<=2&&z>=4;
+const mound=mainX*mainX+mainZ*mainZ,entrance=mainZ>=3&&Math.abs(mainX)<=2;
+if(y<0)return plaza||avenue?B.ARCH:-1;
 if(y===0){
 if(avenue)return B.PATH;
+if(mound<=18)return (mainX+mainZ)%3===0?B.LIMEP:B.SANDSTONE;
 if(!plaza)return -1;
-if(Math.abs(x+13)<=2&&z>=6&&z<=11||Math.abs(x-5)<=2&&z>=7&&z<=12)return B.WATER;
-return (x+z)%5===0?B.LIMEP:B.MARBLE;
+if(oval>59000)return oval>70600?B.LIMEP:B.PATH;
+if(Math.abs(x)<=2||Math.abs(z-4)<=1||mound<=48)return B.PATH;
+return B.GRASS;
 }
 if(y<=5&&Math.abs(mainX)<=3&&Math.abs(mainZ)<=3){
-if(y<=3&&Math.abs(mainX)<=1&&mainZ===3)return 0;
+if(y<=3&&Math.abs(mainX)<=1&&mainZ===3)return B.AIR;
 if(y===5)return B.MARBLE;
 if(Math.abs(mainX)===3||Math.abs(mainZ)===3)return y===1||y===4||Math.abs(mainX)===3&&Math.abs(mainZ)===3?B.MARBLE:B.GLASS;
-if(Math.abs(mainX)<=1&&mainZ===-2)return y===4?B.LANTERN:B.LIMEP;
+if(Math.abs(mainX)<=1&&mainZ===-2)return y===4?B.LANTERN:B.STONE;
+if(y===4&&Math.abs(mainX)===2)return B.LANTERN;
+return B.AIR;
 }
-if(y===4&&Math.abs(mainX)<=2&&mainZ>=4&&mainZ<=6)return mainZ===6?B.TURQ:B.MARBLE;
-if(y===1&&z>=7&&(mainX===-3||mainX===3)&&z%3===1)return B.LANTERN;
+if(y===1&&mound<=38&&!entrance)return B.LIMEP;
+if(y===2&&mound>=29&&mound<=38&&!entrance)return B.GLASS;
+if(y===4&&entrance&&mainZ<=6)return B.MARBLE;
+if(y===1&&plaza&&oval>=59500&&oval<66000&&(x+z)%7===0)return B.LANTERN;
 if(Math.abs(mainX)<=5&&Math.abs(mainZ)<=5){
-let bulb=kuwaitBulb(mainX,y-13,mainZ,5,true);if(bulb>=0)return bulb;
-bulb=kuwaitBulb(mainX,y-23,mainZ,3,true);if(bulb>=0)return bulb;
-const r=y<=16?2:y<=26?1:0;
-if(y>=5&&y<=KUWAIT_MAIN.h&&mainX*mainX+mainZ*mainZ<=r*r)return y===KUWAIT_MAIN.h?B.LANTERN:B.MARBLE;
+let bulb=kuwaitBulb(mainX,y-KT_RESTAURANT,mainZ,5,1);if(bulb>=0)return bulb;
+bulb=kuwaitBulb(mainX,y-KT_LOOKOUT,mainZ,3,2);if(bulb>=0)return bulb;
+const r=y<=8?2.3:y<=15?1.6:y<=25?1:0;
+if(y>=5&&y<=KUWAIT_MAIN.h&&mound<=r*r)return y===KUWAIT_MAIN.h?B.STONE:B.MARBLE;
 }
 if(Math.abs(waterX)<=4&&Math.abs(waterZ)<=4){
-const bulb=kuwaitBulb(waterX,y-16,waterZ,4,false);if(bulb>=0)return bulb;
-const r=y<=15?2:y<=21?1:0;
-if(y<=KUWAIT_WATER.h&&waterX*waterX+waterZ*waterZ<=r*r)return B.MARBLE;
+const bulb=kuwaitBulb(waterX,y-KT_RESERVOIR,waterZ,4,0);if(bulb>=0)return bulb;
+const r=y<=8?2:y<=15?1.5:y<=21?1:0;
+if(y<=KUWAIT_WATER.h&&waterX*waterX+waterZ*waterZ<=r*r)return y===KUWAIT_WATER.h?B.STONE:B.MARBLE;
 }
-if(y===8&&Math.abs(lightX)+Math.abs(lightZ)===1)return B.LANTERN;
-if(y<=KUWAIT_LIGHT.h&&Math.abs(lightX)+Math.abs(lightZ)<=(y<=7?1:0))return y===KUWAIT_LIGHT.h?B.LANTERN:B.MARBLE;
+const lamp=Math.abs(lightX)+Math.abs(lightZ);
+if(y===8&&lamp===1)return B.LANTERN;
+if(y<=KUWAIT_LIGHT.h&&lamp<=(y<=8?1:0))return y===KUWAIT_LIGHT.h?B.STONE:B.MARBLE;
 return -1;
 }
 function silKuwaitTowers(l,add,pk,lod){
-add(-17,0,-12,17,0,12,2);add(-9,0,13,-5,0,15,1);
+add(-16,0,-8,16,0,8,8);add(-10,0,-13,10,0,13,8);add(-9,0,7,-5,0,15,1);
 const shaft=(p,y0,y1,r)=>add(p.x-r,y0,p.z-r,p.x+r,y1,p.z+r,2);
-const sphere=(p,y,r)=>{
-if(lod){add(p.x-r,y-2,p.z-r,p.x+r,y+2,p.z+r,5);return;}
+const sphere=(p,y,r,glass)=>{
+if(lod){add(p.x-r,y-2,p.z-r,p.x+r,y+2,p.z+r,glass?4:5);return;}
 const shoulder=r-1,crown=r-2;
 add(p.x-crown,y-r,p.z-crown,p.x+crown,y-r+1,p.z+crown,4);
 if(r>=4)add(p.x-shoulder,y-r+2,p.z-shoulder,p.x+shoulder,y-2,p.z+shoulder,5);
-add(p.x-r,y-1,p.z-r,p.x+r,y+1,p.z+r,5);
+add(p.x-r,y-1,p.z-r,p.x+r,y+1,p.z+r,glass?4:5);
 if(r>=4)add(p.x-shoulder,y+2,p.z-shoulder,p.x+shoulder,y+r-2,p.z+shoulder,5);
 add(p.x-crown,y+r-1,p.z-crown,p.x+crown,y+r,p.z+crown,4);
 };
 add(-10,1,-3,-4,5,3,2);
-shaft(KUWAIT_MAIN,6,16,2);shaft(KUWAIT_MAIN,17,26,1);shaft(KUWAIT_MAIN,27,31,0);
-shaft(KUWAIT_WATER,1,15,2);shaft(KUWAIT_WATER,16,21,1);shaft(KUWAIT_WATER,22,25,0);
-shaft(KUWAIT_LIGHT,1,7,1);shaft(KUWAIT_LIGHT,8,19,0);
-sphere(KUWAIT_MAIN,13,5);sphere(KUWAIT_MAIN,23,3);sphere(KUWAIT_WATER,16,4);
+shaft(KUWAIT_MAIN,6,8,2);shaft(KUWAIT_MAIN,9,25,1);shaft(KUWAIT_MAIN,26,31,0);
+shaft(KUWAIT_WATER,1,8,2);shaft(KUWAIT_WATER,9,21,1);shaft(KUWAIT_WATER,22,25,0);
+shaft(KUWAIT_LIGHT,1,8,1);shaft(KUWAIT_LIGHT,9,17,0);
+sphere(KUWAIT_MAIN,KT_RESTAURANT,5,false);sphere(KUWAIT_MAIN,KT_LOOKOUT,3,true);sphere(KUWAIT_WATER,KT_RESERVOIR,4,false);
 for(const p of [KUWAIT_MAIN,KUWAIT_WATER,KUWAIT_LIGHT])pk.push([p.x,p.z,p.h]);
 }
 const HEGRA_ROCK=[
-[-11,-10,11,4,4],[-10,-10,10,4,13],[-10,-9,9,4,18],
-[-9,-8,7,4,21],[-8,-7,5,3,23],[-6,-6,2,1,24]
+[-10,-11,9,6,3],[-9,-11,8,5,9],[-9,-10,8,5,15],
+[-8,-9,8,5,20],[-8,-8,8,5,22],[-7,-7,8,4,24]
 ];
 function hegraTomb(l,x,y,z){
 const ax=Math.abs(x);
 if(y===0){
-if(z>=8&&z<=15&&ax<=3+(z>=12?2:0))return B.PATH;
-if(ax<=11&&z>=-11&&z<8)return B.SAND;
+if(z>=8&&z<=15&&ax<=3+(z>=12?2:0))return (x*3+z)%7===0?B.SANDSTONE:B.SAND;
+if(ax<=11&&z>=-12&&z<8)return B.SAND;
 return -1;
 }
-if(y>=4&&y<=23&&z>=5&&z<=7){
-if(y<=9&&ax<=1)return B.AIR;
-if(y<=9&&ax===2&&z===5)return y<=5?B.RROCK:B.SANDSTONE;
-if(y===9&&ax<=3&&z===6||y===10&&ax<=2&&z===6||y===11&&ax<=1&&z===6)return B.ARCH;
-if(y>=7&&y<=12&&(ax===3||ax===7)&&z===6)return y===12?B.ARCH:B.SANDSTONE;
-if(y===12&&z===5&&(ax===4||ax===6))return B.ARCH;
-if(y===13&&ax<=7&&z<=6||y===14&&ax<=8)return B.ARCH;
+if(z>=7&&z<=8&&ax<=5&&y<=9-z)return y===9-z?B.SANDSTONE:B.RROCK;
+if(y>=4&&y<=24&&z>=5&&z<=7){
+if(y<=8&&ax<=1)return B.AIR;
+if(y<=8&&ax===2&&z===5)return y<=5?B.RROCK:B.SANDSTONE;
+if(z===6&&(y===9&&ax<=3||y===10&&ax<=2||y===11&&ax<=1))return B.ARCH;
+if(z===6&&y===10&&ax===3||z===6&&y===12&&ax===0)return B.SANDSTONE;
+if(z===5&&y>=7&&y<=11&&(ax===3||ax===7))return y===7?B.RROCK:B.SANDSTONE;
+if(y===12&&z===6&&(ax===3||ax>=6&&ax<=8))return B.ARCH;
+if(y===13&&ax<=7&&z<=6||y===14&&ax<=8&&z<=6)return y===13&&z===6?B.LIME:B.ARCH;
 if(y>=15&&y<=16&&ax<=7&&z===5)return B.SANDSTONE;
-if(y===17&&ax<=8&&z<=6||y===18&&ax<=8)return B.ARCH;
-if(y>=19&&ax>=2&&ax<=8&&z<=6&&y<=18+Math.ceil((ax-1)*.62))return B.SANDSTONE;
-if(y<=6&&ax>=2&&ax<=7&&z===5&&(y<=5||ax>=5))return B.RROCK;
+if(y===17&&ax<=7&&z<=6||y===18&&ax<=8)return y===18&&z===7?B.LIME:B.ARCH;
+if(y>=19&&ax<=8&&z<=6&&ax>=(y-18)*2-1)return y===19?B.ARCH:B.SANDSTONE;
+if(z===5&&y>=19&&ax<=8)return B.RROCK;
+if(y<=7&&ax>=2&&ax<=8&&z===5)return (x+y)%5===0?B.SANDSTONE:B.RROCK;
 }
-if(y>24||z>4)return -1;
-const tier=y<=4?0:y<=13?1:y<=18?2:y<=21?3:y<=23?4:5;
+if(y>24||z>6)return -1;
+const tier=y<=3?0:y<=9?1:y<=15?2:y<=20?3:y<=22?4:5;
 const [left,back,right,front]=HEGRA_ROCK[tier];
 if(x<left||x>right||z<back||z>front)return -1;
-const corner=Math.min(x-left,right-x)+Math.min(z-back,front-z);
-if(corner<2+(tier>=3?0:1))return -1;
-if(ax<=1&&y>=5&&y<=8&&z>=2)return B.AIR;
-if(z===1&&ax<=1&&y>=5&&y<=8)return B.RROCK;
-const layer=(y+(x+z>2?1:0))%7;
-return layer<=1||y<4&&ax>6?B.RROCK:B.SANDSTONE;
+const corner=Math.min(x-left,right-x)+Math.min(z-back,front-z),carved=z===front&&y>=4&&y<=22&&ax<=8;
+if(!carved&&(corner<2+(tier<2?1:0)||y===24&&(x<-4||z<-5||x>2&&z>0)))return -1;
+if(ax<=1&&y>=4&&y<=8&&z>=2)return B.AIR;
+const layer=(y+Math.floor((x+z+23)/7))%7;
+return layer<=1||y<5&&ax>4||z===1&&ax<=1&&y<=8?B.RROCK:B.SANDSTONE;
 }
 function silHegraTomb(l,add,pk,lod){
 for(let i=0;i<HEGRA_ROCK.length;i++){
@@ -552,11 +702,12 @@ const [left,back,right,front,top]=HEGRA_ROCK[i],bottom=i?HEGRA_ROCK[i-1][4]+1:0;
 add(left,bottom,back+2,right,top,front-2,0);
 if(!lod)add(left+2,bottom,back,right-2,top,front,0);
 }
-add(-8,13,5,8,14,7,7);add(-7,15,5,7,16,5,0);add(-8,17,5,8,18,7,7);
+add(-5,1,4,5,2,7,0);add(-8,13,5,8,14,6,7);add(-7,15,5,7,16,5,0);add(-8,17,5,8,18,7,7);
 if(!lod){
-for(const dx of[-7,-3,3,7])add(dx,7,5,dx,12,6,7);
+add(-3,9,5,3,9,6,7);add(-2,10,5,2,10,6,7);add(-1,11,5,1,11,6,7);
+for(const dx of[-7,-3,3,7])add(dx,9,5,dx,12,6,7);
 for(const side of[-1,1])for(let step=0;step<4;step++){
-const a=(2+step*2)*side,b=(step===3?8:3+step*2)*side;
+const a=(1+step*2)*side,b=(step===3?8:2+step*2)*side;
 add(Math.min(a,b),19,5,Math.max(a,b),19+step,6,7);
 }
 }
@@ -613,10 +764,14 @@ return s===0&&y===bal+8?B.LANTERN:-1;
 function mosque(l,lx,y,lz){
 const P=l.P,hw=P.hw,wh=P.wh,ax=Math.abs(lx);let r;
 for(const m of P.mn){r=minaret(lx-m[0]*(hw+3),y,lz-m[1],P);if(r>=0)return r}
+if(P.white&&ax>=hw+2&&ax<=hw+5&&lz>=P.hb+1&&lz<P.fw){
+if(y===0)return ax===hw+3||ax===hw+4?B.WATER:B.MARBLE;
+if(y===-1)return B.TURQ;
+}
 const inHall=ax<=hw&&lz>=P.hb&&lz<=P.hf,dz=lz-P.zc,rr=lx*lx+dz*dz;
 if(inHall){
 const edge=ax===hw||lz===P.hb||lz===P.hf;
-if(y===0)return edge?B.ARCH:(ax===hw-1||lz===P.hb+1||lz===P.hf-1)?B.MARBLE:B.CARPET;
+if(y===0)return edge?B.ARCH:(ax===hw-1||lz===P.hb+1||lz===P.hf-1)?B.MARBLE:P.white&&(ax===0||((lz-P.hb)%4===0&&ax%3===0))?B.TURQ:B.CARPET;
 if(y<wh){
 if(edge){
 if(lz===P.hf){r=portal(ax,y);if(r>=0)return r}
@@ -645,13 +800,18 @@ return -1;
 }
 if(ax>hw||lz<=P.hf)return -1;
 if(lz>P.fw){return y===0&&ax<=3?B.PATH:-1}
+if(P.white){
+const col=((lz-P.hf)%5+5)%5,near=Math.min(col,5-col),petal=Math.abs(ax-4);
+if(y===0){if(ax===hw||lz===P.fw)return B.ARCH;if(petal+near===1)return B.TURQ;if(petal===0&&near===0)return B.GOLD;if(petal===2&&near===0)return B.GREEN;return B.MARBLE}
+if(y>=5&&ax>=hw-1&&lz<P.fw){if(y===8&&ax===hw&&col===0)return B.GOLD;const cap=dome(ax-hw,y-5,near,1.7,B.MARBLE,B.MARBLE);if(cap>=0)return cap}
+}
 if(y===0){
 const fz=(P.hf+1+P.fw)>>1,fx=Math.abs(lx),fd=Math.abs(lz-fz);
 if(Math.max(fx,fd)<=1)return B.WATER;if(Math.max(fx,fd)===2&&fx+fd<4)return B.ARCH;
 if(ax===hw||lz===P.fw)return B.ARCH;
 return (lx&3)===0&&(lz&3)===0?B.STAR:(lx&3)===2&&(lz&3)===2?B.BLUE:B.MARBLE}
 const fz=(P.hf+1+P.fw)>>1,fx=Math.abs(lx),fd=Math.abs(lz-fz);
-if(Math.max(fx,fd)<=2&&!(fx===2&&fd===2)){
+if(!P.white&&Math.max(fx,fd)<=2&&!(fx===2&&fd===2)){
 if(Math.max(fx,fd)===2)return y===1?B.ARCH:-1;
 if(fx===0&&fd===0)return y<=3?B.ARCH:y===4||y===5?B.WATER:-1;
 return -1}
@@ -667,12 +827,12 @@ return y===5&&(lz-P.hf)%6===1?B.LANTERN:-1}
 return -1;
 }
 const MQ=[
-{hw:8,cd:14,wh:9,dr:7,dh:2,dome:B.GOLD,acc:B.GOLD,mh:32,sd:1,mn:[[-1,0],[1,0],[-1,1],[1,1]]},
+{hw:8,cd:14,wh:9,dr:7,dh:2,dome:B.MARBLE,acc:B.MARBLE,mh:32,sd:1,white:true,ymin:-1,mn:[[-1,0],[1,0],[-1,1],[1,1]]},
 {hw:6,cd:9,wh:8,dr:5,dh:2,dome:B.BLUE,acc:B.TURQ,mh:24,sd:0,mn:[[-1,0],[1,0]]},
 {hw:4,cd:6,wh:6,dr:3,dh:1,dome:B.TURQ,acc:B.BLUE,mh:18,sd:0,mn:[[1,0]]},
 {hw:5,cd:8,wh:7,dr:4,dh:2,dome:B.GREEN,acc:B.GOLD,mh:22,sd:0,mn:[[-1,0],[1,1]]}];
 for(const P of MQ){P.hx=P.hw+5;P.hz=Math.ceil((2*P.hw+P.cd+5)/2);P.hb=-P.hz+1;P.zc=P.hb+P.hw;P.hf=P.hb+2*P.hw;P.fw=P.hf+P.cd;P.h=Math.max(P.mh,P.wh+P.dh+P.dr+5);P.top=P.mh-1;
-P.mn=P.mn.map(m=>[m[0],m[1]?P.hb+1:P.hf])}
+P.mn=P.mn.map(m=>[m[0],m[1]?P.hb+1:(P.white?P.fw-1:P.hf)])}
 function charbagh(l,lx,y,lz){
 const ax=Math.abs(lx),az=Math.abs(lz),m=Math.max(ax,az);
 if(m===17){
@@ -1036,7 +1196,10 @@ const sb=v[(top<<8)|i];if(sb===B.LEAVES||sb===B.WOOD)continue;
 v[((ty+1)<<8)|i]=B.CHEST;if(ty+1>c.my)c.my=ty+1;
 }
 genSigns(x0,z0);genPortals(x0,z0);genMachinePost(x0,z0);
-if(!c.pure)for(const mp of [bedits.get(c.key),edits.get(c.key)])if(mp)for(const [i,b] of mp){v[i]=b;const y=i>>8;if(b&&y>c.my)c.my=y}
+if(!c.pure)for(const mp of [bedits.get(c.key),edits.get(c.key)])if(mp)for(const [i,b] of mp){
+const y=i>>8;if(liftProtected(x0+(i&15),y,z0+((i>>4)&15)))continue;
+v[i]=b;if(b&&y>c.my)c.my=y;
+}
 for(let y=1;y<H-1;y++){const o=y<<8;for(let i=0;i<256;i++)if(v[o+i]===B.CHEST&&c.chests.length<8)c.chests.push([x0+(i&15),y,z0+(i>>4)])}
 gc=null;
 }
@@ -1047,6 +1210,10 @@ const EXP=[[0,-1,-17],[0,-1,-6],[0,-1,5],[0,1,-17],[0,1,-6],[0,1,5],[1,-1,-17],[
 [2,-1,-18],[2,-1,-11],[2,-1,-4],[2,-1,3],[2,1,-17],[2,1,-8],[2,1,1],[3,-1,-18],[3,-1,-11],[3,-1,-4],[3,-1,3],[3,1,-17],[3,1,-8],[3,1,1]];
 const EXK=new Map();EXP.forEach((e,i)=>EXK.set(e[0]*1000+(e[1]>0?200:0)+e[2]+100,i));
 const exAt=(f,mx,mz)=>{const v=EXK.get(f*1000+(mx>0?200:0)+mz+100);return v===undefined?-1:v};
+function galleryDivider(f,mx,mz){
+if(f<2)return mz===-12||mz===0;
+return mx<0?(mz===-15||mz===-8||mz===-1):(mz===-13||mz===-4);
+}
 const PLAQUE={mx:0,mz:15};
 function palmB(dx,y,dz,th){
 const a=dx<0?-dx:dx,b=dz<0?-dz:dz;
@@ -1139,11 +1306,18 @@ case 5:{
 if(mz===11){ /* wall between the galleries and the south hall */
 if(f===0){if(ax<=4&&k<=4)return 0;}else if(ax<=1&&k<=4)return 0;
 return k===5?B.LIMEP:B.LIME}
-if(ax===11&&mz<=10){const dz=mz+6,a=dz<0?-dz:dz;if(a<=1&&(k<=3||(a===0&&k===4)))return 0;return k===5||k===4&&a<=1?B.LIMEP:(k===3&&((mz+22)%6===0||(mz+22)%6===1))?B.LATTICE:B.LIME}
+if(ax===11&&mz<=10){
+const middle=exAt(f,mx,mz)>=0,side=exAt(f,mx,mz-1)>=0||exAt(f,mx,mz+1)>=0;
+if((middle||side)&&(k<=3||middle&&k===4))return 0;
+if(middle&&k===5)return B.LANTERN;
+return k===5||k===4&&side?B.LIMEP:B.LIME;
+}
 if(ax===11&&mz>=12&&mz<=14&&k<=4)return 0;
+if(ax===11&&mz===15&&k===2)return B.LANTERN;
 return B.LIME}
 case 6:{
 if(ax===X){const e=exAt(f,mx,mz);if(e>=0)return k===1?B.LIMEP:k===2?B.GLASS:k===5&&0?B.LANTERN:-1}
+if(galleryDivider(f,mx,mz))return k===5?B.LIMEP:B.LIME;
 if(k===5&&lantOn(ax,mz))return B.LANTERN;
 if(ax===12&&mz===-6)return -1;
 return -1}
@@ -1159,14 +1333,14 @@ default:return B.LIME;
 function mCore(ax,mz,y){
 const v=ax-12,u=mz-12,r=y%6;
 if(y===0)return B.LIME;
-if(y===24)return v>=2&&v<=3?-1:B.LIME;
-if(v===0)return r===0?B.LIME:-1;
+if(y===24)return u>=2&&v>=2&&v<=4?-1:B.LIMEP;
+if(v===0)return r===0?B.LIMEP:-1;
 if(v<=3){
-if(u<2)return r===v?B.LIME:-1;
-if(v===1)return r===0?B.LIME:-1;
-return r===7-v?B.LIME:-1;
+if(u<2)return r===v?B.ARCH:-1;
+if(v===1)return r===0?B.LIMEP:-1;
+return r===7-v?B.ARCH:-1;
 }
-return r===3?B.LIME:-1;
+return r===3?B.LIMEP:v===6&&r===5?B.LANTERN:-1;
 }
 function planter(ax,mz,x0,z0){return ax>=x0-1&&ax<=x0+1&&mz>=z0-1&&mz<=z0+1}
 function mTop(mx,y,mz,ax){
@@ -1220,11 +1394,12 @@ if(b>=a)add(cx-w,yb+a,cz-w,cx+w,yb+b,cz+w,mat)}
 }
 function silMosque(l,add,pk,lod){
 const P=l.P,hw=P.hw,wh=P.wh,zc=P.zc,dr=P.dr,db=wh+P.dh+1;
-add(-hw,0,P.hb,hw,wh,P.hf,7);
+add(-hw,0,P.hb,hw,wh,P.hf,P.white?2:7);
 add(-dr,wh+1,zc-dr,dr,wh+P.dh,zc+dr,1);
 domeRings(add,0,zc,dr,db,P.dome,lod?2:3);
 add(0,db+dr+1,zc,0,db+dr+3,zc,3);pk.push([0,zc,db+dr+3]);
-if(P.sd){const s=hw-3;for(const a of[-s,s])for(const b of[zc-s,zc+s])domeRings(add,a,b,3,wh+1,B.GOLD===P.dome?3:3,lod?1:2)}
+if(P.sd){const s=hw-3;for(const a of[-s,s])for(const b of[zc-s,zc+s]){domeRings(add,a,b,3,wh+1,P.dome,lod?1:2);add(a,wh+5,b,a,wh+5,b,3)}}
+if(P.white&&!lod)for(const x of[-hw,hw])for(let z=P.hf+5;z<P.fw;z+=5)domeRings(add,x,z,1.7,5,2,1);
 add(-hw,0,P.fw+1,hw,0,l.o&1?l.ex:l.ez,7);add(-hw,0,P.hf+1,-hw,4,P.fw,7);add(hw,0,P.hf+1,hw,4,P.fw,7);add(-hw,0,P.fw,hw,5,P.fw,7);
 const bal=P.mh-9;
 for(const m of P.mn){const cx=m[0]*(hw+3),cz=m[1];
@@ -1256,7 +1431,7 @@ A(-28,0,-28,28,0,28,2);A(-5,0,29,5,0,88,2);A(-25,1,-25,25,5,25,1);A(-23,6,-23,23
 A(-9,25,-14,9,27,-2,1);A(-6,25,-17,6,27,1,1);A(-7,28,-13,7,29,-3,1);A(-5,28,-15,5,29,-1,1);
 A(-5,30,-11,5,30,-5,1);A(-3,30,-13,3,30,-3,1);A(-2,31,-10,2,31,-6,3);pk.push([0,-8-MZC,31]);
 }
-const BMAT={11:4,23:5,12:6,14:3};
+const BMAT={10:2,11:4,23:5,12:6,14:3};
 const SILF={mosque:silMosque,charbagh:silCharbagh,village:silVillage,caravan:silCaravan,museum:silMuseum,
 burj:silBurjKhalifa,sail:silBurjAlArab,dohaMia:silDohaMia,petra:silPetraTreasury,kuwait:silKuwaitTowers,hegra:silHegraTomb};
 const isIslamic=l=>!!SILF[l.t];
@@ -1369,7 +1544,7 @@ worldDirty=true;queueSave();
 }
 function unloadAll(){while(loaded.length)unloadChunk(loaded[loaded.length-1]);qList.length=0;qPos=0;qCx=-9999}
 function setBlock(x,y,z,b,who){
-if(!inb(x,y,z)||y>=H-1)return false;
+if(!inb(x,y,z)||y>=H-1||liftProtected(x,y,z))return false;
 const k=(x>>4)+(z>>4)*NC,li=(y<<8)|((z&15)<<4)|(x&15),bot=who===1;
 if(!bot){const bm=bedits.get(k);if(bm&&bm.has(li)){bm.delete(li);PERSIST.botDirty=true}}
 const mp=bot?bedits:edits;let m=mp.get(k);if(!m){m=new Map();mp.set(k,m)}m.set(li,b);if(!bot){PERSIST.dirty.add(k);PERSIST.cnt++}
@@ -1777,6 +1952,7 @@ const player={x:0,y:0,z:0,vx:0,vy:0,vz:0,yaw:-Math.PI/2,pitch:-.2,ground:false,w
 const HALF=.3, HEIGHT=1.8;
 function solidAt(x,y,z){
 if(x<0||x>=WX||z<0||z>=WZ||y<0)return true;if(y>=H)return false;
+if(liftShaftSolid(x,y,z))return true;
 const c=chunkAt(x>>4,z>>4);if(!c||c.st!==2)return true;
 return DEFS[c.v[(y<<8)|((z&15)<<4)|(x&15)]].solid;
 }
@@ -2274,7 +2450,8 @@ p.fig={x:0,y:0,z:0,yaw:0,ph:0,leg:0,arm:0,st:BS.WANDER,look};HARAM_CROWD.push(p)
 const tm=performance.now()*.001,lim2=farFog*farFog*1.1,eye=cam.e,fw=cam.fw,base=l.y0+1;
 const k={x:l.x+.5,y:l.y0+4.5,z:l.z+.5,yaw:0};
 if(botN+36*52<botGeo.length/7){part(k,0,0,0,3.54,3.54,3.54,[.055,.055,.055]);
-const band=l.y0+5.4,gold=[.83,.64,.22],dark=[.5,.33,.1];
+const band=l.y0+5.4,gold=[.83,.64,.22],dark=[.5,.33,.1],foot=[.73,.71,.65],low=base-k.y+.09;
+part(k,0,low,3.52,3.63,.09,.18,foot);part(k,3.52,low,0,.18,.09,3.52,foot);part(k,-3.52,low,0,.18,.09,3.52,foot);
 part(k,0,band-k.y,-3.56,3.55,.12,.025,gold);part(k,0,band-k.y,3.56,3.55,.12,.025,gold);part(k,3.56,band-k.y,0,.025,.12,3.55,gold);part(k,-3.56,band-k.y,0,.025,.12,3.55,gold);
 const door={x:k.x+3.57,y:base+1.5,z:k.z,yaw:0};part(door,0,1.35,0,.035,.87,.58,dark);part(door,0,1.35,-.015,.04,.76,.47,gold);
 const stone={x:k.x+3.58,y:base+.48,z:k.z+3.53,yaw:0};part(stone,0,0,0,.23,.24,.065,[.76,.76,.72]);part(stone,0,0,-.045,.17,.18,.035,[.008,.008,.008]);
@@ -2360,7 +2537,7 @@ if((b.x-cam.e[0])*cam.fw[0]+(b.y+1-cam.e[1])*cam.fw[1]+(b.z-cam.e[2])*cam.fw[2]<
 drawBotFig(b);
 }
 haramDraw();
-gzDraw();machinePostDraw();
+gzDraw();machinePostDraw();liftDraw();
 }
 function botPick(o,d){
 let best=null,bt=1e9;
@@ -2909,7 +3086,7 @@ function progObj(){
 const blocks=countBlocks();
 SV.sum={stars:S.stars,mission:Math.min(S.mission+1,MISSIONS.length),blocks,rank:rankOf(S.stars)};
 return{v:4,stars:S.stars,mission:S.mission,unlocked:S.unlocked,skills:S.skills,settings:S.settings,sel:S.sel,mode:S.mode,
-pos:(playing||glide)?[player.x,player.y,player.z,player.yaw,player.pitch]:(SV.pos||null),day:(playing||glide)?dayT:(SV.dayKeep===undefined?dayT:SV.dayKeep),playT:Math.floor(S.playT),act:Math.floor(activeSec),
+pos:(playing||glide)?(liftSavePos()||[player.x,player.y,player.z,player.yaw,player.pitch]):(SV.pos||null),day:(playing||glide)?dayT:(SV.dayKeep===undefined?dayT:SV.dayKeep),playT:Math.floor(S.playT),act:Math.floor(activeSec),
 pass:S.pass,passFl:S.passFl,title:S.title,gz:S.gz,q:S.q,bd:botSaveState(),sum:SV.sum,idb:PERSIST.ok?1:0,ts:Date.now()};
 }
 function saveProg(){if(SV.importing||SV.writer!==true)return false;try{localStorage.setItem(PROG_KEY,JSON.stringify(progObj()));return true}catch(e){return false}}
@@ -3105,6 +3282,7 @@ if(SV.acc>=15){SV.acc=0;if(SV.changed||Math.hypot(player.x-SV.px,player.z-SV.pz)
 }
 function restorePos(){
 const p=SV.pos;if(!p)return false;
+if(liftRestorePos(p))return true;
 const ok=placeSafe(p[0],p[2],p[3],clamp(p[4],-1.45,1.45),p[1]);
 if(!ok)spawnPlayer();
 return ok;
@@ -3721,6 +3899,73 @@ part(b,0,v,.42,.12,.09,.24,MG_BLACK,p,v);
 part(b,0,1.19,.04,.055,.18,.07,MG_BLACK,p,v);
 part(b,0,1.67,-.1,.045,.05,.07,MG_BLACK,p,v);
 }
+const LIFT_SITES=[['burj',BURJ_LIFT],['sail',ARAB_LIFT]].map(([type,model])=>{
+const l=lmOf(type),xz=(x,z)=>{const p=[0,0];lm2w(l,x,z,p);return{x:p[0]+.5,z:p[1]+.5}};
+return{name:lmName(l),type,shaft:xz(...model.shaft),stops:model.stops.map(p=>({...p,...xz(p.x,p.z),y:l.y0+p.y,yaw:p.yaw-l.o*Math.PI/2}))};
+});
+const LIFT_SHAFT_CELLS=new Map(),LIFT_RESERVED=new Set();
+for(const e of LIFT_SITES){
+const x=Math.floor(e.shaft.x),z=Math.floor(e.shaft.z),lo=e.stops[0].y,hi=e.stops[e.stops.length-1].y+1;
+LIFT_SHAFT_CELLS.set(x+z*WX,[lo,hi]);
+for(let y=lo;y<=hi;y++)LIFT_RESERVED.add(gkey(x,y,z));
+for(const p of e.stops)for(let y=p.y-1;y<=p.y+1;y++)LIFT_RESERVED.add(gkey(Math.floor(p.x),y,Math.floor(p.z)));
+}
+function liftShaftSolid(x,y,z){const h=LIFT_SHAFT_CELLS.get(x+z*WX);return h&&y>=h[0]&&y<=h[1]}
+const liftProtected=(x,y,z)=>LIFT_RESERVED.has(gkey(x,y,z));
+let LIFT_RIDE=null;
+function liftNear(){
+if(!playing||curModal||FLY||TP||MG.on||mapDialog.open||LIFT_RIDE)return null;
+for(const e of LIFT_SITES)for(const p of e.stops)if(Math.abs(player.y-p.y)<.6&&Math.hypot(player.x-p.x,player.z-p.z)<1.55)return{e,p};
+return null;
+}
+function liftPanel(){
+const n=liftNear();if(!n)return false;
+const {e,p}=n;
+modal(`<h2>${e.name} elevator</h2><p>Current floor: ${p.name}</p><div class="liftFloors">${e.stops.map((q,i)=>`<button class="btn alt sm" data-floor="${i}"${p===q?' disabled':''}>${q.name}</button>`).join('')}</div><div class="row"><button class="btn sm" data-a="ok">Close</button></div>`,panel=>{
+panel.querySelector('[data-a=ok]').onclick=closeModal;
+panel.querySelectorAll('[data-floor]').forEach(b=>b.onclick=()=>{const to=e.stops[+b.dataset.floor];wantLock=false;closeModal();liftStart(e,p,to)});
+});
+return true;
+}
+function liftStanding(p){return solidAt(Math.floor(p.x),p.y-1,Math.floor(p.z))&&!collides(p.x,p.y,p.z)}
+function liftStart(e,from,to){
+if(!liftStanding(from)||!liftStanding(to)){toast('The elevator landing is blocked.');return}
+input.keys.clear();input.jx=input.jy=0;input.jump=false;aim=null;
+LIFT_RIDE={e,from,to,t:0,duration:clamp(Math.abs(to.y-from.y)/7,.7,3.6),yaw:player.yaw};
+player.x=from.x;player.y=from.y;player.z=from.z;player.stepOff=0;player.vx=player.vy=player.vz=0;
+$('app').classList.add('lifting');
+}
+function liftFinish(){LIFT_RIDE=null;$('app').classList.remove('lifting')}
+function liftStep(dt){
+const r=LIFT_RIDE,{from,to,e,duration}=r;
+const t=r.t+=dt,door=.38;
+if(t<door){const k=sstep(0,door,t);player.x=lerp(from.x,e.shaft.x,k);player.z=lerp(from.z,e.shaft.z,k);return}
+if(t<duration+door){player.x=e.shaft.x;player.z=e.shaft.z;player.y=lerp(from.y,to.y,sstep(door,duration+door,t));return}
+const k=sstep(duration+door,duration+door*2,t);
+player.x=lerp(e.shaft.x,to.x,k);player.z=lerp(e.shaft.z,to.z,k);player.y=to.y;
+const turn=Math.atan2(Math.sin(to.yaw-r.yaw),Math.cos(to.yaw-r.yaw));player.yaw=r.yaw+turn*k;player.pitch*=1-Math.min(1,dt*8);
+if(k===1){Object.assign(player,{ground:true,water:false,hold:false,stepOff:0,pitch:0});input.keys.clear();input.jx=input.jy=0;input.jump=false;liftFinish();queueSave();toast(to.name)}
+}
+function liftSavePos(){const p=LIFT_RIDE?.from;return p?[p.x,p.y,p.z,p.yaw,0]:null}
+function liftRestorePos(pos){
+if(LIFT_RIDE)liftFinish();
+for(const e of LIFT_SITES)for(const p of e.stops){
+if(Math.abs(p.y-pos[1])>.65||Math.hypot(p.x-pos[0],p.z-pos[2])>.75)continue;
+forceLoad(Math.floor(p.x/16),Math.floor(p.z/16),2);
+if(liftStanding(p)){Object.assign(player,{x:p.x,y:p.y,z:p.z,yaw:pos[3],pitch:clamp(pos[4],-1.45,1.45),vx:0,vy:0,vz:0,ground:true,water:false,hold:false,stepOff:0});qCx=-9999;return true}
+}
+return false;
+}
+function liftHud(){
+const b=$('liftChip'),n=liftNear(),text=LIFT_RIDE?`Going to ${LIFT_RIDE.to.name}`:n?(touchMode?'Elevator':'Elevator · E'):'';
+b.hidden=!text;b.disabled=!!LIFT_RIDE;
+if(b.textContent!==text)b.textContent=text;
+}
+function liftDraw(){
+if(!LIFT_RIDE||botN+72>botGeo.length/7)return;
+const p={...LIFT_RIDE.e.shaft,y:player.y,yaw:0};
+part(p,0,-.045,0,.47,.04,.47,[.62,.66,.65]);part(p,0,2.39,0,.47,.05,.47,[.73,.72,.64]);
+}
 const LETTERS=[['ا','Alif'],['ب','Ba'],['ت','Ta (light)'],['ث','Tha'],['ج','Jeem'],['ح','Haa (throaty)'],['خ','Khaa'],['د','Dal'],['ذ','Dhal'],['ر','Ra'],['ز','Zay'],['س','Seen'],['ش','Sheen'],['ص','Sad (heavy)'],['ض','Dad (heavy)'],['ط','Taa (heavy)'],['ظ','Dhaa (heavy)'],['ع','Ain'],['غ','Ghain'],['ف','Fa'],['ق','Qaf'],['ك','Kaf'],['ل','Lam'],['م','Meem'],['ن','Noon'],['ه','Ha (light)'],['و','Waw'],['ي','Ya']];
 const FACTS=[
 ['science',1,'Which invention uses a tiny hole to show an upside-down picture of the outside world?','Camera obscura',['Windmill','Water clock'],'Ibn al-Haytham studied the camera obscura. Light goes through a tiny hole and makes a picture on the wall.'],
@@ -3914,7 +4159,7 @@ pin.el.style.left=`${pin.x*100}%`;pin.el.style.top=`${pin.z*100}%`;
 }
 function setMapOpen(open){
 if(!open){if(mapDialog.open)mapDialog.close();return}
-if(mapDialog.open||!playing||curModal||FLY||TP)return;
+if(mapDialog.open||!playing||curModal||FLY||TP||LIFT_RIDE)return;
 wantLock=false;MG.fireHeld=false;input.keys.clear();input.jx=input.jy=0;input.jump=false;aim=null;
 if(document.pointerLockElement)document.exitPointerLock();
 mapDialog.showModal();layoutMapPins();mapT=-1000;drawMap(performance.now());
@@ -4080,6 +4325,7 @@ p=>{p.querySelector('[data-a=no]').onclick=()=>{closeModal();if(back&&!playing)b
 p.querySelector('[data-a=yes]').onclick=()=>{closeModal();resetAll()}});
 }
 function resetAll(){
+if(LIFT_RIDE)liftFinish();
 clearTimeout(saveTimer);saveTimer=0;
 edits.clear();bedits.clear();blClear();PERSIST.dirty.clear();PERSIST.botDirty=false;worldDirty=false;resetState();SV.has=false;SV.pos=null;SV.sum=null;
 for(const b of bots){b.on=false;b.done=[];b.ds=null;b.site=null;b.st=0;b.cells.length=0}
@@ -4118,13 +4364,13 @@ function tryLock(){try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch
 let noLock=false,aim=null,aimTime=0,hintTimer=0;
 let wantLock=false;
 function relock(){
-if(!wantLock||touchMode||noLock||!playing||curModal||mapDialog.open||document.pointerLockElement)return;
+if(!wantLock||touchMode||noLock||!playing||curModal||mapDialog.open||LIFT_RIDE||document.pointerLockElement)return;
 try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}
 }
 document.addEventListener('pointerlockchange',()=>{
 const h=$('lockhint');clearTimeout(hintTimer);
 if(document.pointerLockElement===canvas){
-if(curModal||mapDialog.open){document.exitPointerLock();return}
+if(curModal||mapDialog.open||LIFT_RIDE){document.exitPointerLock();return}
 h.classList.add('on');hintTimer=setTimeout(()=>h.classList.remove('on'),6000);
 }else{
 h.classList.remove('on');
@@ -4134,7 +4380,7 @@ if(!curModal)wantLock=false;MG.fireHeld=false;
 const locked=()=>document.pointerLockElement===canvas;
 function look(dx,dy){const k=.0016*S.settings.sens;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.45,1.45);if(MG.on){player.x=MG_POST.x+Math.sin(player.yaw)*MG_RADIUS;player.z=MG_POST.z+Math.cos(player.yaw)*MG_RADIUS;player.vx=player.vy=player.vz=0}}
 function act(px,py,button){
-if(!playing||curModal||mapDialog.open||FLY||TP)return;
+if(!playing||curModal||mapDialog.open||FLY||TP||LIFT_RIDE)return;
 if(MG.on){if(button===2)leaveMachinePost();return}
 const r=playerRay(px,py),mode=button===0?'break':button===2?'place':S.mode;
 const hit=cast(r.o,r.d,REACH,mode==='place'?S.sel:0,mode==='break'),bp=botPick(r.o,r.d);
@@ -4146,11 +4392,12 @@ if(!hit)return;
 if(hit.b===B.CHEST){openChest(hit.x,hit.y,hit.z);return}
 if(mode==='break'){
 if(hit.ghost||hit.y===0)return;
-if((typeof protectedLandmarkBlock==='function'&&protectedLandmarkBlock(hit.x,hit.y,hit.z))||portalPad(hit.x,hit.z,0)||machinePostBlock(hit.x,hit.y,hit.z)){toast('This landmark or post is protected.');return}
+if(protectedLandmarkBlock(hit.x,hit.y,hit.z)||portalPad(hit.x,hit.z,0)||machinePostBlock(hit.x,hit.y,hit.z)||liftProtected(hit.x,hit.y,hit.z)){toast('This landmark or post is protected.');return}
 setBlock(hit.x,hit.y,hit.z,0,0);sfx.brk();return;
 }
 if(!S.unlocked.includes(S.sel)&&!S.tmp.includes(S.sel)){toast('That block is locked.');return}
 const x=hit.x+(hit.ghost?0:hit.n[0]),y=hit.y+(hit.ghost?0:hit.n[1]),z=hit.z+(hit.ghost?0:hit.n[2]);
+if(liftProtected(x,y,z)){toast('Keep the elevator clear.');return}
 const cur=getB(x,y,z);
 if(!inb(x,y,z)||y<1||!chunkAt(x>>4,z>>4)||(cur&&cur!==B.WATER&&DEFS[cur].kind!=='x')||(DEFS[S.sel].solid&&overlapsPlayer(x,y,z)))return;
 setBlock(x,y,z,S.sel,0);sfx.place();
@@ -4159,7 +4406,7 @@ const looks=new Map();
 function aimAt(px,py){aim=[px,py];aimTime=performance.now()}
 canvas.addEventListener('pointerdown',e=>{
 if(e.pointerType==='mouse'&&touchMode)setTouch(false);
-if(curModal||mapDialog.open||!playing)return;
+if(curModal||mapDialog.open||LIFT_RIDE||!playing)return;
 if(e.pointerType==='mouse'&&!noLock&&!locked()){wantLock=true;tryLock();return}
 if(locked()){if(MG.on&&e.button===0){MG.fireHeld=true;MG.fireT=MG_RATE;machineFire()}else act(undefined,undefined,e.button);return}
 canvas.setPointerCapture(e.pointerId);
@@ -4189,6 +4436,8 @@ document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault
 document.addEventListener('pointerlockerror',()=>{noLock=true});
 window.addEventListener('keydown',e=>{
 const k=e.key.toLowerCase();
+if(LIFT_RIDE)return;
+if(k==='e'&&!e.repeat&&liftPanel()){e.preventDefault();return}
 if(k==='m'&&!e.repeat&&playing&&!curModal){setMapOpen(!mapDialog.open);return}
 if(mapDialog.open)return;
 if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
@@ -4217,6 +4466,7 @@ $('btnSet').addEventListener('click',settingsPanel);
 $('btnQuest').addEventListener('click',questPanel);
 $('btnStats').addEventListener('click',skillsPanel);
 $('btnPass').addEventListener('click',passportPanel);
+$('liftChip').addEventListener('click',liftPanel);
 $('helpout').addEventListener('click',()=>{if(helpOut()){toast('Back on dry land');$('helpout').classList.remove('on')}else toast('Try walking towards the shore')});
 const LD={phase:'idle',gen:0,mesh:0,t0:0,menu:0};
 function setProg(p,label){
@@ -4284,9 +4534,9 @@ requestAnimationFrame(frame);
 if(document.hidden){last=now;return}
 const dt=Math.min(.05,(now-last)/1000||0);last=now;
 if(playing&&!curModal&&!mapDialog.open){
-if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
-activeSec+=dt;if(activeSec>=BREAK_SECONDS){activeSec=0;breakReminder()}
-edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on)portalTick(dt);saveTick(dt);
+if(LIFT_RIDE)liftStep(dt);else if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
+activeSec+=dt;if(activeSec>=BREAK_SECONDS&&!LIFT_RIDE){activeSec=0;breakReminder()}
+edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on&&!LIFT_RIDE)portalTick(dt);saveTick(dt);
 }else if(glide)glideStep(dt);
 else if(!playing){if(W.on)welcomeCam(dt);else player.yaw+=dt*.08}
 if(playing||glide)dayT=(dayT+dt/DAY_SECONDS)%1;else dayT=W.day;
@@ -4297,7 +4547,7 @@ if(LD.phase==='chunks'){busyFrame=true;loadStep(now)}
 else{busyFrame=streamWork(4,2,now)>0;if(now-lastUnload>400){lastUnload=now;unloadFar()}}
 if(beamsDirty&&now-beamsT>300){beamsT=now;rebuildBeams()}
 $('building').style.display=playing&&player.hold?'block':'none';
-drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);updatePortalLabels();museumHud(dt);fillExGeo(now);uiWater();
+drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);updatePortalLabels();museumHud(dt);fillExGeo(now);uiWater();liftHud();
 hitView=null;
 if(playing&&!curModal&&!mapDialog.open){
 let r=null;

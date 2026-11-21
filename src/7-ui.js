@@ -84,7 +84,7 @@ function layoutMapPins(){
 }
 function setMapOpen(open){
  if(!open){if(mapDialog.open)mapDialog.close();return}
- if(mapDialog.open||!playing||curModal||FLY||TP)return;
+ if(mapDialog.open||!playing||curModal||FLY||TP||LIFT_RIDE)return;
  wantLock=false;MG.fireHeld=false;input.keys.clear();input.jx=input.jy=0;input.jump=false;aim=null;
  if(document.pointerLockElement)document.exitPointerLock();
  mapDialog.showModal();layoutMapPins();mapT=-1000;drawMap(performance.now());
@@ -255,6 +255,7 @@ function confirmReset(back){
    p.querySelector('[data-a=yes]').onclick=()=>{closeModal();resetAll()}});
 }
 function resetAll(){
+ if(LIFT_RIDE)liftFinish();
  clearTimeout(saveTimer);saveTimer=0;
  edits.clear();bedits.clear();blClear();PERSIST.dirty.clear();PERSIST.botDirty=false;worldDirty=false;resetState();SV.has=false;SV.pos=null;SV.sum=null;
  for(const b of bots){b.on=false;b.done=[];b.ds=null;b.site=null;b.st=0;b.cells.length=0}
@@ -296,14 +297,14 @@ let noLock=false,aim=null,aimTime=0,hintTimer=0;
 /* wantLock: the mouse should be captured whenever no card is open. Esc clears it, so the player is never forced back in. */
 let wantLock=false;
 function relock(){
- if(!wantLock||touchMode||noLock||!playing||curModal||mapDialog.open||document.pointerLockElement)return;
+ if(!wantLock||touchMode||noLock||!playing||curModal||mapDialog.open||LIFT_RIDE||document.pointerLockElement)return;
  try{const r=canvas.requestPointerLock();if(r&&r.catch)r.catch(()=>{})}catch(e){}
 }
 document.addEventListener('pointerlockchange',()=>{
  const h=$('lockhint');clearTimeout(hintTimer);
  if(document.pointerLockElement===canvas){
   /* a card opened while the lock request was pending: give the mouse back so its buttons can be clicked */
-  if(curModal||mapDialog.open){document.exitPointerLock();return}
+  if(curModal||mapDialog.open||LIFT_RIDE){document.exitPointerLock();return}
   h.classList.add('on');hintTimer=setTimeout(()=>h.classList.remove('on'),6000);
  }else{
   h.classList.remove('on');
@@ -314,7 +315,7 @@ document.addEventListener('pointerlockchange',()=>{
 const locked=()=>document.pointerLockElement===canvas;
 function look(dx,dy){const k=.0016*S.settings.sens;player.yaw-=dx*k;player.pitch=clamp(player.pitch-dy*k,-1.45,1.45);if(MG.on){player.x=MG_POST.x+Math.sin(player.yaw)*MG_RADIUS;player.z=MG_POST.z+Math.cos(player.yaw)*MG_RADIUS;player.vx=player.vy=player.vz=0}}
 function act(px,py,button){
- if(!playing||curModal||mapDialog.open||FLY||TP)return;
+ if(!playing||curModal||mapDialog.open||FLY||TP||LIFT_RIDE)return;
  if(MG.on){if(button===2)leaveMachinePost();return}
  const r=playerRay(px,py),mode=button===0?'break':button===2?'place':S.mode;
  const hit=cast(r.o,r.d,REACH,mode==='place'?S.sel:0,mode==='break'),bp=botPick(r.o,r.d);
@@ -326,11 +327,12 @@ function act(px,py,button){
  if(hit.b===B.CHEST){openChest(hit.x,hit.y,hit.z);return}
  if(mode==='break'){
   if(hit.ghost||hit.y===0)return;
-  if((typeof protectedLandmarkBlock==='function'&&protectedLandmarkBlock(hit.x,hit.y,hit.z))||portalPad(hit.x,hit.z,0)||machinePostBlock(hit.x,hit.y,hit.z)){toast('This landmark or post is protected.');return}
+  if(protectedLandmarkBlock(hit.x,hit.y,hit.z)||portalPad(hit.x,hit.z,0)||machinePostBlock(hit.x,hit.y,hit.z)||liftProtected(hit.x,hit.y,hit.z)){toast('This landmark or post is protected.');return}
   setBlock(hit.x,hit.y,hit.z,0,0);sfx.brk();return;
  }
  if(!S.unlocked.includes(S.sel)&&!S.tmp.includes(S.sel)){toast('That block is locked.');return}
  const x=hit.x+(hit.ghost?0:hit.n[0]),y=hit.y+(hit.ghost?0:hit.n[1]),z=hit.z+(hit.ghost?0:hit.n[2]);
+ if(liftProtected(x,y,z)){toast('Keep the elevator clear.');return}
  const cur=getB(x,y,z);
  if(!inb(x,y,z)||y<1||!chunkAt(x>>4,z>>4)||(cur&&cur!==B.WATER&&DEFS[cur].kind!=='x')||(DEFS[S.sel].solid&&overlapsPlayer(x,y,z)))return;
  setBlock(x,y,z,S.sel,0);sfx.place();
@@ -339,7 +341,7 @@ const looks=new Map();
 function aimAt(px,py){aim=[px,py];aimTime=performance.now()}
 canvas.addEventListener('pointerdown',e=>{
  if(e.pointerType==='mouse'&&touchMode)setTouch(false);
- if(curModal||mapDialog.open||!playing)return;
+ if(curModal||mapDialog.open||LIFT_RIDE||!playing)return;
  if(e.pointerType==='mouse'&&!noLock&&!locked()){wantLock=true;tryLock();return}
  if(locked()){if(MG.on&&e.button===0){MG.fireHeld=true;MG.fireT=MG_RATE;machineFire()}else act(undefined,undefined,e.button);return}
  canvas.setPointerCapture(e.pointerId);
@@ -369,6 +371,8 @@ document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault
 document.addEventListener('pointerlockerror',()=>{noLock=true});
 window.addEventListener('keydown',e=>{
  const k=e.key.toLowerCase();
+ if(LIFT_RIDE)return;
+ if(k==='e'&&!e.repeat&&liftPanel()){e.preventDefault();return}
  if(k==='m'&&!e.repeat&&playing&&!curModal){setMapOpen(!mapDialog.open);return}
  if(mapDialog.open)return;
  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
@@ -398,6 +402,7 @@ $('btnSet').addEventListener('click',settingsPanel);
 $('btnQuest').addEventListener('click',questPanel);
 $('btnStats').addEventListener('click',skillsPanel);
 $('btnPass').addEventListener('click',passportPanel);
+$('liftChip').addEventListener('click',liftPanel);
 $('helpout').addEventListener('click',()=>{if(helpOut()){toast('Back on dry land');$('helpout').classList.remove('on')}else toast('Try walking towards the shore')});
 
 /* ===== 12. Loader, main loop and boot ===== */
@@ -470,9 +475,9 @@ function frame(now){
  if(document.hidden){last=now;return}
  const dt=Math.min(.05,(now-last)/1000||0);last=now;
  if(playing&&!curModal&&!mapDialog.open){
- if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
-  activeSec+=dt;if(activeSec>=BREAK_SECONDS){activeSec=0;breakReminder()}
-  edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on)portalTick(dt);saveTick(dt);
+ if(LIFT_RIDE)liftStep(dt);else if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(dt);else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
+  activeSec+=dt;if(activeSec>=BREAK_SECONDS&&!LIFT_RIDE){activeSec=0;breakReminder()}
+  edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on&&!LIFT_RIDE)portalTick(dt);saveTick(dt);
  }else if(glide)glideStep(dt);
  else if(!playing){if(W.on)welcomeCam(dt);else player.yaw+=dt*.08}
  if(playing||glide)dayT=(dayT+dt/DAY_SECONDS)%1;else dayT=W.day;
@@ -483,7 +488,7 @@ function frame(now){
  else{busyFrame=streamWork(4,2,now)>0;if(now-lastUnload>400){lastUnload=now;unloadFar()}}
  if(beamsDirty&&now-beamsT>300){beamsT=now;rebuildBeams()}
  $('building').style.display=playing&&player.hold?'block':'none';
- drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);updatePortalLabels();museumHud(dt);fillExGeo(now);uiWater();
+ drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);updatePortalLabels();museumHud(dt);fillExGeo(now);uiWater();liftHud();
  hitView=null;
  if(playing&&!curModal&&!mapDialog.open){
   let r=null;
