@@ -223,6 +223,34 @@ button:focus-visible{outline:3px solid #ffdd72;outline-offset:2px}
 @media(max-width:830px){#top{padding-left:118px;max-width:678px}#map{width:112px;height:48px}}
 @media(max-width:520px){#top{padding-left:72px}#map{width:66px;height:48px}#rank{display:none}.mapLayout{grid-template-columns:1fr;gap:8px}#mapChart{max-width:min(43vh,100%)}#mapPlaces{max-height:29vh}}
 @media(max-height:430px){#mapChart{max-width:min(67vh,100%)}#mapPlaces{max-height:66vh}}
+#con{position:fixed;left:calc(var(--sl) + 10px);bottom:calc(var(--sb) + 10px);z-index:66;width:min(430px,calc(100% - var(--sl) - var(--sr) - 20px));max-height:min(46vh,330px);display:none;flex-direction:column;background:rgba(10,22,24,.94);border:2px solid var(--ui-edge);box-shadow:inset 0 0 0 2px #6b5a44,0 4px #0008;color:#e9f3e6;font:13px/1.35 ui-monospace,Menlo,Consolas,monospace}
+#con.on{display:flex}
+body.touch #con{bottom:calc(var(--sb) + 226px)}
+#conHead{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 8px;border-bottom:2px solid #3c5145;color:#ffd76a;font-weight:700;font-size:12px}
+#conClose{background:#274038;color:#f6e8c6;border:1px solid #6b8a72;font:700 12px system-ui;padding:2px 8px;min-height:26px}
+#conLog{overflow-y:auto;overflow-x:hidden;padding:6px 8px;flex:1 1 auto;max-height:calc(min(46vh,330px) - 66px);touch-action:pan-y;white-space:pre-wrap;word-break:break-word}
+#conLog .in{color:#9fe0b4}
+#conLog .er{color:#ffb08a}
+#conLog .ccode{margin:4px 0 6px}
+#conLog .cta,#panel .cta{display:block;width:100%;box-sizing:border-box;background:#0a1416;color:#eaf5e7;border:1px solid #3c5145;font:12px/1.3 ui-monospace,Menlo,monospace;padding:5px 6px;resize:none;min-height:44px;word-break:break-all}
+#panel .cta{background:#fff;color:#1b2a2d;border:2px solid #a1875c;font-size:13px;margin:8px 0 2px;min-height:70px}
+.conBtn{background:#2e694a;color:#fff8e8;border:2px solid #172b21;font:800 12px system-ui;padding:3px 10px;min-height:28px}
+#conRow{display:flex;gap:6px;align-items:center;padding:4px 6px;border-top:2px solid #3c5145}
+#conPre{color:#ffd76a;font-weight:800}
+#conIn{flex:1;min-width:0;background:#0a1416;border:1px solid #3c5145;color:#eaf5e7;font:inherit;padding:6px;min-height:34px;outline:none}
+#wworlds{margin-top:10px;background:rgba(8,61,68,.74);border:2px solid #a88a53;padding:8px;text-align:left}
+#wworlds h3{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 6px;font:800 14px Georgia,serif;color:#f6e8c6;letter-spacing:.5px}
+#wneww{background:#2e694a;color:#fff8e8;border:2px solid #172b21;font:800 12px system-ui;padding:2px 9px;min-height:28px}
+#wlist{display:flex;flex-direction:column;gap:5px;max-height:min(30vh,190px);overflow:auto;touch-action:pan-y;padding-right:2px}
+.wrow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 8px;background:#14343a;border:2px solid #4b6a63;color:#f6e8c6;padding:5px 8px;min-height:44px;text-align:left;box-shadow:inset 0 1px #ffffff1f}
+.wrow:hover,.wrow:focus-visible{background:#1d4a52;border-color:#e3b23c}
+.wrow b{display:block;font-size:14px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wrow small{display:block;font-size:11px;color:#c9d9c7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wrow.cur{border-color:#e3b23c;background:#1f5159}
+.wrow em{grid-row:1/3;grid-column:2;font-style:normal;font-weight:800;font-size:12px;color:#ffd76a;white-space:nowrap}
+@media (min-width:900px) and (min-height:560px){#wworlds{position:fixed;right:calc(var(--sr) + 18px);top:50%;transform:translateY(-50%);width:min(300px,30vw);margin:0}#wlist{max-height:min(56vh,420px)}}
+@media (max-width:899px){#wworlds{margin-top:6px;padding:4px 6px}#wworlds h3{font-size:12px;margin:0 0 3px}#wlist{flex-direction:row;overflow-x:auto;overflow-y:hidden;max-height:44px;gap:4px}.wrow{flex:0 0 auto;max-width:210px;min-height:38px;padding:3px 7px}.wrow em{display:none}#wfeat{display:none}}
+@media (max-height:520px){#wworlds{margin-top:3px}#wlist{max-height:40px}}
 </style>
 </head>
 <body>
@@ -253,7 +281,8 @@ button:focus-visible{outline:3px solid #ffdd72;outline-offset:2px}
 <div class="wtop"><svg class="wstar" aria-hidden="true"><use href="#star8"/></svg><svg width="0" height="0" style="position:absolute"><defs><symbol id="tl" viewBox="0 0 1 1"><rect x=".1" y=".14" width=".9" height=".9" fill="#5a3c0a"/><rect width=".92" height=".92" fill="#a9781a"/><rect width=".86" height=".86" fill="#e3b23c"/><rect width=".86" height=".2" fill="#fbe9a0"/><rect width=".16" height=".86" fill="#f4d374"/><rect x=".7" y=".2" width=".16" height=".66" fill="#c9972a"/></symbol><rect id="tr" width=".92" height=".92"/><linearGradient id="shg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg><svg class="wtitle" id="wt" viewBox="-.3 -.6 77.9 9" role="img" aria-label="musliMineCraft"><title>musliMineCraft</title></svg><script>(function(){var s="11010/10101/10101/10101/10101|10001/10001/10001/10011/01101|01111/10000/01110/00001/11110|110/010/010/010/010/010/111|010/000/110/010/010/010/111|10001/11011/10101/10001/10001/10001/10001|010/000/110/010/010/010/111|10110/11001/10001/10001/10001|01110/10001/11111/10000/01110|01110/10001/10000/10000/10000/10001/01110|10111/11000/10000/10000/10000|01110/00001/01111/10001/01111|00110/01000/11110/01000/01000/01000/01000|01000/11110/01000/01000/01000/01001/00110".split("|"),h="",cl="",x=0,i,r,c,g,n=0;for(i=0;i<s.length;i++){g=s[i].split("/");for(r=0;r<g.length;r++)for(c=0;c<g[0].length;c++)if(g[r].charAt(c)=="1"){var X=x+c,Y=r+7-g.length;h+='<use class="tc" href="#tl" x="'+X+'" y="'+Y+'" width="1" height="1" style="--d:'+(.15+X*.03+(Y%3)*.05).toFixed(2)+'s"/>';cl+='<use href="#tr" x="'+X+'" y="'+Y+'"/>'}x+=g[0].length+1}document.getElementById("wt").insertAdjacentHTML("beforeend",h+'<clipPath id="tcp">'+cl+'</clipPath><g clip-path="url(#tcp)"><rect class="wshine" x="-10" y="-1" width="4" height="10" fill="url(#shg)"/></g>')})()</script><p class="wtag">Build, learn and explore</p></div>
 <div class="wbot"><div id="wbadge"></div><div id="wsum"></div><div id="wmsg"></div>
 <div id="wbar"><div id="wtrack"><i id="wfill"></i></div><div id="wlab"><span id="wstage">Starting up</span><b id="wpct">0%</b></div></div>
-<div id="wready"><div class="col"><button class="btn play" data-a="play">Play</button><div class="r2"><button class="btn alt" data-a="reset">Start a new world</button></div><div class="r2"><button class="btn alt" data-a="set">Settings</button><button class="btn alt" data-a="how">How to play</button></div></div></div>
+<div id="wready"><div class="col"><button class="btn play" data-a="play">Play</button><div class="r2"><button class="btn alt" data-a="lobby">Join lobby</button><button class="btn alt" data-a="reset">Reset this world</button></div><div class="r2"><button class="btn alt" data-a="set">Settings</button><button class="btn alt" data-a="how">How to play</button></div></div></div>
+<div id="wworlds" aria-label="Your worlds"><h3><span>Your worlds</span><button id="wneww" type="button" aria-label="Start a new world">+ New</button></h3><div id="wlist"></div></div>
 <div id="wfeat"><span><svg><use href="#star8"/></svg>7 building missions</span><span><svg><use href="#star8"/></svg>26 museum treasures</span><span><svg><use href="#star8"/></svg>6 builder friends</span></div><div id="wtip"></div></div>
 </div></div>
 <svg width="0" height="0" style="position:absolute">
@@ -298,4 +327,5 @@ button:focus-visible{outline:3px solid #ffdd72;outline-offset:2px}
 <div id="lockhint">Press Esc to release the mouse</div>
 </div>
 <div id="modal"><div id="panel"></div></div>
+<div id="con" role="dialog" aria-label="Command console"><div id="conHead"><span>Console</span><button id="conClose" type="button" aria-label="Close the console">Close</button></div><div id="conLog" aria-live="polite"></div><div id="conRow"><span id="conPre" aria-hidden="true">/</span><input id="conIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Command" placeholder="share"></div></div>
 <script type="text/plain" id="game">

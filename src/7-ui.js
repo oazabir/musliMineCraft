@@ -1,6 +1,8 @@
 
 /* ===== 10. Interface: modals, HUD, hotbar ===== */
-const modalQ=[];let curModal=null,modalT=0,modalCloseT=-999;
+const modalQ=[];let curModal=null,modalT=0,modalCloseT=-999,inPanelClick=false;
+/* a card opened from a button of the card itself (settings redraws its own card) is not guarded against that same click */
+$('panel').addEventListener('click',()=>{inPanelClick=true;setTimeout(()=>{inPanelClick=false},0)},true);
 const welcomeUp=()=>$('welcome').style.display!=='none';
 function modal(html,wire){modalQ.push({html,wire});if(!curModal)nextModal()}
 function nextModal(){
@@ -8,8 +10,8 @@ function nextModal(){
  const el=$('modal');
  /* a card opened over the welcome screen lifts the whole game layer above it */
  if(!curModal){el.classList.remove('on');return}
- /* the tap guard only protects a card that opens from closed; a re-render from the card's own button is not guarded */
- {const nw=performance.now();modalT=nw-modalCloseT<80?0:nw}
+ /* a card opened by a tap is guarded against the click that same tap still sends; a card a button redrew is not */
+ {modalT=inPanelClick?performance.now()-400:performance.now()}
  $('panel').innerHTML=curModal.html;$('panel').scrollTop=0;el.classList.add('on');
  input.jx=input.jy=0;input.jump=false;
  if(document.pointerLockElement){wantLock=true;document.exitPointerLock()}
@@ -168,6 +170,7 @@ function startScreen(){
  if(has&&sm){su.style.display='block';su.textContent=sm.stars+' stars Ã‚Â· Mission '+sm.mission+' Ã‚Â· '+sm.blocks+' blocks built';bd.style.display='block';bd.textContent=(sm.rank||rankOf(sm.stars))+' Ã‚Â· '+sm.stars+' stars'}
  else{su.style.display='none';bd.style.display='none'}
  W.on=true;if(RAD<6)RAD=6;
+ worldsList();
  /* two frames later the illustration fades into the live panorama */
  requestAnimationFrame(()=>requestAnimationFrame(()=>{if(!playing)$('welcome').classList.add('live')}));
 }
@@ -175,6 +178,7 @@ function howCard(){
  const how=touchMode?['Drag the round pad to walk. Drag anywhere else to look.','Tap a block to break or place it. Use the Place / Break button to switch. Tap Blocks for the inventory.','Follow the glowing blueprint, open the glowing chests, and tap a builder to build together.','Swim east to the Open Air Prison, or tap My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.']
   :['Click the game to look around. Move with W A S D and jump with Space.','Left click breaks a block. Right click places one. Keys 1 to 9 pick a block. Press E for the block inventory and F to use a nearby lift.','Follow the glowing blueprint, open the glowing chests, and click a builder to build together.','Swim east to the Open Air Prison, or open My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.'];
  how.push(`${touchMode?'Tap Map':'Press M'} to travel to landmarks. The Landmarks wall across the lake has gates to these places.`);
+ how.push(`${touchMode?'Open Settings then Console':'Press /'} for commands. /share opens a lobby so a friend can join your world from the Join lobby button.`);
  modal(`<svg class="motif i"><use href="#star8"/></svg><h2>How to play</h2><ul class="how">${how.map(h=>`<li>${h}</li>`).join('')}</ul><div class="row"><button class="btn" data-a="ok">Got it</button></div>`,p=>{p.querySelector('[data-a=ok]').onclick=closeModal});
 }
 function startPlay(){
@@ -188,7 +192,7 @@ function startPlay(){
  for(const b of bots)if(b.on&&(Math.hypot(b.x-player.x,b.z-player.z)>26||Math.hypot(b.x-player.x,b.z-player.z)<7))botRespawn(b,player.x,player.z,10,26,undefined,b.i*1.047);
  W.on=false;$('welcome').style.opacity='0';
  const fin=()=>{$('app').classList.remove('pre');$('welcome').style.display='none';$('welcome').style.opacity='';playing=true;glide=null;applyGfx();if(!touchMode)wantLock=true;
-  if(resumed||SV.has){toast('Welcome back!')}else if(S.mission<MISSIONS.length){missionIntro(false)}else toast('Free building. Have fun!');
+  if(netGuest()){toast('You are in the host\'s world now.')}else if(resumed||SV.has){toast('Welcome back!')}else if(S.mission<MISSIONS.length){missionIntro(false)}else toast('Free building. Have fun!');
   if(!curModal)relock()};
  if(Math.hypot(from[0]-to[0],from[2]-to[2])<90&&Math.abs(from[1]-to[1])<40){
   glide={t:0,from,to,fin};player.x=from[0];player.y=from[1];player.z=from[2];player.yaw=from[3];player.pitch=from[4];
@@ -291,9 +295,10 @@ function settingsPanel(){
  modal(`<h2>Settings</h2>
   <div class="row"><button class="btn alt" data-a="snd">Sound: ${S.settings.sound?'On':'Off'}</button><button class="btn alt" data-a="gfx">Graphics: ${S.settings.gfx==='auto'?'Auto':S.settings.gfx==='low'?'Low':'High'}</button></div>
   <div class="row"><button class="btn alt sm" data-a="m">-</button><span>Look speed: <b>${S.settings.sens}</b></span><button class="btn alt sm" data-a="p">+</button></div>
-  <div class="row"><button class="btn alt sm" data-a="reset">Reset world</button><button class="btn" data-a="ok">Close</button></div>`,
+  <div class="row"><button class="btn alt" data-a="con">Console</button><button class="btn alt sm" data-a="reset">Reset world</button><button class="btn" data-a="ok">Close</button></div>`,
   p=>{
    const again=()=>{closeModal();settingsPanel()};
+   p.querySelector('[data-a=con]').onclick=()=>{closeModal();conOpen(true)};
    p.querySelector('[data-a=snd]').onclick=()=>{S.settings.sound=!S.settings.sound;queueSave();again()};
    p.querySelector('[data-a=gfx]').onclick=()=>{S.settings.gfx=S.settings.gfx==='auto'?'low':S.settings.gfx==='low'?'high':'auto';applyGfx();queueSave();again()};
    p.querySelector('[data-a=m]').onclick=()=>{S.settings.sens=Math.max(1,S.settings.sens-1);queueSave();again()};
@@ -404,6 +409,8 @@ window.addEventListener('keydown',e=>{
  }
  if(curModal&&$('blockInventory'))return;
  if(k==='f'&&!e.repeat&&liftPanel()){e.preventDefault();return}
+ if(CON.on){if(k==='escape'){conOpen(false);e.preventDefault()}return}
+ if(k==='/'&&!e.repeat&&!curModal&&!mapDialog.open){conOpen(true);e.preventDefault();return}
  if(k==='m'&&!e.repeat&&playing&&!curModal){setMapOpen(!mapDialog.open);return}
  if(mapDialog.open)return;
  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
@@ -413,7 +420,7 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('keyup',e=>input.keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>{input.keys.clear();MG.fireHeld=false});
 window.addEventListener('touchstart',()=>{if(!touchMode)setTouch(true)},{passive:true});
-function setTouch(on){touchMode=on;$('app').classList.toggle('touch',on);$('app').classList.toggle('desk',!on)}
+function setTouch(on){touchMode=on;$('app').classList.toggle('touch',on);$('app').classList.toggle('desk',!on);document.body.classList.toggle('touch',on)}
 
 const joy=$('joy');let joyId=null;
 function joyMove(e){
@@ -511,6 +518,8 @@ function frame(now){
   edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on&&!LIFT_RIDE)portalTick(dt);saveTick(dt);
  }else if(glide)glideStep(dt);
  else if(!playing){if(W.on)welcomeCam(dt);else player.yaw+=dt*.08}
+ /* the lobby keeps talking while a card is open, so a friend never waits on a paused card */
+ netTick(dt);
  if(playing||glide)dayT=(dayT+dt/DAY_SECONDS)%1;else dayT=W.day;
  {const mt=W.on&&!playing&&!glide?1:0;menuK+=(mt-menuK)*Math.min(1,dt*(mt?2:3));if(menuK<.01&&!mt)menuK=0}
  const label=updateSky();
@@ -549,7 +558,7 @@ function boot(){
    window.addEventListener('pagehide',()=>saveNow(true));window.addEventListener('blur',()=>saveNow(true));document.addEventListener('freeze',()=>saveNow(true));
    document.addEventListener('pointerdown',initAudio);document.addEventListener('keydown',initAudio);
    const wq=k=>$('welcome').querySelector('[data-a='+k+']');
-   wq('play').onclick=startPlay;wq('reset').onclick=()=>confirmReset();wq('set').onclick=settingsPanel;wq('how').onclick=howCard;
+   wq('play').onclick=startPlay;wq('reset').onclick=()=>confirmReset();wq('set').onclick=settingsPanel;wq('how').onclick=howCard;wq('lobby').onclick=joinLobbyCard;
    requestAnimationFrame(frame);
   }]];
  let i=0;

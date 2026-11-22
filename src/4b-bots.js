@@ -309,7 +309,10 @@ function botTick(b,dt){
 }
 let bAX=0,bAZ=0;
 function stepBots(dt){
- dt*=BSPD;bAX=W.on&&!playing?W.gx:player.x;bAZ=W.on&&!playing?W.gz:player.z;
+ dt*=BSPD;
+ /* a guest lives in the host's world, so the builders of its own world stay away */
+ if(netGuest()){for(let i=0;i<bots.length;i++)if(bots[i].on)bots[i].on=false;return}
+ bAX=W.on&&!playing?W.gx:player.x;bAZ=W.on&&!playing?W.gz:player.z;
  if(JB){
   const jb=JB.bot;
   if(!jb.on||jb.st!==BS.BUILD||jb.site!==JB.site)leaveBuild(JB.name+' moved on, so the build ended.');
@@ -452,6 +455,7 @@ function fillBotGeo(){
   if((b.x-cam.e[0])*cam.fw[0]+(b.y+1-cam.e[1])*cam.fw[1]+(b.z-cam.e[2])*cam.fw[2]<-3)continue;
   drawBotFig(b);
  }
+ netDraw();
  haramDraw();
  gzDraw();machinePostDraw();liftDraw();
 }
