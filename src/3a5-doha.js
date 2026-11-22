@@ -139,9 +139,18 @@ function dohaMia(l,lx,y,z){
  if(dohaMiaEdge(t,x,z)){
   if(y===t[3])return B.LIMEP;
   if(n===4&&z===1&&x===2&&y===22)return B.GLASS;
+  if(n<3&&z===t[2]&&x>=4&&x<=t[0]-2){
+   const bay=x%4,level=(y-1)%5;
+   if(bay===1||bay===2){
+    if(level===1)return B.BLUE;
+    if(level===2)return B.GLASS;
+    if(level===3)return B.ARCH;
+   }
+  }
   if(n<=1&&x===t[0]&&z%4===0&&y%5>=2&&y%5<=3)return B.LATTICE;
   return B.LIME;
  }
+ const sideRoom=dohaMiaSideRoom(px,y,z);if(sideRoom>=0)return sideRoom;
  const room=dohaMiaRoom(px,y,z);
  if(room>=0)return room;
  const floor=y%5===0&&y<=20;
@@ -150,7 +159,6 @@ function dohaMia(l,lx,y,z){
  if(y%5===1&&y>=6&&y<=16&&x===3&&z>-9&&z<2&&!(px>0&&z<=-4&&y===16))return B.LATTICE;
  if(y===t[3]&&n<5){
   if(!dohaMiaTier(DOHA_MIA_TIERS[n+1],x,z))return B.LIME;
- const sideRoom=dohaMiaSideRoom(px,y,z);if(sideRoom>=0)return sideRoom;
   return x+Math.abs(z+4)<=1?B.AIR:B.MARBLE;
  }
  if(y===17&&x+Math.abs(z+4)===2)return B.LANTERN;

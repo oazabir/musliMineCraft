@@ -11,19 +11,30 @@ function kuwaitBulb(x,y,z,r,room){
  if(d2>r*r+.5)return -1;
  const shell=d2>=(r-.8)*(r-.8);
  if(room===2&&y>=-1&&y<=2){
-  if(y===-1)return B.MARBLE;
-  if(shell)return ((x+z+y)&3)===0?B.LIMEP:B.GLASS;
+  if(y===-1)return shell?B.BLUE:B.MARBLE;
+  if(shell)return (x===0||z===0)?B.LIMEP:((x+z+y)&3)===0?B.BLUE:B.GLASS;
   if(x===0&&z===0)return B.LIMEP;
   return B.AIR;
  }
  if(room===1&&y>=0){
-  if(y===0)return B.MARBLE;
-  if(shell&&y<=2)return ((x-z)&3)===0?B.LIMEP:B.GLASS;
-  if(!shell)return y===1&&x===0&&Math.abs(z)===2?B.OLIVE:B.AIR;
+  if(y===0)return shell?B.BLUE:B.MARBLE;
+  if(shell&&y<=3)return x===0||z===0?B.LIMEP:y===3?B.TURQ:y===1&&((x-z)&1)?B.BLUE:B.GLASS;
+  if(!shell){
+   if(Math.abs(x)===2&&Math.abs(z)===2){if(y===1)return B.WOOD;if(y===2)return B.LANTERN}
+   if(y===1&&Math.abs(x)===3&&Math.abs(z)===1)return B.CARPET;
+   return B.AIR;
+  }
  }
  if(!shell)return B.STONE;
- const tile=(((x+2*z+3*y+(y&1)*4)%12)+12)%12;
- return tile<3?B.GREEN:tile<7?B.TURQ:tile<10?B.BLUE:B.LIMEP;
+ if(y===r||y===-r)return B.LIMEP;
+ if(y===-1||y===2&&room===0)return B.TURQ;
+ const tile=(Math.abs(x)+2*Math.abs(z)+3*(y+r))%9;
+ return tile<4?B.BLUE:tile<7?B.TURQ:tile===7?B.GREEN:B.LIMEP;
+}
+function kuwaitMast(y,top){
+ if(y===top)return B.LANTERN;
+ if(y===top-2||y===top-3)return B.BLUE;
+ return y%5===0?B.LIMEP:B.MARBLE;
 }
 function kuwaitTowers(l,x,y,z){
  const mainX=x-KUWAIT_MAIN.x,mainZ=z-KUWAIT_MAIN.z,waterX=x-KUWAIT_WATER.x,waterZ=z-KUWAIT_WATER.z,lightX=x-KUWAIT_LIGHT.x,lightZ=z-KUWAIT_LIGHT.z;
@@ -43,9 +54,15 @@ function kuwaitTowers(l,x,y,z){
   if(Math.abs(x)<=2||Math.abs(z-4)<=1||mound<=48)return B.PATH;
   return B.GRASS;
  }
+ for(const [dx,dz] of [[waterX,waterZ],[lightX,lightZ]]){
+  if(Math.abs(dx)>2||Math.abs(dz)>2||y>4)continue;
+  if(dz===2&&Math.abs(dx)<=1&&y<=3)return B.AIR;
+  if(y===4)return B.LIMEP;
+  return Math.abs(dx)===2||Math.abs(dz)===2?(y===2?B.GLASS:B.MARBLE):B.AIR;
+ }
  if(y<=5&&Math.abs(mainX)<=3&&Math.abs(mainZ)<=3){
   if(y<=3&&Math.abs(mainX)<=1&&mainZ===3)return B.AIR;
-  if(y===5)return B.MARBLE;
+  if(y===5)return Math.abs(mainX)===3||Math.abs(mainZ)===3?B.BLUE:B.MARBLE;
   if(Math.abs(mainX)===3||Math.abs(mainZ)===3)return y===1||y===4||Math.abs(mainX)===3&&Math.abs(mainZ)===3?B.MARBLE:B.GLASS;
   if(Math.abs(mainX)<=1&&mainZ===-2)return y===4?B.LANTERN:B.STONE;
   if(y===4&&Math.abs(mainX)===2)return B.LANTERN;
@@ -59,16 +76,17 @@ function kuwaitTowers(l,x,y,z){
   let bulb=kuwaitBulb(mainX,y-KT_RESTAURANT,mainZ,5,1);if(bulb>=0)return bulb;
   bulb=kuwaitBulb(mainX,y-KT_LOOKOUT,mainZ,3,2);if(bulb>=0)return bulb;
   const r=y<=8?2.3:y<=15?1.6:y<=25?1:0;
-  if(y>=5&&y<=KUWAIT_MAIN.h&&mound<=r*r)return y===KUWAIT_MAIN.h?B.STONE:B.MARBLE;
+  if(y>=5&&y<=KUWAIT_MAIN.h&&mound<=r*r)return kuwaitMast(y,KUWAIT_MAIN.h);
  }
  if(Math.abs(waterX)<=4&&Math.abs(waterZ)<=4){
   const bulb=kuwaitBulb(waterX,y-KT_RESERVOIR,waterZ,4,0);if(bulb>=0)return bulb;
   const r=y<=8?2:y<=15?1.5:y<=21?1:0;
-  if(y<=KUWAIT_WATER.h&&waterX*waterX+waterZ*waterZ<=r*r)return y===KUWAIT_WATER.h?B.STONE:B.MARBLE;
+  if(y<=KUWAIT_WATER.h&&waterX*waterX+waterZ*waterZ<=r*r)return kuwaitMast(y,KUWAIT_WATER.h);
  }
  const lamp=Math.abs(lightX)+Math.abs(lightZ);
  if(y===8&&lamp===1)return B.LANTERN;
- if(y<=KUWAIT_LIGHT.h&&lamp<=(y<=8?1:0))return y===KUWAIT_LIGHT.h?B.STONE:B.MARBLE;
+ if(y===13&&lamp<=1)return lamp?B.LANTERN:B.LIMEP;
+ if(y<=KUWAIT_LIGHT.h&&lamp<=(y<=8?1:0))return kuwaitMast(y,KUWAIT_LIGHT.h);
  return -1;
 }
 function silKuwaitTowers(l,add,pk,lod){
@@ -79,7 +97,8 @@ function silKuwaitTowers(l,add,pk,lod){
   const shoulder=r-1,crown=r-2;
   add(p.x-crown,y-r,p.z-crown,p.x+crown,y-r+1,p.z+crown,4);
   if(r>=4)add(p.x-shoulder,y-r+2,p.z-shoulder,p.x+shoulder,y-2,p.z+shoulder,5);
-  add(p.x-r,y-1,p.z-r,p.x+r,y+1,p.z+r,glass?4:5);
+  add(p.x-r,y,p.z-r,p.x+r,y+1,p.z+r,glass?4:5);
+  add(p.x-r,y-1,p.z-r,p.x+r,y-1,p.z+r,4);
   if(r>=4)add(p.x-shoulder,y+2,p.z-shoulder,p.x+shoulder,y+r-2,p.z+shoulder,5);
   add(p.x-crown,y+r-1,p.z-crown,p.x+crown,y+r,p.z+crown,4);
  };

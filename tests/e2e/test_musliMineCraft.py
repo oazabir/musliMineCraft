@@ -1768,7 +1768,7 @@ class TestSixBuilders:
         _wait_bots(g, 6)
         g.ev("(()=>{const b=bots.find(b=>b.name==='Idris');for(let k=0;k<120&&b.st!==BS.BUILD;k++)__stepBots(5)})()")
         t = g.ev("(()=>{const b=bots.find(b=>b.name==='Idris');return botTag(b)})()")
-        assert t.startswith("Idris Ã‚Â· building a "), t
+        assert t.startswith("Idris Ãƒâ€šÃ‚Â· building a "), t
 
     def test_bots_never_end_up_inside_blocks(self, started):
         g = started
@@ -1784,7 +1784,7 @@ class TestDismantle:
         _wait_bots(g, 6)
         g.ev("window.__ev=[];const o=botTag;")
         seen = g.ev("""(()=>{let s=false;for(let k=0;k<400&&!s;k++){__stepBots(5);for(const b of bots)if(b.on&&botTag(b).indexOf('tidying up')>0)s=true}return s})()""")
-        assert seen, "Expected some bot to show '<name> Ã‚Â· tidying up' within 2000 s of game time"
+        assert seen, "Expected some bot to show '<name> Ãƒâ€šÃ‚Â· tidying up' within 2000 s of game time"
 
     def test_tidying_removes_blocks_top_down_slowly(self, started):
         g = started
@@ -3195,6 +3195,24 @@ def _walk_into_gate(g, i):
 
 
 class TestTowerElevators:
+    def test_tower_bases_pick_up_the_upper_facade_palette(self, loaded):
+        assert loaded.ev("""(()=>{const burj=lmOf('burj'),sail=lmOf('sail');
+          return burj.fn(burj,-6,3,7)===B.BLUE&&burj.fn(burj,-6,4,7)===B.LIMEP
+            &&sail.fn(sail,4,2,-8)===B.TURQ;
+        })()""")
+
+    def test_upper_tower_blocks_are_solid(self, started):
+        assert started.ev("""(()=>['burj','sail'].every(type=>{
+          const {l,levels}=upperTowerBlocks.find(t=>t.l.t===type);
+          const y=levels.findIndex((cells,i)=>i>l.h&&cells.length>0);
+          return upperTowerSolid(levels[y][0][0],l.y0+y,levels[y][0][1]);
+        }))()""")
+
+    def test_kuwait_towers_have_blue_bands_and_mast_beacons(self, loaded):
+        assert loaded.ev("""(()=>{const l=lmOf('kuwait');
+          return l.fn(l,-2,13,0)===B.BLUE&&l.fn(l,7,16,0)===B.BLUE&&l.fn(l,14,17,6)===B.LANTERN;
+        })()""")
+
     @pytest.mark.parametrize("type_", ["burj", "sail", "kuwait"])
     def test_take_elevator_and_return_to_the_lobby(self, desktop, type_):
         g = desktop
@@ -3223,7 +3241,7 @@ class TestTowerElevators:
                     throw Error('Expected the open door to clear the landing');
                 liftClick(ray,null);
             })()""")
-            control = g.page.locator("#liftControls").get_by_role("button", name=stop["name"].split(" · ")[0], exact=False)
+            control = g.page.locator("#liftControls").get_by_role("button", name=stop["name"].split(" Â· ")[0], exact=False)
             control.click()
             g.wait(f"!LIFT_RIDE&&Math.hypot(player.x-{stop['x']},player.y-{stop['y']},player.z-{stop['z']})<.05"
                    f"&&!collides(player.x,player.y,player.z)&&solidAt({int(stop['x'])},{stop['y']-1},{int(stop['z'])})",
@@ -3354,15 +3372,19 @@ class TestPortals:
     def test_haram_has_the_expansion_clock_tower_and_clearly_black_stone(self, loaded):
         g = loaded
         r = g.ev("""(()=>{const l=fixedList().find(q=>q.t==='haram');return{
-          courtyard:haram(l,48,0,0),edge:haram(l,55,0,0),extension:haram(l,0,15,-40),hall:haram(l,8,8,-40),
+          courtyard:haram(l,48,0,0),edge:haram(l,55,0,13),extension:haram(l,0,15,-40),hall:haram(l,8,8,-40),
           clock:haram(l,-61,23,-4),clockTop:haram(l,-68,31,-4),extent:[l.ex,l.ez],
-          southRoof:haram(l,0,9,44),eastRoof:haram(l,44,9,0),gate:haram(l,0,2,52),openMataf:haram(l,21,4,0)}})()""")
+          southRoof:haram(l,0,9,44),eastRoof:haram(l,44,9,0),gate:haram(l,0,2,52),openMataf:haram(l,21,4,0),
+          paths:HARAM_GATES.every(([,nx,nz,d,a])=>[d-12,d-2,d,d+2].every(k=>
+            [1,2,3].every(y=>haram(l,nx*k+(nx?0:a),y,nz*k+(nz?0:a))===B.AIR))),
+          towers:HARAM_TOWERS.every(([x,z,w])=>[1,2,3].every(y=>haram(l,x+w,y,z)===B.AIR&&haram(l,x,y,z)===B.AIR))}})()""")
         assert r["courtyard"] == g.ev("B.PATH"), f"The mataf should span a broad courtyard, observed {r}"
         assert r["edge"] == g.ev("B.ARCH"), f"Expected a perimeter around the expanded courtyard, observed {r}"
         assert r["extension"] == g.ev("B.LIMEP") and r["hall"] == g.ev("B.MARBLE"), f"Expected the northern prayer hall and roof, observed {r}"
         assert r["clock"] == g.ev("B.GOLD") and r["clockTop"] == g.ev("B.GOLD"), f"Expected the Abraj Al-Bait clock face and crown, observed {r}"
-        assert r["extent"] == [78, 75], f"Expected an expanded Haram footprint, observed {r}"
+        assert r["extent"] == [96, 75], f"Expected an expanded Haram footprint, observed {r}"
         assert r["southRoof"] == r["eastRoof"] == g.ev("B.LIMEP") and r["gate"] == 0 and r["openMataf"] == -1
+        assert r["paths"] and r["towers"], f"Expected all five gates and seven tower lobbies to be open, observed {r}"
 
     def test_landmarks_back_panel_is_compact_with_floor_aligned_gates(self, loaded):
         g = loaded

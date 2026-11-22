@@ -280,11 +280,80 @@ function flowers(l,lx,y,lz){
  if(y===1){const k=m&1?-1:B.FL0+((m+(lx>0?1:0)+(lz>0?2:0))%6);return k>=0?k:(hash2(lx,lz,4)>.5?B.TUFT:-1)}
  return -1;
 }
+/* Five simplified entrances around the mataf. */
+const HARAM_GATES=[
+ ['King Abdulaziz Gate',0,1,52,0],['King Fahd Gate',-1,0,52,19],
+ ['King Abdullah Gate',0,-1,52,0],['Umrah Gate',-1,0,52,-19],['Al-Fath Gate',1,0,52,0]
+];
+const HARAM_TOWERS=[
+ [-68,-4,7,8,47],[-69,-24,6,7,25],[-69,17,6,7,28],
+ [-85,-25,6,7,23],[-85,18,6,7,26],[-87,-10,6,6,31],[-87,5,6,6,33]
+];
+function haramGate(lx,y,lz){
+ for(const [name,nx,nz,depth,center] of HARAM_GATES){
+  const d=lx*nx+lz*nz,a=(nx?lz:lx)-center,w=Math.abs(a);
+  if(d<29||d>depth+6||w>10)continue;
+  if(d>=depth-2&&d<=depth+2&&(Math.abs(w-8)<=1)){
+   if(y<=19)return y%5===0?B.LIMEP:B.MARBLE;
+   if(y<=31&&w===8&&Math.abs(d-depth)<=1)return y>=29?B.GOLD:y%4===0?B.LIMEP:B.MARBLE;
+  }
+  const arch=Math.min(Math.abs(a),Math.abs(a-5),Math.abs(a+5));
+  if(d>=depth-1&&d<=depth+2&&w<=7){
+   if(y===0)return w===2||w===3?B.LIMEP:B.PATH;
+   if(y<=5&&(arch<=1||y===1&&arch===2))return B.AIR;
+   if(y===6&&arch===0)return B.AIR;
+   if(y<=8)return (a+y)%2===0?B.MARBLE:B.LIMEP;
+   if(y===9)return B.ARCH;
+   if(y===10&&w<=6)return w%2===0?B.TURQ:B.LIMEP;
+  }
+  if(w<=6&&d<depth-1){
+   if(y===0)return B.PATH;
+   if(y<=4)return B.AIR;
+  }
+  if(d>depth+2&&w<=7&&y===0)return B.PATH;
+ }
+ return -1;
+}
+function haramHotel(lx,y,lz){
+ for(const [x,z,w,d,h] of HARAM_TOWERS){
+  const dx=lx-x,dz=lz-z,ax=Math.abs(dx),az=Math.abs(dz),clock=h===47;
+  if(ax>w||az>d||y>h)continue;
+  const edge=ax===w||az===d;
+  if(y===0)return dx===w&&az<=2?B.PATH:B.MARBLE;
+  if(y<12){
+   if(dx===w&&az<=2&&y<=4)return B.AIR;
+   if(edge)return y===1||y===5||y===6||y===11||ax===w&&az===d?B.LIMEP:y%3===0?B.MARBLE:B.GLASS;
+   if(y===1&&dx===-w+1&&az<=1)return B.ARCH;
+   if(y===4&&dx===w-1&&az===3||y===10&&az===d-2&&dx%3===0)return B.LANTERN;
+   const stair=dz===-d+2&&dx>=-3&&dx<=2,step=dx+4;
+   if(stair&&y<=step)return B.ARCH;
+   if(y===6&&!stair)return B.MARBLE;
+   if(y===6&&stair&&step===6)return B.ARCH;
+   return B.AIR;
+  }
+  if(clock&&y>=20&&y<=27&&edge){
+   const u=ax===w?dz:dx,v=y-23,r=u*u+v*v;
+   if(r<=13)return u===0&&v>=0||v===0&&u>=0?B.GOLD:r>=9?B.LIMEP:B.TURQ;
+   return B.STONE;
+  }
+  if(clock&&y>=30){
+   const r=y<=35?Math.max(1,6-(y-30)):y<=43?1:0;
+   if(y>=44)return dz===0&&(y===44&&ax<=2||y===45&&ax===2||y===46&&dx===-1||y===47&&dx===0)?B.GOLD:-1;
+   return ax<=r&&az<=r?(y===31||y%4===0?B.GOLD:B.LIMEP):-1;
+  }
+  if(!clock&&y>=h-3)return ax<=w-1&&az<=d-1?(y===h?B.GOLD:B.LIMEP):-1;
+  if(edge)return y%4===0?B.LIMEP:(dx+dz)%3===0?B.MARBLE:B.GLASS;
+  return y%4===0?B.MARBLE:B.AIR;
+ }
+ return -1;
+}
 function haram(l,lx,y,lz){
  const ax=Math.abs(lx),az=Math.abs(lz),m=Math.max(ax,az);
+ const gate=haramGate(lx,y,lz);if(gate>=0)return gate;
+ const hotel=haramHotel(lx,y,lz);if(hotel>=0)return hotel;
  /* broad marble mataf with the northern expansion and its four minarets */
  if(y===0){if(m<=56)return m>=54?B.ARCH:(m>21&&(lx%8===0||lz%8===0)?B.PATH:B.MARBLE);
-  return Math.abs(lx+68)<=7&&Math.abs(lz+4)<=8?B.MARBLE:-1}
+  return lx>=-95&&lx<-56&&az<=33?(lx%5===0||lz%5===0?B.PATH:B.MARBLE):-1}
  /* King Abdullah expansion: wide prayer halls, roof terraces and colonnades */
  if(lz>=-53&&lz<=-29&&ax<=42){
   if(y===1||y===2){if(ax<=40&&lz>=-51&&lz<=-31)return y===1?B.MARBLE:B.LIMEP}
@@ -316,19 +385,6 @@ function haram(l,lx,y,lz){
   if(y>=2&&y<=27)return y%6===0?B.ARCH:B.MARBLE;
   if(y===28)return B.GOLD;if(y===29)return B.TURQ;if(y===30)return B.GOLD;
  }
- /* Abraj Al-Bait inspired clock tower beyond the west colonnade */
- const tx=lx+68,tz=lz+4,ta=Math.max(Math.abs(tx),Math.abs(tz));
- if(Math.abs(tx)<=7&&Math.abs(tz)<=8){
-  if(y<=3)return ta>=7?B.GOLD:B.MARBLE;
-  if(y<=19){if(Math.abs(tx)===7||Math.abs(tz)===8)return y%5===0?B.GOLD:B.LIMEP;return B.MARBLE}
-  if(y<=27){
-   const edge=Math.abs(tx)===7||Math.abs(tz)===8,pos=Math.abs(tx)===7?tz:tx;
-   if(edge){if(y===20||y===27||Math.abs(pos)===4)return B.GOLD;
-    if(y>=20&&y<=26)return y===23&&pos===0||y===24&&pos===1||y===22&&pos===-1?B.GOLD:B.STONE}
-   return y%4===0?B.GOLD:B.MARBLE;
-  }
-  if(y<=31){const r=31-y;return Math.abs(tx)<=r&&Math.abs(tz)<=r?(y>=30?B.GOLD:B.LIMEP):-1}
- }
  if(ax<=3&&az<=3&&y>=1&&y<=7)return B.STONE;
  return -1;
 }
@@ -341,7 +397,7 @@ const LMT={
  orchard:{fn:orchard,p:()=>({hx:14,hz:11,h:7})},
  vineyard:{fn:vineyard,p:()=>({hx:15,hz:11,h:5})},
  flowers:{fn:flowers,p:()=>({hx:10,hz:10,h:5,ymin:-1})}
- ,haram:{fn:haram,p:()=>({hx:78,hz:75,h:31,top:31,ymin:0})},
+ ,haram:{fn:haram,p:()=>({hx:96,hz:75,h:47,top:47,ymin:0})},
  landmarks:{fn:()=>-1,p:()=>({hx:15,hz:26,h:8,y0:16,ymin:0})},
  burj:{fn:burjKhalifa,p:()=>({hx:19,hz:21,h:63,top:63,y0:15,ymin:0})},
  sail:{fn:burjAlArab,p:()=>({hx:16,hz:20,h:31,top:31,y0:15,ymin:-2})},

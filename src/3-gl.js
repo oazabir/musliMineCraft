@@ -206,9 +206,19 @@ function silDraw(time){
 }
 /* The tall skyline uses static meshes and the same depth buffer as terrain. */
 let upperTowerMeshes=null;
+let upperTowerBlocks=null;
+function upperTowerSolid(x,y,z){
+ if(y<32||!upperTowerBlocks)return false;
+ for(const {l,levels} of upperTowerBlocks){
+  if(y<=l.y0+l.h||Math.abs(x-l.x)>32||Math.abs(z-l.z)>32)continue;
+  const boxes=levels[y-l.y0];if(!boxes)continue;
+  for(const [west,north,east,south] of boxes)if(x>=west&&x<=east&&z>=north&&z<=south)return true;
+ }
+ return false;
+}
 function drawUpperTowers(){
  if(!upperTowerMeshes)upperTowerMeshes=[['burj',burjUpper],['sail',arabUpper]].map(([type,build])=>{
-  const l=lmOf(type),verts=[],at=[0,0];
+  const l=lmOf(type),verts=[],at=[0,0],levels=[];
   const quad=(a,b,c,d,col,shade=1)=>{
    for(const v of [a,b,c,a,c,d]){
     lm2w(l,v[0],v[2],at);
@@ -223,7 +233,12 @@ function drawUpperTowers(){
    quad([x,y,Z],[x,y,z],[x,Y,z],[x,Y,Z],c,.72);
    quad([x,y,Z],[X,y,Z],[X,y,z],[x,y,z],c,.60);
   };
-  build(quad,box);
+  build(quad,(x,y,z,X,Y,Z,c)=>{
+   box(x-.5,y,z-.5,X-.5,Y,Z-.5,c);
+   const a=[],b=[];lm2w(l,x+.5,z+.5,a);lm2w(l,X-.5,Z-.5,b);
+   const cells=[Math.floor(Math.min(a[0],b[0])),Math.floor(Math.min(a[1],b[1])),Math.floor(Math.max(a[0],b[0])),Math.floor(Math.max(a[1],b[1]))];
+   for(let h=y;h<Y;h++)(levels[h]??=[]).push(cells);
+  });
   const {summit:y,shaft:[x,z]}=type==='burj'?BURJ_LIFT:ARAB_LIFT;
   const deck=[.60,.67,.69],rail=[.32,.47,.54],trim=[.85,.71,.40];
   box(x-3.5,y-1,z-3.5,x+3.5,y,z+3.5,deck);
@@ -234,8 +249,9 @@ function drawUpperTowers(){
    box(x+a,y+.88,z-3.5,x+b,y+1,z+3.5,trim);
    box(x-2.5,y+.88,z+a,x+2.5,y+1,z+b,trim);
   }
-  return{l,data:new Float32Array(verts),b:null,n:verts.length/7};
+  return{l,levels,data:new Float32Array(verts),b:null,n:verts.length/7};
  });
+ upperTowerBlocks=upperTowerMeshes;
  for(const o of upperTowerMeshes){
   if(Math.hypot(o.l.x-cam.e[0],o.l.z-cam.e[2])>570)continue;
   if(!o.b||!gl.isBuffer(o.b)){

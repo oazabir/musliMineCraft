@@ -16,6 +16,11 @@ function petraTreasury(l,lx,y,lz){
  if(ax>PETRA_X||az>PETRA_Z||y<0||y>27)return -1;
  const rock=petraCliff[(lz+PETRA_Z)*PETRA_W+lx+PETRA_X];
  if(y===0)return ax<=3&&lz>=-5?B.PATH:rock?B.RROCK:B.SANDSTONE;
+ if(ax<=1&&lz>=-11&&lz<=7){
+  const step=lz<=0?2:lz===1?1:0;
+  if(y<=step)return B.PATH;
+  if(y<=step+3)return B.AIR;
+ }
  if(y<=2&&ax<=9&&lz>=-7&&lz<=2-y)return B.ARCH;
  if(ax<=3&&lz>=-12&&lz<=-3&&y>=3&&y<=8&&(ax<=1||lz<=-7))return 0;
  if(ax<=9&&lz>=-5&&lz<=-1){

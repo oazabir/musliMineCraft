@@ -46,7 +46,7 @@ function genPortals(x0,z0){
  }
 }
 /* --- drawing: masonry, portal surface, and sparks --- */
-const PO=new Float32Array(252*240*PORT.length),PT=new Float32Array(42*624*PORT.length),PA=new Float32Array(42*40*PORT.length),PE=new Float32Array(42*4200);
+const PO=new Float32Array(252*240*PORT.length),PT=new Float32Array(42*624*PORT.length),PA=new Float32Array(42*40*PORT.length),PE=new Float32Array(42*6500);
 let pBuf=null,pTextN=0,pTextUploaded=false;
 const PBC=new Float32Array(24),PLIT=[1,1,1];
 function pbox(o,cx,cy,cz,ux,uy,uz,vx,vy,vz,wx,wy,wz,hu,hv,hw,r,g,b,lit){
@@ -219,6 +219,12 @@ function buildPortalEngraving(){
   const facade={x:l.x+(art?-2.5:.5),z:l.z+(art?11:26-MZC),nx:0,nz:1,tx:-1,tz:0};
   o=engraveText(o,facade,name,l.y0+5.5,ink,.13,32,.015);
  }
+ const haram=lmOf('haram');
+ for(const [name,nx,nz,depth,along] of HARAM_GATES){
+  const x=haram.x+nx*(depth+2.53)+(nx?0:along)+.5;
+  const z=haram.z+nz*(depth+2.53)+(nz?0:along)+.5;
+  o=engraveText(o,{x,z,nx,nz,tx:-nz,tz:nx},name,haram.y0+9.48,ink,.12,24,0);
+ }
  pTextN=o;
 }
 function portalDraw(now){
@@ -371,7 +377,7 @@ function photoBoardTexture(p){
  g.drawImage(im,(512-w)/2,(282-h)/2,w,h);
  g.fillStyle='#241b12';g.textAlign='center';g.font='bold 19px sans-serif';g.fillText(label,256,305,496);
  const credit=license==='Public domain'?license:'CC '+license.split('/').filter(Boolean).slice(-2).join(' ').toUpperCase();
- g.font='13px sans-serif';g.fillText(author+' · '+credit+' · Resized',256,325,496);
+ g.font='13px sans-serif';g.fillText(author+' Â· '+credit+' Â· Resized',256,325,496);
  p.tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,p.tex);
  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);

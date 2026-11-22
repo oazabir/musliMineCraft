@@ -8,8 +8,8 @@ const BURJ_MASS=[
 const BURJ_SKY_HEIGHT=630;
 const BURJ_LIFT={shaft:[0,0],summit:BURJ_SKY_HEIGHT,stops:[
  {name:'Lobby',x:0,y:2,z:2,yaw:Math.PI},
- {name:'At the Top · Levels 124–125',x:0,y:36,z:2,yaw:Math.PI},
- {name:'At the Top SKY · Level 148',x:0,y:46,z:2,yaw:Math.PI},
+ {name:'At the Top Ã‚Â· Levels 124Ã¢â‚¬â€œ125',x:0,y:36,z:2,yaw:Math.PI},
+ {name:'At the Top SKY Ã‚Â· Level 148',x:0,y:46,z:2,yaw:Math.PI},
  {name:'Spire summit',x:0,y:BURJ_SKY_HEIGHT,z:2,yaw:Math.PI}
 ]};
 const BURJ_STRIDE=21,BURJ_CENTER=10;
@@ -20,11 +20,20 @@ for(const [x0,z0,x1,z1,top] of BURJ_MASS)for(let z=z0;z<=z1;z++)for(let x=x0;x<=
 }
 function burjKhalifa(l,lx,y,lz){
  if(lx===0&&lz===0&&y>=2)return B.AIR;
+ if(Math.abs(lx)<=1&&lz>=3&&y>=1&&y<=4)return lz===3&&y===1?B.MARBLE:B.AIR;
  if(lz===2)for(const p of BURJ_LIFT.stops){
   if(lx===0&&y===p.y+2)return B.LANTERN;
   if(Math.abs(lx)===1&&y>=p.y&&y<=p.y+2)return B.LIMEP;
  }
- return burjBlock(Math.floor(lx/2),Math.floor(y/2),Math.floor(lz/2));
+ const x=Math.floor(lx/2),floor=Math.floor(y/2),z=Math.floor(lz/2),block=burjBlock(x,floor,z);
+ if(y<2||block!==B.GLASS&&block!==B.TURQ&&block!==B.BLUE)return block;
+ const i=(z+BURJ_CENTER)*BURJ_STRIDE+x+BURJ_CENTER;
+ if(burjFootprint[i]<floor)return block;
+ const side=(burjFootprint[i-1]||0)<floor||(burjFootprint[i+1]||0)<floor;
+ const bay=side?lz:lx;
+ if(y%5===4||bay%3===0)return B.LIMEP;
+ if(y%10===3&&(bay+y)%7===0)return B.LANTERN;
+ return (bay+y)&1?B.BLUE:B.TURQ;
 }
 function burjBlock(lx,y,lz){
  const ax=Math.abs(lx),az=Math.abs(lz);
@@ -67,7 +76,9 @@ function burjBlock(lx,y,lz){
  }
  if(y===top||y===4||y%5===0)return B.MARBLE;
  if(!edge)return B.STONE;
- return (lx+lz)%3===0?B.LIMEP:(lx-lz)%4===0?B.TURQ:B.GLASS;
+ if((lx+lz)%3===0)return B.LIMEP;
+ if(y%5===1)return B.BLUE;
+ return (lx-lz)%4===0?B.TURQ:B.GLASS;
 }
 function silBurjKhalifa(l,add,pk,lod){
  const rawAdd=add;
@@ -84,26 +95,32 @@ function silBurjKhalifa(l,add,pk,lod){
 
 /* Upper facade in world units, independent of the terrain chunk height. */
 function burjUpper(q,box){
- const glass=[.31,.54,.67],silver=[.76,.85,.87],dark=[.21,.39,.51];
+ const blue=[.12,.34,.66],cyan=[.29,.61,.77],silver=[.76,.85,.87],dark=[.10,.23,.38],lit=[.83,.73,.49];
  const tier=(x,z,w,d,y,top)=>{
-  box(x-w/2,y,z-d/2,x+w/2,top,z+d/2,glass);
-  for(let level=y+4;level<top-1;level+=6)box(x-w/2-.055,level,z-d/2-.055,x+w/2+.055,level+.35,z+d/2+.055,level%5===0?silver:dark);
-  for(let level=y+8;level<top-2;level+=12)for(const side of [-1,1]){
-   const face=z+side*(d/2+.071);
-   for(const bay of [-.35,-.17,.17,.35]){
-    const a=x+bay*w;
-    q([a-.24,level,face],[a+.24,level,face],[a+.24,level+1.25,face],[a-.24,level+1.25,face],[.82,.74,.53]);
+  const left=Math.floor(x-w/2),right=Math.ceil(x+w/2),back=Math.floor(z-d/2),front=Math.ceil(z+d/2);
+  box(left,y,back,right,top,front,dark);
+  for(let floor=y;floor<top;floor+=5){
+   const ceiling=Math.min(floor+5,top);
+   box(left-1,ceiling-1,back-1,right+1,ceiling,front+1,silver);
+   if(ceiling-floor<2)continue;
+   for(let a=left;a<right;a+=3)for(const side of [back-1,front]){
+    const color=(a+floor)%11===0?lit:(a+floor)%2?blue:cyan;
+    box(a,floor,side,Math.min(a+2,right),ceiling-1,side+1,color);
+   }
+   for(let a=back;a<front;a+=3)for(const side of [left-1,right]){
+    const color=(a-floor)%11===0?lit:(a-floor)%2?blue:cyan;
+    box(side,floor,a,side+1,ceiling-1,Math.min(a+2,front),color);
+   }
+   if(w>=7&&ceiling-floor>=4&&floor%4===1){
+    box(left+1,floor+1,front+1,right-1,floor+2,front+2,silver);
    }
   }
-  for(let i=-1;i<=1;i++){
-   const xx=x+i*w*.31,zz=z+i*d*.31;
-   for(const side of [-1,1]){
-    const faceZ=z+side*(d/2+.063),faceX=x+side*(w/2+.063);
-    q([xx-.13,y,faceZ],[xx+.13,y,faceZ],[xx+.13,top,faceZ],[xx-.13,top,faceZ],silver);
-    q([faceX,y,zz-.13],[faceX,y,zz+.13],[faceX,top,zz+.13],[faceX,top,zz-.13],silver);
-   }
+  if(w>=7&&d>=7){
+   box(left,top,back,right,top+1,front,silver);
+   box(left+1,top+1,back+1,left+3,top+3,back+3,dark);
+   box(right-3,top+1,front-3,right-1,top+3,front-1,dark);
+   for(const a of [left,right-1])for(const b of [back,front-1])box(a,top+1,b,a+1,top+2,b+1,lit);
   }
-  box(x-w/2-.14,top-.85,z-d/2-.14,x+w/2+.14,top,z+d/2+.14,silver);
  };
  for(const [x,z,w,d,base,top] of [
   [0,0,26,26,41,169],[-15,-5,17,19,45,117],[15,-5,17,19,46,138],[0,15,18,17,42,104],
@@ -111,6 +128,6 @@ function burjUpper(q,box){
   [-5,4,12,14,299,347],[5,-5,13,12,300,397],[0,0,16,16,301,433],
   [-2,1,10,10,426,482],[1,-1,7,7,475,517],[0,0,4,4,511,553],[0,0,2,2,552,581]
  ])tier(x,z,w,d,base,top);
- box(-.52,580,-.52,.52,609,.52,silver);
- box(-.23,608,-.23,.23,BURJ_SKY_HEIGHT,.23,[.91,.91,.86]);
+ box(-1,580,-1,1,609,1,silver);
+ box(0,609,0,1,BURJ_SKY_HEIGHT,1,silver);
 }

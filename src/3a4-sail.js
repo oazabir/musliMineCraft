@@ -35,6 +35,7 @@ function burjAlArab(l,x,y,z){
   if(z>=4&&ax<=2)return ax===2?B.GOLD:B.PATH;
   return ((x+z)&3)===0?B.LIMEP:B.MARBLE;
  }
+ if(ax<=1&&z>=6&&z<=12&&y<=3)return B.AIR;
  const lift=burjArabLiftBlock(x,y,z);if(lift>=0)return lift;
  if(bridge&&bax===3&&z>12&&z<20&&y===1)return z%4===0?B.LANTERN:B.LATTICE;
  if(terrace&&z===-18&&ax%4===0&&y===1)return B.LANTERN;
@@ -58,7 +59,7 @@ function burjAlArab(l,x,y,z){
  if(y>=28)return ax===0&&z===5?(y===31?B.LANTERN:B.MARBLE):-1;
  if(y<=5&&z>=4&&z<=10&&ax<=4){
   if(y===5&&z>=8)return ax===4||z===10?B.MARBLE:B.LIMEP;
-  if(ax===4&&z>=7&&z<=9)return y===4?B.LANTERN:y<=3?B.GLASS:B.ARCH;
+  if(ax===4&&z>=7&&z<=9)return y===4?B.LANTERN:y===1?B.BLUE:y<=3?B.GLASS:B.ARCH;
   if(ax===3&&z>=7&&z<=9&&y===1)return B.BLUE;
   if(y<=4&&ax<=2)return 0;
  }
@@ -67,10 +68,17 @@ function burjAlArab(l,x,y,z){
  const width=BAA_W[y-1],edge=BAA_EDGE[y-1];
  if(ax>width||z<edge||z>6)return -1;
  const sail=edge+Math.floor(ax*ax/(width*2));
- if(z===sail){if(y%6===0||ax===width||ax===0)return B.MARBLE;return y%6===1?B.GLASS:B.LIME;}
+ if(z===sail){
+  if(y%5===0||ax===width||ax===0||(ax+y)%9===0)return B.MARBLE;
+  return (x+y)%3===0?B.TURQ:B.BLUE;
+ }
  if(z<sail)return -1;
  const wing=Math.max(2,Math.round(width*(6-z)/(6-edge)));
- if(ax===wing)return y%5===0?B.MARBLE:((y+z)%6===0?B.BLUE:B.GLASS);
+ if(ax===wing){
+  if(y%5===0)return B.MARBLE;
+  if(y%5===1||z%6===0)return B.BLUE;
+  return z%6===1?B.TURQ:B.GLASS;
+ }
  if(ax===wing+1&&ax<=width&&(y%6<2||Math.abs(z-(5-y*.55))<1))return B.MARBLE;
  if(ax>2&&ax<wing&&y%4===0&&z<3)return B.ARCH;
  if(ax===wing-1&&ax>2&&y%4===1&&y>2&&z<3)return y%8===1?B.TURQ:B.GLASS;
@@ -91,28 +99,25 @@ function silBurjAlArab(l,add,pk,lod){
 }
 
 function arabUpper(q,box){
- const white=[.92,.94,.92],steel=[.67,.77,.80],blue=[.20,.42,.60],window=[.31,.56,.72];
- /* Full-height mast and a curved sail that narrows into it. */
- box(-1,24,4,1,96,6,white);box(-.36,95,4.64,.36,ARAB_SKY_HEIGHT,5.36,white);
- const rim=y=>{const t=(y-20)/77;return{z:-11+16*Math.pow(t,2.2),w:9.2*(1-.88*Math.pow(t,1.45))}};
- for(let y=20;y<97;y+=2){
-  const top=Math.min(97,y+2),a=rim(y),b=rim(top);
-  q([-a.w,y,a.z],[a.w,y,a.z],[b.w,top,b.z],[-b.w,top,b.z],y%8===0?white:y%4===0?window:blue);
-  for(const side of [-1,1]){
-   const x=side*a.w,X=side*b.w;
-   q([x,y,a.z],[side*1.05,y,5],[side*1.05,top,5],[X,top,b.z],y%8===0?steel:blue);
-   q([x-side*.35,y,a.z-.09],[x+side*.35,y,a.z-.09],[X+side*.35,top,b.z-.09],[X-side*.35,top,b.z-.09],white);
-   if(y%4===0){
-    const span=a.w*.72,face=a.z-.16;
-    q([side*span,y+.18,face],[side*.65,y+.18,face],[side*.65,y+.43,face],[side*span,y+.43,face],steel);
-   }
+ const white=[.92,.94,.92],steel=[.67,.77,.80],blue=[.12,.34,.66],glass=[.30,.58,.77];
+ box(-1,24,4,2,96,7,white);
+ box(0,96,5,1,ARAB_SKY_HEIGHT,6,white);
+ for(let y=20;y<97;y++){
+  const t=(y-20)/77,width=Math.max(1,Math.round(9*(1-.88*t**1.45)));
+  const front=Math.round(-11+16*t**2.2);
+  for(let x=-width;x<=width;x++){
+   const z=Math.min(5,front+Math.floor(x*x/Math.max(2,width*2)));
+   const frame=Math.abs(x)===width||x===0||y%5===0;
+   box(x,y,z,x+1,y+1,z+1,frame?white:(x+y)%3===0?glass:blue);
+  }
+  for(const side of [-1,1])for(let z=front+1;z<5;z++){
+   const x=side*Math.max(1,Math.round(width*(5-z)/Math.max(1,5-front)));
+   const brace=(z+y)%9===0||(z-y)%9===0;
+   box(x,y,z,x+1,y+1,z+1,brace?white:y%5===0?steel:(z%3===0?glass:blue));
   }
  }
- for(const side of [-1,1])for(const [y,top] of [[27,38],[41,54],[57,70],[73,86],[87,96]]){
-  const a=rim(y),b=rim(top);
-  q([side*(a.w+.05),y,a.z],[side*1.12,top,5],[side*1.12,top+1,5],[side*(a.w+.05),y+1,a.z],white);
- }
- box(-1.4,72,5,1.4,73.5,12,steel);
- box(-4.8,73.5,10,4.8,74.15,15.5,[.47,.62,.54]);
- box(-4.8,74.15,14.9,4.8,74.32,15.5,white);
+ box(-1,72,5,2,74,12,steel);
+ box(-5,74,10,5,75,16,[.23,.53,.40]);
+ for(const x of [-5,4])box(x,75,10,x+1,76,16,white);
+ for(let x=-3;x<=3;x+=2)box(x,75,15,x+1,76,16,white);
 }

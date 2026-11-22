@@ -1,4 +1,4 @@
-/* Hegra: the partly carved façade of the Tomb of Lihyan son of Kuza. */
+/* Hegra: the partly carved faÃ§ade of the Tomb of Lihyan son of Kuza. */
 const HEGRA_ROCK=[
  [-10,-11,9,6,3],[-9,-11,8,5,9],[-9,-10,8,5,15],
  [-8,-9,8,5,20],[-8,-8,8,5,22],[-7,-7,8,4,24]
@@ -9,6 +9,11 @@ function hegraTomb(l,x,y,z){
   if(z>=8&&z<=15&&ax<=3+(z>=12?2:0))return (x*3+z)%7===0?B.SANDSTONE:B.SAND;
   if(ax<=11&&z>=-12&&z<8)return B.SAND;
   return -1;
+ }
+ if(ax<=1&&z>=2&&z<=12){
+  const step=Math.min(3,Math.max(0,11-z));
+  if(y<=step)return B.SANDSTONE;
+  if(y<=step+3)return B.AIR;
  }
  if(z>=7&&z<=8&&ax<=5&&y<=9-z)return y===9-z?B.SANDSTONE:B.RROCK;
  if(y>=4&&y<=24&&z>=5&&z<=7){
