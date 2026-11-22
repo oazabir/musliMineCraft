@@ -3568,6 +3568,46 @@ class TestConsoleWorldsLobby:
         assert g.ev("(()=>{forceLoad(1040>>4,1045>>4,1);return getB(1040,25,1045)})()") == g.ev("B.GOLD"), \
             "The block built in the first world did not come back"
 
+    def test_share_makes_one_invite_per_friend_and_players_counts_them(self, desktop):
+        """Every /share adds another invite with its own lane, so one host can bring several friends."""
+        g = desktop
+        g.page.keyboard.press("/")
+        g.wait("__con().on", "the command console to open", observe="__con()")
+        g.ev("__cmd('/share')")
+        g.wait("__netCodes().length===1&&__netCodes()[0].invite", "the first invite", timeout=20000, observe="__netCodes()")
+        first = g.ev("__netCodes()")[0]
+        assert first["invite"].startswith("MM2."), f"Expected a short invite, observed {first['invite'][:40]!r}"
+        g.ev("__cmd('/share')")
+        g.wait("__netCodes().length===2&&__netCodes().every(c=>c.invite)", "a second invite", timeout=20000,
+               observe="__netCodes()")
+        codes = g.ev("__netCodes()")
+        assert codes[0]["invite"] != codes[1]["invite"], "Expected a fresh code for the second friend, not the same one"
+        assert [c["lane"] for c in codes] == [1, 2], f"Expected one lane per invite, observed {[c['lane'] for c in codes]}"
+        offers = [g.ev("(t)=>__netParse(t)", c["invite"]) for c in codes]
+        assert [o["t"] for o in offers] == ["offer", "offer"] and [o["lane"] for o in offers] == [1, 2], \
+            f"Expected both codes to carry their lane, observed {[(o['t'], o.get('lane')) for o in offers]}"
+        txt = g.ev("__cmd('/players')")
+        assert "2 invites waiting" in txt, f"Expected /players to count the waiting invites, observed {txt[-300:]!r}"
+        g.ev("__cmd('/endstream')")
+        g.wait("!__net().on", "the lobby to close", observe="__net()")
+        assert g.ev("__net().lanes") == 0, f"Expected no invite left open, observed {g.ev('__net()')}"
+        assert g.ev("playing"), "Expected the host to keep playing alone"
+
+    def test_a_reply_code_only_fits_the_invite_it_answers(self, desktop):
+        """A reply for a lane that is not open is refused with a clear message, not a silent failure."""
+        g = desktop
+        g.page.keyboard.press("/")
+        g.wait("__con().on", "the command console to open", observe="__con()")
+        g.ev("__cmd('/share')")
+        g.wait("__netCodes().length===1&&__netCodes()[0].invite", "the invite", timeout=20000, observe="__netCodes()")
+        inv = g.ev("__netCodes()")[0]["invite"]
+        stray = g.ev("(t)=>{const d=__netParse(t);return __netCode({t:'answer',sdp:d.sdp,lane:9})}", inv)
+        assert stray.startswith("MM2."), f"Expected a reply code, observed {stray[:40]!r}"
+        g.ev("(t)=>__cmd('/join '+t)", stray)
+        txt = g.ev("__con().text")
+        assert "belongs to an invite" in txt, f"Expected the stray reply to be refused, observed {txt[-300:]!r}"
+        g.ev("__cmd('/endstream')")
+
     def test_a_guest_sees_the_host_blocks_and_the_cancelled_game(self, started):
         """A guest applies the host's blocks and is told when the host ends the stream."""
         g = started
@@ -3650,6 +3690,57 @@ class TestConsoleWorldsLobby:
           return [Math.round(j.top-c.bottom),getComputedStyle(document.querySelector('#joy')).display]})()""")
         assert r[1] != "none", f"Expected the joystick to be shown in touch mode, observed {r}"
         assert r[0] >= 0, f"Expected the console above the joystick, observed them overlapping by {-r[0]}px"
+
+    def test_other_players_are_eased_between_packets_instead_of_jumping(self, started):
+        """Remote figures move smoothly: a new packet is approached over several frames and the legs swing on the way."""
+        g = started
+        g.ev("__netSim('guest')")
+        g.ev("__netFeed({t:'ps',l:[['h',100,20,100,0,0]]})")
+        g.wait("__net().players.length===1", "the remote player to appear", observe="__net().players")
+        r = g.ev("""(()=>{__netFeed({t:'ps',l:[['h',104,20,100,1.5,0]]});
+          const p=NET.players.get('h');__netTick(1/60);
+          const first=p.x,walk=p.leg>0;
+          for(let i=0;i<90;i++)__netTick(1/60);
+          return [first,walk,p.x,p.tx,p.leg,player===undefined]})()""")
+        assert 100.05 < r[0] < 103.95, f"Expected the figure between the packets after one frame, observed x={r[0]}"
+        assert r[1] is True, "Expected the legs to swing while the other player is moving"
+        assert abs(r[2] - 104) < 0.3, f"Expected the figure to reach the packet within a second, observed x={r[2]}"
+        assert r[4] < 0.2, f"Expected the legs to settle once it stopped, observed {r[4]}"
+
+    def test_one_host_takes_two_friends_and_they_all_see_each_other(self, game):
+        """A host sends an invite per friend; the reply codes come back in the other order and still find their invite."""
+        a, b, c = game(PHONE), game(PHONE), game(PHONE)
+        a.start()
+        b.start()
+        c.start()
+        codes = a.ev("""(async()=>{netShare();
+          for(let i=0;i<150&&__netCodes().length<1;i++)await new Promise(r=>setTimeout(r,100));
+          netShare();
+          for(let i=0;i<150&&!(__netCodes().length===2&&__netCodes()[1].invite);i++)await new Promise(r=>setTimeout(r,100));
+          return __netCodes().map(c=>c.invite)})()""")
+        assert len(codes) == 2 and all(x.startswith("MM2.") for x in codes), f"Expected two invites, observed {[x[:20] for x in codes]}"
+        b.ev("(t)=>netGuestJoin(t)", codes[0])
+        c.ev("(t)=>netGuestJoin(t)", codes[1])
+        wait_reply = """(async()=>{for(let i=0;i<150;i++){const t=document.getElementById('rcode');
+          if(t&&t.value)return t.value;await new Promise(r=>setTimeout(r,100))}return ''})()"""
+        rb, rc = b.ev(wait_reply), c.ev(wait_reply)
+        assert rb.startswith("MM2.") and rc.startswith("MM2."), f"Expected two replies, observed {rb[:20]!r} {rc[:20]!r}"
+        a.ev("(t)=>netAccept(t)", rc)
+        a.wait("__net().peers===1", "the second friend to connect", timeout=30000, observe="__net()")
+        a.ev("(t)=>netAccept(t)", rb)
+        a.wait("__net().peers===2", "the first friend to connect", timeout=30000, observe="__net()")
+        b.wait("__net().players.length===2", "the guest to see the host and the other guest", timeout=20000, observe="__net()")
+        c.wait("__net().players.length===2", "the other guest to see both of them", timeout=20000, observe="__net()")
+        b.ev("setBlock(1030,24,1032,B.GOLD,0)")
+        c.wait("getAny(1030,24,1032)===B.GOLD", "one guest's block in the other guest's world", timeout=20000,
+               observe="getAny(1030,24,1032)")
+        a.wait("getAny(1030,24,1032)===B.GOLD", "the same block in the host's world", timeout=20000,
+               observe="getAny(1030,24,1032)")
+        a.ev("__cmd('/endstream')")
+        b.wait("(document.getElementById('panel').textContent||'').includes('host has cancelled the game')",
+               "the first guest to be told the host cancelled", timeout=15000,
+               observe="document.getElementById('panel').textContent.slice(0,120)")
+        assert a.ev("playing") and not a.ev("__net().on"), "Expected the host to keep playing alone"
 
     def test_two_browsers_connect_with_one_invite_and_one_reply_code(self, game):
         """The short codes are real ones: a host and a guest connect and blocks cross both ways."""

@@ -3,7 +3,9 @@ const WORLDS_KEY='musliMineCraft_worlds_v1',ACTIVE_KEY='musliMineCraft_active_v1
 let WORLDS=[],WACT='';
 const CON={on:false,hist:[],hi:0};
 /* NET is a var so the guards in earlier parts (netGuest) are safe before this line has run */
-var NET={on:false,role:'',guest:false,me:'',peers:[],players:new Map(),pending:null,invite:'',tick:0,q:[],sent:[],sim:false,seq:0,entered:false};
+var NET={on:false,role:'',guest:false,me:'',peers:[],players:new Map(),lanes:new Map(),pending:null,invite:'',tick:0,q:[],sent:[],sim:false,seq:0,laneSeq:0,lane:0,entered:false};
+/* one lane is one invite: every friend answers its own, so a lobby can hold many players */
+const NET_MAX=8,NET_SEND=.07,NET_LANE_TTL=300000;
 function netGuest(){return !!(NET&&NET.guest)}
 /* ---- console ---- */
 function conLog(txt,cls){
@@ -52,8 +54,8 @@ function conRun(text){
 const CMDS={
  help(){
   conLog('Commands:');
-  conLog('/share: open a lobby and get an invite code for a friend');
-  conLog('/join <code>: paste the reply code a friend sends back to you');
+  conLog('/share: get an invite code for a friend (type it again for another friend)');
+  conLog('/join <code>: paste a reply code a friend sends back (one /join per friend)');
   conLog('/players: who is in the lobby');
   conLog('/endstream: close the lobby (you can keep playing alone)');
   conLog('/leave: leave a friend\'s lobby and go back to your world');
@@ -284,11 +286,12 @@ function netSdpBuild(ufrag,pwd,fb,setup,c){
  L.push('a=fingerprint:sha-256 '+fp,'a=setup:'+setup,'a=mid:0','a=sctp-port:5000','a=max-message-size:262144','a=end-of-candidates');
  return L.join('\r\n')+'\r\n';
 }
-function netPack(sdp,ans){
+/* every invite carries a lane byte, and the reply echoes it, so the host can pair many reply codes with their invites */
+function netPack(sdp,ans,lane){
  const f=netSdpFields(sdp||''),fb=netHex(f.fpHex);
  if(!f.ufrag||!f.pwd||!fb||!f.c.length)return '';
  const si=NET_SETUP.indexOf(f.setup);
- const A=[0x20|(ans?4:0)|(si<0?0:si)];
+ const A=[0x30|(ans?4:0)|(si<0?0:si),(lane|0)&255];
  netStr(A,f.ufrag);netStr(A,f.pwd);
  for(const b of fb)netU8(A,b);
  const at=A.length;netU8(A,0);
@@ -300,13 +303,15 @@ function netPack(sdp,ans){
 }
 function netUnpack(body){
  const A=netUnB64(body);
- if(!A||A.length<40||(A[0]>>4)!==2)return null;
- const o={p:1},ufrag=netStrRead(A,o),pwd=netStrRead(A,o),fb=[];
+ if(!A||A.length<40)return null;
+ const v=A[0]>>4;
+ if(v!==2&&v!==3)return null;
+ const lane=v===3?(A[1]||0):0,o={p:v===3?2:1},ufrag=netStrRead(A,o),pwd=netStrRead(A,o),fb=[];
  for(let i=0;i<32;i++)fb.push(A[o.p++]||0);
  const n=A[o.p++]||0,c=[];
  for(let i=0;i<n;i++){const s=netCandRead(A,o,i);if(s)c.push(s)}
  if(!ufrag||!pwd||!c.length)return null;
- return {v:2,t:(A[0]&4)?'answer':'offer',sdp:netSdpBuild(ufrag,pwd,fb,NET_SETUP[A[0]&3],c)};
+ return {v:v,t:(A[0]&4)?'answer':'offer',lane:lane,sdp:netSdpBuild(ufrag,pwd,fb,NET_SETUP[A[0]&3],c)};
 }
 const netNum=v=>{const n=Number(v);return isFinite(n)?n:0};
 function netName(n){const s=String(n||'').replace(/[^\w \-'.]/g,'').slice(0,16).trim();return s||'Friend'}
@@ -322,42 +327,58 @@ function netIceWait(pc,cb){
  try{pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete')fin()})}catch(e){}
  setTimeout(fin,4000);
 }
+function netLaneNext(){
+ const lu=NET.lanes||new Map();
+ for(let i=0;i<255;i++){NET.laneSeq=NET.laneSeq%255+1;if(!lu.has(NET.laneSeq))return NET.laneSeq}
+ return 0;
+}
+function netLaneHas(p){
+ if(!NET.lanes)return false;
+ for(const l of NET.lanes.values())if(l.p===p)return true;
+ return false;
+}
 function netShare(){
  if(!window.RTCPeerConnection){conLog('This browser cannot make a peer connection.','er');return}
  if(NET.on&&NET.role==='guest'){conLog('You are in a friend\'s lobby. Type /leave first.','er');return}
  if(!playing){conLog('Enter your world first, then type /share.','er');return}
- if(NET.on&&NET.pending){conLog('Your invite is waiting. Send it to your friend, then type /join with the reply code they send back.');conCode('Invite code',NET.invite);return}
+ if(!NET.lanes)NET.lanes=new Map();
+ if(NET.lanes.size>=NET_MAX){conLog('You already have '+NET.lanes.size+' invites waiting. A friend has to type /join first.','er');return}
  NET.role='host';NET.guest=false;NET.on=true;NET.me='h';
  if(!NET.players)NET.players=new Map();
+ const lane=netLaneNext();if(!lane){conLog('There are no invite slots left.','er');return}
  const pc=new RTCPeerConnection({iceServers:NET_STUN});
  const p=netPeer(pc,pc.createDataChannel('mmc',{ordered:true}));
+ p.lane=lane;
+ NET.lanes.set(lane,{p:p,invite:'',ts:performance.now()});
  NET.pending=p;
- conLog('Making the invite code…');
+ conLog('Making the invite code for friend '+(NET.peers.length+NET.lanes.size)+'…');
  pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='failed'||s==='closed')netDropPeer(p)};
  p.dc.onopen=()=>{if(NET.pending===p)NET.pending=null;netHostPeerJoin(p)};
  p.dc.onmessage=e=>netMsg(p,e.data);
  p.dc.onclose=()=>netDropPeer(p);
  pc.createOffer().then(o=>pc.setLocalDescription(o)).then(()=>{
   netIceWait(pc,()=>{
-   if(NET.pending!==p)return;
+   if(!netLaneHas(p))return;
    const sdp=pc.localDescription?pc.localDescription.sdp:'';
-   NET.invite=netPack(sdp,false)||netEnc({v:1,t:'offer',sdp:sdp});
+   NET.invite=netPack(sdp,false,lane)||netEnc({v:1,t:'offer',sdp:sdp,lane:lane});
+   const l=NET.lanes.get(lane);if(l)l.invite=NET.invite;
    if(!NET.invite){conLog('The invite could not be made.','er');netDropPeer(p);return}
-   conLog('Send this invite code to your friend:');
+   conLog('Send this invite code to one friend:');
    conCode('Invite code',NET.invite);
-   conLog('Then type /join and paste the reply code your friend sends back.');
+   conLog('Type /share again for another friend, then paste each reply you get back with /join.');
   });
  }).catch(()=>{conLog('The invite could not be made.','er');netDropPeer(p)});
 }
 function netHostPeerJoin(p){
  if(NET.peers.indexOf(p)>=0)return;
+ if(NET.lanes)NET.lanes.delete(p.lane);
  NET.peers.push(p);NET.seq=(NET.seq||0)+1;
  p.id='g'+NET.seq;p.name='Friend '+NET.seq;
- NET.players.set(p.id,{id:p.id,name:p.name,x:player.x,y:player.y,z:player.z,yaw:player.yaw,k:NET.seq%6,ts:performance.now()});
+ NET.players.set(p.id,{id:p.id,name:p.name,x:player.x,y:player.y,z:player.z,yaw:player.yaw,tx:player.x,ty:player.y,tz:player.z,tyaw:player.yaw,k:NET.seq%6,ph:0,leg:0,ts:performance.now()});
  p.send({t:'hi',i:p.id});
  netSendWorld(p);
- conLog('A friend joined your world. Type /endstream to close the lobby and keep playing alone.');
- toast('A friend joined your world');
+ conLog(p.name+' joined your world. '+NET.peers.length+' friend'+(NET.peers.length===1?'':'s')+' in the lobby now; /players lists them.');
+ toast(p.name+' joined your world');
 }
 /* the guest already builds the same terrain from the same seed, so only the edits have to travel */
 function netSendWorld(p){
@@ -371,10 +392,11 @@ function netSendWorld(p){
  p.send({t:'go'});
 }
 function netAccept(text){
- const p=NET.pending;
- if(!p||!p.pc){conLog('There is no invite waiting. Type /share first.','er');return}
+ if(!NET.on||NET.role!=='host'||!NET.lanes||!NET.lanes.size){conLog('There is no invite waiting. Type /share first.','er');return}
  const d=netDec(text);
  if(!d||d.t!=='answer'||typeof d.sdp!=='string'||!d.sdp){conLog('That reply code did not work. Check that you copied all of it.','er');return}
+ const l=NET.lanes.get(d.lane||0),p=l?l.p:null;
+ if(!p||!p.pc){conLog('That reply code belongs to an invite that is already used or closed. Type /share for a fresh invite.','er');return}
  p.pc.setRemoteDescription({type:'answer',sdp:d.sdp}).then(()=>{
   conLog('Connecting…');
  }).catch(()=>conLog('That reply code does not fit this invite. Ask your friend for a fresh one after typing /share again.','er'));
@@ -385,7 +407,7 @@ function netGuestJoin(text){
  if(!window.RTCPeerConnection){toast('This browser cannot join a lobby.');return}
  if(NET.on&&NET.role==='host'){toast('Close your own lobby first with /endstream.');return}
  netClose();
- NET.role='guest';NET.guest=true;NET.on=true;NET.sim=false;NET.entered=false;
+ NET.role='guest';NET.guest=true;NET.on=true;NET.sim=false;NET.entered=false;NET.lane=d.lane||0;
  NET.players=new Map();if(!NET.q)NET.q=[];
  const pc=new RTCPeerConnection({iceServers:NET_STUN});
  const p=netPeer(pc,null);
@@ -397,7 +419,7 @@ function netGuestJoin(text){
   .then(a=>pc.setLocalDescription(a))
   .then(()=>{netIceWait(pc,()=>{
    const sdp=pc.localDescription?pc.localDescription.sdp:'';
-   const reply=netPack(sdp,true)||netEnc({v:1,t:'answer',sdp:sdp});
+   const reply=netPack(sdp,true,NET.lane)||netEnc({v:1,t:'answer',sdp:sdp,lane:NET.lane});
    if(!reply){toast('That invite code did not work.');netClose();return}
    netReplyCard(reply);
   })})
@@ -422,8 +444,14 @@ function netReplyCard(reply){
 function netWho(){
  if(!NET.on){conLog('No lobby is open. Type /share to open one.');return}
  conLog(NET.role==='host'?'You are the host of this lobby.':'You are a guest in a friend\'s lobby.');
- if(NET.role==='host')conLog('You and '+NET.peers.length+' friend'+(NET.peers.length===1?'':'s')+' in the world.');
- else conLog(NET.players.size+' other player'+(NET.players.size===1?'':'s')+' here.');
+ if(NET.role==='host'){
+  const wait=NET.lanes?NET.lanes.size:0;
+  conLog('You and '+NET.peers.length+' friend'+(NET.peers.length===1?'':'s')+' in the world'+(wait?', with '+wait+' invite'+(wait===1?'':'s')+' waiting for a reply code':'')+'.');
+  if(NET.peers.length)conLog('Players: you, '+NET.peers.map(p=>p.name).join(', ')+'.');
+ }else{
+  const names=[...NET.players.values()].map(p=>p.name||'Friend');
+  conLog(NET.players.size+' other player'+(NET.players.size===1?'':'s')+' here'+(names.length?': '+names.join(', '):'')+'.');
+ }
 }
 function netEnd(){
  if(!NET.on){conLog('No lobby is open.');return}
@@ -442,13 +470,15 @@ function netLeave(){
  setTimeout(()=>location.reload(),500);
 }
 function netClose(){
+ if(NET.lanes){for(const l of NET.lanes.values()){try{l.p.close()}catch(e){}}NET.lanes.clear()}
  for(const p of NET.peers)p.close();
- NET.on=false;NET.role='';NET.guest=false;NET.peers=[];NET.pending=null;NET.invite='';NET.me='';NET.tick=0;NET.q=[];NET.entered=false;
+ NET.on=false;NET.role='';NET.guest=false;NET.peers=[];NET.pending=null;NET.invite='';NET.me='';NET.tick=0;NET.q=[];NET.entered=false;NET.lane=0;
  if(NET.players)NET.players.clear();
 }
 function netDropPeer(p){
  if(!p)return;
  if(NET.pending===p)NET.pending=null;
+ if(NET.lanes)for(const[lane,l]of NET.lanes)if(l.p===p)NET.lanes.delete(lane);
  const i=NET.peers.indexOf(p);
  if(i>=0)NET.peers.splice(i,1);
  if(p.id&&NET.players)NET.players.delete(p.id);
@@ -479,7 +509,7 @@ function netHostMsg(p,m){
  }
  if(m.t==='p'&&p.id){
   const pl=NET.players.get(p.id);
-  if(pl){pl.x=netNum(m.x);pl.y=netNum(m.y);pl.z=netNum(m.z);pl.yaw=netNum(m.yaw);pl.ts=performance.now()}
+  if(pl){pl.tx=netNum(m.x);pl.ty=netNum(m.y);pl.tz=netNum(m.z);pl.tyaw=netNum(m.yaw);pl.ts=performance.now()}
   return;
  }
  if(m.t==='b'&&Array.isArray(m.l)){
@@ -527,16 +557,31 @@ function netPlayers(l){
   if(!Array.isArray(r)||r.length<5)continue;
   const id=String(r[0]);
   let p=NET.players.get(id);
-  if(!p){p={id:id,name:'Friend',k:(NET.players.size+1)%6};NET.players.set(id,p)}
-  p.x=netNum(r[1]);p.y=netNum(r[2]);p.z=netNum(r[3]);p.yaw=netNum(r[4]);p.ts=now;
+  if(!p){p={id:id,name:'Friend',k:(NET.players.size+1)%6,x:netNum(r[1]),y:netNum(r[2]),z:netNum(r[3]),yaw:netNum(r[4]),ph:0,leg:0};NET.players.set(id,p)}
+  p.tx=netNum(r[1]);p.ty=netNum(r[2]);p.tz=netNum(r[3]);p.tyaw=netNum(r[4]);p.ts=now;
   if(Number.isInteger(r[5]))p.k=Math.abs(r[5])%6;
   if(id===NET.me)NET.players.delete(id);
  }
 }
+/* updates come in at most 14 times a second, so a remote figure is eased towards its last packet every frame instead of jumping */
+function netEase(dt){
+ if(!NET.players||!NET.players.size)return;
+ const a=1-Math.exp(-dt*13),decay=Math.max(0,1-dt*8);
+ for(const p of NET.players.values()){
+  if(p.tx===undefined)continue;
+  const dx=p.tx-p.x,dy=p.ty-p.y,dz=p.tz-p.z;
+  if(dx*dx+dy*dy+dz*dz>64){p.x=p.tx;p.y=p.ty;p.z=p.tz;p.yaw=p.tyaw||0;p.leg=0;continue}
+  p.x+=dx*a;p.y+=dy*a;p.z+=dz*a;
+  if(p.tyaw!==undefined){const d=Math.atan2(Math.sin(p.tyaw-(p.yaw||0)),Math.cos(p.tyaw-(p.yaw||0)));p.yaw=(p.yaw||0)+d*a}
+  const left=Math.hypot(dx,dy,dz);
+  if(left>.03){p.leg=Math.min(1,.35+left*2);p.ph=(p.ph||0)+dt*7.5}else p.leg=(p.leg||0)*decay;
+ }
+}
 function netTick(dt){
  if(!NET.on)return;
+ netEase(dt);
  NET.tick+=dt;
- if(NET.tick<.12)return;
+ if(NET.tick<NET_SEND)return;
  NET.tick=0;
  const now=performance.now();
  if(NET.q.length){
@@ -546,10 +591,13 @@ function netTick(dt){
  if(NET.players){
   for(const[id,p]of NET.players)if(now-(p.ts||now)>15000)NET.players.delete(id);
  }
+ if(NET.role==='host'&&NET.lanes&&NET.lanes.size){
+  for(const[lane,l]of NET.lanes)if(now-(l.ts||now)>NET_LANE_TTL){NET.lanes.delete(lane);try{l.p.close()}catch(e){}}
+ }
  if(NET.role==='host'){
   if(!NET.peers.length)return;
   const l=[['h',player.x,player.y,player.z,player.yaw,0]];
-  for(const[id,p]of NET.players)l.push([id,p.x,p.y,p.z,p.yaw,p.k]);
+  for(const[id,p]of NET.players)l.push([id,p.tx===undefined?p.x:p.tx,p.ty===undefined?p.y:p.ty,p.tz===undefined?p.z:p.tz,p.tyaw===undefined?p.yaw:p.tyaw,p.k]);
   for(const p of NET.peers)p.send({t:'ps',l:l});
  }else if(NET.role==='guest'){
   if(!NET.peers.length)return;
@@ -583,7 +631,7 @@ function netDraw(){
   if(dx*dx+dz*dz>farFog*farFog*1.1)continue;
   if((p.x-cam.e[0])*cam.fw[0]+(p.y+1-cam.e[1])*cam.fw[1]+(p.z-cam.e[2])*cam.fw[2]<-3)continue;
   if(botN+80>botGeo.length/7)break;
-  drawBotFig({x:p.x,y:p.y,z:p.z,yaw:p.yaw||0,ph:0,leg:0,arm:0,look:BLOOK[(p.k||0)%6],st:BS.WANDER,work:false,cele:0});
+  drawBotFig({x:p.x,y:p.y,z:p.z,yaw:p.yaw||0,ph:p.ph||0,leg:p.leg||0,arm:0,look:BLOOK[(p.k||0)%6],st:BS.WANDER,work:false,cele:0});
  }
 }
 /* ---- the "Join lobby" card on the start screen ---- */
@@ -615,8 +663,9 @@ worldsInit();
 window.__con=()=>({on:CON.on,text:($('conLog')||{}).textContent||''});
 window.__cmd=t=>{conRun(String(t));return (($('conLog')||{}).textContent||'').slice(-600)};
 window.__worlds=()=>({active:WACT,list:WORLDS.map(w=>({id:w.id,name:w.name,stars:w.stars||0,mission:w.mission||0,blocks:w.blocks||0}))});
-window.__net=()=>({on:NET.on,role:NET.role,guest:NET.guest,peers:NET.peers.length,players:[...NET.players.values()].map(p=>({id:p.id,x:p.x,y:p.y,z:p.z}))});
-window.__netCode=o=>o&&typeof o==='object'&&typeof o.sdp==='string'?(netPack(o.sdp,o.t==='answer')||netEnc(o)):'';
+window.__net=()=>({on:NET.on,role:NET.role,guest:NET.guest,peers:NET.peers.length,lanes:NET.lanes?NET.lanes.size:0,lane:NET.lane,players:[...NET.players.values()].map(p=>({id:p.id,name:p.name,x:p.x,y:p.y,z:p.z,tx:p.tx===undefined?null:p.tx,ty:p.ty===undefined?null:p.ty,tz:p.tz===undefined?null:p.tz,leg:p.leg||0}))});
+window.__netCodes=()=>NET.lanes?[...NET.lanes.entries()].map(e=>({lane:e[0],invite:e[1].invite})):[];
+window.__netCode=o=>o&&typeof o==='object'&&typeof o.sdp==='string'?(netPack(o.sdp,o.t==='answer',o.lane)||netEnc(o)):'';
 window.__netParse=t=>netDec(t);
 window.__netSim=role=>{
  netClose();NET.on=true;NET.sim=true;NET.role=role;NET.guest=role==='guest';NET.me=role==='guest'?'g1':'h';NET.sent=[];
