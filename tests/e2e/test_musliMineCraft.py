@@ -235,7 +235,7 @@ JS_HELPERS = r"""
     setInterval(() => { const s = __stats(); E.pk.chunks = Math.max(E.pk.chunks, s.loadedChunks); E.pk.bytes = Math.max(E.pk.bytes, s.approxBytes); }, 50);
   };
   // number of edited-chunk records in IndexedDB (async)
-  E.idbChunks = () => new Promise(res => { try { const q = indexedDB.open('musliMineCraft', 1); q.onerror = () => res(-1);
+  E.idbChunks = () => new Promise(res => { try { const q = indexedDB.open('musliMineCraft'); q.onerror = () => res(-1);
       q.onsuccess = () => { try { const c = q.result.transaction(['c'], 'readonly').objectStore('c').count(); c.onsuccess = () => { q.result.close(); res(c.result) }; c.onerror = () => res(-1) } catch (e) { res(-1) } } } catch (e) { res(-1) } });
   E.settled = () => { const s = __stats(); return !s.hold && s.queue < 4; };
   E.mission = () => ({ idx: S.mission, counter: (document.querySelector('#mission .mc') || {}).textContent || null,
@@ -2732,7 +2732,7 @@ class TestImportOverExistingSave:
         j = json.dumps({"musliMineCraft": 4, "prog": {"v": 4, "stars": 3}, "ed": [[8385, [64 * 5 + 3, 99999999999, -4, 1.5, 64 * 12288 + 1]], [99999999, [1]]], "bed": []})
         g.ev(f"musliMineCraft.importSave({json.dumps(j)})")
         g.wait("!window.__old&&typeof SV!=='undefined'&&SV.ready&&S.stars===3", "the filtered import to load", timeout=30000, observe="S.stars")
-        n = g.ev("(async()=>{const q=indexedDB.open('musliMineCraft',1);return await new Promise(r=>{q.onsuccess=()=>{const t=q.result.transaction('c').objectStore('c').getAll();t.onsuccess=()=>r(t.result)}})})()")
+        n = g.ev("(async()=>{const q=indexedDB.open('musliMineCraft');return await new Promise(r=>{q.onsuccess=()=>{const t=q.result.transaction('c').objectStore('c').getAll();t.onsuccess=()=>r(t.result)}})})()")
         assert n == [[64 * 5 + 3]], f"Expected only the one valid cell to be stored, observed {n}"
 
 
@@ -2818,7 +2818,7 @@ class TestTwoTabs:
         g.ev("forceLoad(1300>>4,1300>>4,0);setBlock(1300,30,1300,B.GOLD,'player');saveNow(true)")
         g.wait("(async()=>(await __e2e.idbChunks())>=1)()", "the first tab's chunk stored", timeout=20000, observe="1")
         pb.evaluate("forceLoad(1301>>4,1300>>4,0);setBlock(1301,30,1300,B.SANDSTONE,'player');saveNow(true)")
-        pb.wait_for_function("(async()=>{const q=indexedDB.open('musliMineCraft',1);return await new Promise(r=>{q.onsuccess=()=>{const t=q.result.transaction('c').objectStore('c').getAll();t.onsuccess=()=>r(t.result.some(a=>a.length>=2))}})})()", timeout=T(20000))
+        pb.wait_for_function("(async()=>{const q=indexedDB.open('musliMineCraft');return await new Promise(r=>{q.onsuccess=()=>{const t=q.result.transaction('c').objectStore('c').getAll();t.onsuccess=()=>r(t.result.some(a=>a.length>=2))}})})()", timeout=T(20000))
         g.page.reload(wait_until="commit")
         g.ready()
         assert g.ev("(()=>{forceLoad(1300>>4,1300>>4,1);return [getB(1300,30,1300)===B.GOLD,getB(1301,30,1300)===B.SANDSTONE]})()") == [True, True]
@@ -3382,3 +3382,255 @@ class TestPortals:
         assert .6 < r["lo"] and r["hi"] < 1.2, f"Tawaf figures should walk slowly, observed {r}"
         assert g.ev("Math.max(...HARAM_CROWD.map(p=>p.r))") > 27
         assert r["stone"] < r["body"] < r["frame"], f"The Kaaba should be slightly grey with a black stone and silver setting, observed {r}"
+
+# --------------------------------------------------------------------------- command console, worlds and the lobby
+class TestConsoleWorldsLobby:
+    def test_the_slash_key_opens_the_console_and_help_lists_the_commands(self, desktop):
+        """Pressing / opens the small console in the bottom left; /help lists the lobby commands and Escape closes it."""
+        g = desktop
+        g.page.keyboard.press("/")
+        g.wait("__con().on", "the command console to open after pressing /", observe="__con()")
+        r = g.ev("(()=>{const b=document.getElementById('con').getBoundingClientRect();return [b.left,b.top,b.width,innerWidth,innerHeight]})()")
+        assert r[0] < r[3] / 2 and r[1] > r[4] / 2 and r[0] >= 0 and r[2] > 180, f"Expected the console in the bottom left, observed {r}"
+        g.page.locator("#conIn").fill("help")
+        g.page.keyboard.press("Enter")
+        txt = g.ev("__con().text")
+        for c in ("/share", "/join", "/endstream", "/leave"):
+            assert c in txt, f"Expected {c} in the help text, observed {txt[-400:]!r}"
+        g.page.keyboard.press("Escape")
+        g.wait("!__con().on", "the console to close on Escape", observe="__con()")
+        assert g.ev("playing"), "Expected the game to keep running after the console closed"
+        g.freeze_bots()
+        x0, z0 = g.ev("[player.x,player.z]")
+        g.page.keyboard.down("w")
+        try:
+            g.wait("Math.hypot(player.x-a[0],player.z-a[1])>1.0", "the player to walk again after the console closed",
+                   observe="[player.x,player.z]", arg=[x0, z0])
+        finally:
+            g.page.keyboard.up("w")
+
+    def test_the_start_screen_has_a_join_lobby_button_that_asks_for_the_code(self, loaded):
+        """Join lobby on the start screen opens a card with a place to paste the invite code."""
+        g = loaded
+        g.page.click("[data-a=lobby]")
+        g.modal_ready()
+        assert g.ev("(()=>{const t=document.querySelector('#jcode');return !!t&&t.offsetParent!==null})()"), \
+            f"Expected an invite code field, observed {g.modal_text()!r}"
+        assert "/share" in g.modal_text(), f"Expected the card to say how a host shares, observed {g.modal_text()!r}"
+        g.close_modal("no")
+
+    def test_share_asks_you_to_enter_your_world_first(self, loaded):
+        """On the start screen /share explains that a world must be open first."""
+        g = loaded
+        g.page.keyboard.press("/")
+        g.wait("__con().on", "the command console to open", observe="__con()")
+        g.ev("__cmd('/share')")
+        assert "Enter your world first" in g.ev("__con().text"), f"Observed {g.ev('__con().text')[-300:]!r}"
+        g.ev("__cmd('/join MMC1.bm9wZQ')")
+        assert "no invite waiting" in g.ev("__con().text"), f"Observed {g.ev('__con().text')[-300:]!r}"
+
+    def test_an_invite_code_is_short_and_carries_the_offer(self, desktop):
+        """A host /share produces one short MM2 code that a guest can decode into a working offer."""
+        g = desktop
+        g.page.keyboard.press("/")
+        g.wait("__con().on", "the command console to open", observe="__con()")
+        assert g.ev("!!window.RTCPeerConnection"), "Expected a browser with WebRTC"
+        g.ev("__cmd('/share')")
+        g.wait("__con().text.includes('Send this invite code')", "the invite code to be ready", timeout=20000,
+               observe="__con().text.slice(-300)")
+        inv = g.ev("document.querySelector('#conLog textarea').value")
+        assert inv.startswith("MM2."), f"Expected a short MM2 invite, observed {inv[:40]!r}"
+        assert len(inv) < 340, f"Expected a short invite code, observed {len(inv)} characters"
+        assert not re.search(r"\s", inv), "Expected the code to be one unbroken line so it survives a chat message"
+        d = g.ev("(a)=>__netParse(a)", inv)
+        assert d and d["t"] == "offer", f"Expected an offer, observed {str(d)[:200]}"
+        sdp = d["sdp"]
+        for bit in ["v=0", "m=application 9 UDP/DTLS/SCTP webrtc-datachannel", "a=ice-ufrag:", "a=ice-pwd:",
+                    "a=setup:actpass", "a=sctp-port:5000"]:
+            assert bit in sdp, f"Expected {bit!r} in the rebuilt offer, observed {sdp[:400]!r}"
+        assert sdp.count("a=candidate:") >= 1, f"Expected candidates in the rebuilt offer, observed {sdp[:400]!r}"
+        fps = [ln for ln in sdp.splitlines() if ln.startswith("a=fingerprint:sha-256 ")]
+        assert fps and len(fps[0].split()[-1].split(":")) == 32, f"Expected a 32 byte sha-256 fingerprint, observed {fps!r}"
+        assert "c" not in d, f"Expected no lobby code in the invite, observed {d.get('c')!r}"
+        g.ev("__cmd('/endstream')")
+        g.wait("!__net().on", "the lobby to close on /endstream", observe="__net()")
+        assert g.ev("playing"), "Expected the host to keep playing alone after /endstream"
+
+    def test_the_start_screen_lists_your_worlds_below_the_continue_button(self, loaded):
+        """The worlds list stands under the big Continue button and a world row enters that world."""
+        g = loaded
+        g.wait("document.querySelectorAll('#wlist .wrow').length===1", "one world in the list", observe="__worlds()")
+        r = g.ev("""(()=>{const b=document.querySelector('#wlist .wrow').getBoundingClientRect(),
+          p=document.querySelector('#wready .play').getBoundingClientRect(),l=document.querySelector('#wworlds').getBoundingClientRect();
+          return [b.width>60,b.height>30,l.top>=p.bottom-2,l.left<innerWidth/2,getComputedStyle(document.querySelector('#wready .play')).fontSize]})()""")
+        assert r[:4] == [True, True, True, True], f"Expected the worlds list under the prominent Continue button, observed {r}"
+        assert float(r[4].replace("px", "")) >= 19, f"Expected a big Continue button, observed font {r[4]}"
+        g.page.click("#wlist .wrow")
+        g.wait("playing", "the world to open from its list row", observe="[playing,LD.phase]")
+
+    def test_a_new_world_is_added_to_the_list_and_opened(self, loaded):
+        """+ New keeps the current world in the list and opens a fresh one."""
+        g = loaded
+        g.wait("__worlds().list.length===1", "one world to start with", observe="__worlds()")
+        first = g.ev("__worlds()")
+        g.page.click("#wneww")
+        seen = None
+        for _ in range(120):
+            try:
+                seen = g.ev("__worlds()")
+                if seen and len(seen["list"]) == 2 and seen["active"] != first["active"]:
+                    break
+            except PWError:      # the page reloads once the new world is stored
+                seen = None
+            g.page.wait_for_timeout(200)
+        assert seen and len(seen["list"]) == 2, f"Expected two worlds after + New, observed {seen}"
+        assert seen["active"] == seen["list"][1]["id"], f"Expected the new world to be the open one, observed {seen}"
+        assert seen["list"][0]["id"] == first["active"], f"Expected the first world to stay in the list, observed {seen}"
+        assert seen["list"][1]["name"] == "World 2", f"Observed {seen}"
+        assert g.ev("!SV.has"), "Expected the new world to be empty, so Play starts it"
+
+    def test_each_world_keeps_its_own_buildings(self, game):
+        """A block built in one world is gone in a new world and back when that world is opened again."""
+        g = game(PHONE)
+        g.start()
+        g.freeze_bots()
+        first = g.ev("__worlds().active")
+        g.ev("setBlock(1040,25,1045,B.GOLD,0);saveNow(true)")
+        g.wait("(async()=>!!(await __e2e.idbChunks()))()", "the built block to be stored", timeout=15000,
+               observe="[PERSIST.dirty.size,PERSIST.ok]")
+        g.page.reload(wait_until="commit")
+        g.ready()
+        g.page.click("#wneww")
+        seen = None
+        for _ in range(120):
+            try:
+                seen = g.ev("__worlds()")
+                if seen and seen["active"] != first and len(seen["list"]) == 2:
+                    break
+            except PWError:
+                seen = None
+            g.page.wait_for_timeout(200)
+        assert seen and seen["active"] != first, f"Expected a new open world, observed {seen}"
+        g.wait("SV.ready", "the new world to finish loading", timeout=20000, observe="[SV.ready]")
+        assert g.ev("(()=>{forceLoad(1040>>4,1045>>4,1);return getB(1040,25,1045)})()") == 0, \
+            "Expected the new world to have no block where the first world has one"
+        g.page.click("#wlist .wrow")
+        for _ in range(120):
+            try:
+                if g.ev("(id)=>!!window.__worlds&&SV.ready&&__worlds().active===id", first):
+                    break
+            except PWError:
+                pass
+            g.page.wait_for_timeout(200)
+        assert g.ev("__worlds().active") == first, f"Expected to come back to the first world, observed {g.ev('__worlds()')}"
+        assert g.ev("(()=>{forceLoad(1040>>4,1045>>4,1);return getB(1040,25,1045)})()") == g.ev("B.GOLD"), \
+            "The block built in the first world did not come back"
+
+    def test_a_guest_sees_the_host_blocks_and_the_cancelled_game(self, started):
+        """A guest applies the host's blocks and is told when the host ends the stream."""
+        g = started
+        g.ev("__netSim('guest')")
+        g.ev("__netFeed({t:'hi',i:'g1'})")
+        g.wait("__net().guest && playing", "the guest to stand in the host world", observe="__net()")
+        r = g.ev("""(()=>{const x=1025,z=1024,y=Math.floor(groundTop(x,z))+1,k=(x>>4)+(z>>4)*NC,li=(y<<8)|((z&15)<<4)|(x&15);
+          __netFeed({t:'wl',e:[[k,[li*64+B.GOLD]]]});return [y,getAny(x,y,z),B.GOLD]})()""")
+        assert r[1] == r[2], f"Expected the host block at y={r[0]}, observed block {r[1]}"
+        g.ev("__netFeed({t:'end'})")
+        g.modal_ready()
+        txt = g.modal_text()
+        assert "host has cancelled the game" in txt, f"Expected the cancelled message, observed {txt!r}"
+
+    def test_a_guest_block_reaches_the_host_and_is_passed_on(self, started):
+        """The host applies a guest edit and sends it to the other guests."""
+        g = started
+        g.ev("__netSim('host')")
+        r = g.ev("""(()=>{const x=1026,z=1025,y=Math.floor(groundTop(x,z))+1;
+          __netFeed({t:'b',l:[[x,y,z,B.GOLD]]});__netTick(.2);
+          return [getAny(x,y,z),B.GOLD,__netSent().map(m=>m.t)]})()""")
+        assert r[0] == r[1], f"Expected the guest block in the host world, observed block {r[0]}"
+        assert "b" in r[2], f"Expected the host to pass the edit on, observed {r[2]}"
+
+    def test_endstream_closes_the_lobby_and_the_host_still_plays(self, started):
+        """ /endstream tells the guests and leaves the host in its own world. """
+        g = started
+        g.ev("__netSim('host')")
+        g.ev("__cmd('/endstream')")
+        assert not g.ev("__net().on"), f"Expected the lobby to close, observed {g.ev('__net()')}"
+        assert g.ev("__netSent().some(m=>m.t==='end')"), "Expected the guests to be told the host ended the stream"
+        assert g.ev("playing") and not g.ev("player.hold"), "Expected the host to keep playing alone"
+
+    def test_a_tap_on_the_world_closes_the_console_so_movement_works(self, started):
+        """The console is a typing surface: movement keys stay out while it is open and a tap on the world restores them."""
+        g = started
+        g.ev("conOpen(true)")
+        assert g.ev("CON.on"), f"Expected the console to open, observed {g.ev('__con()')}"
+        g.ev("document.dispatchEvent(new KeyboardEvent('keydown',{key:'w',bubbles:true}))")
+        assert not g.ev("input.keys.has('w')"), "Expected movement keys to stay out of the game while the console is open"
+        g.ev("""(()=>{const c=document.querySelector('canvas');
+          for(const t of ['pointerdown','pointerup'])c.dispatchEvent(new PointerEvent(t,{bubbles:true,clientX:200,clientY:300,pointerId:1,isPrimary:true}))})()""")
+        assert not g.ev("CON.on"), f"Expected a tap on the world to close the console, observed {g.ev('__con()')}"
+        g.ev("document.dispatchEvent(new KeyboardEvent('keydown',{key:'w',bubbles:true}))")
+        assert g.ev("input.keys.has('w')"), "Expected movement to work again after the console closed"
+        g.ev("document.dispatchEvent(new KeyboardEvent('keyup',{key:'w',bubbles:true}))")
+
+    def test_every_key_goes_into_the_console_until_it_closes(self, desktop):
+        """Typing in the console must reach it: e does not open the inventory, f the lifts, m the map or a digit a block,
+        and the bindings come back as soon as the console closes."""
+        g = desktop
+        g.page.keyboard.press("/")
+        g.wait("__con().on", "the command console to open", observe="__con()")
+        g.wait("document.activeElement&&document.activeElement.id==='conIn'", "the console input to take the keyboard",
+               observe="[document.activeElement&&document.activeElement.id]")
+        g.freeze_bots()
+        before = g.ev("[S.sel,activeSlot]")
+        g.page.keyboard.type("share")
+        g.page.keyboard.type("efm5 /share")
+        v = g.ev("document.getElementById('conIn').value")
+        assert v == "shareefm5 /share", f"Expected every character to reach the console input, observed {v!r}"
+        r = g.ev("[input.keys.size,curModal,!!document.getElementById('blockInventory'),mapDialog.open,S.sel,activeSlot,!!LIFT_RIDE]")
+        assert r[0] == 0, f"Expected no game key to be held while the console is open, observed {r[0]} keys"
+        assert not r[1] and not r[2], f"Expected e to leave the inventory closed, observed curModal={r[1]} inventory={r[2]}"
+        assert not r[3], "Expected m to leave the map closed while the console is open"
+        assert not r[6], "Expected f to leave the lifts alone while the console is open"
+        assert r[4:6] == before, f"Expected the selected block to stay {before}, observed {r[4:6]}"
+        g.page.keyboard.press("Escape")
+        g.wait("!__con().on", "the console to close on Escape", observe="__con()")
+        g.page.keyboard.press("e")
+        g.wait("!!document.getElementById('blockInventory')", "e to open the inventory again once the console is closed",
+               observe="[!!document.getElementById('blockInventory'),!!curModal]")
+
+    def test_the_console_does_not_cover_the_joystick_on_a_touch_screen(self, started):
+        """On a phone the console sits above the joystick, so a touch player is never stuck without movement."""
+        g = started
+        g.ev("setTouch(true);conOpen(true)")
+        r = g.ev("""(()=>{const c=document.querySelector('#con').getBoundingClientRect(),
+          j=document.querySelector('#joy').getBoundingClientRect();
+          return [Math.round(j.top-c.bottom),getComputedStyle(document.querySelector('#joy')).display]})()""")
+        assert r[1] != "none", f"Expected the joystick to be shown in touch mode, observed {r}"
+        assert r[0] >= 0, f"Expected the console above the joystick, observed them overlapping by {-r[0]}px"
+
+    def test_two_browsers_connect_with_one_invite_and_one_reply_code(self, game):
+        """The short codes are real ones: a host and a guest connect and blocks cross both ways."""
+        a, b = game(PHONE), game(PHONE)
+        a.start()
+        b.start()
+        inv = a.ev("""(async()=>{netShare();
+          for(let i=0;i<100&&!NET.invite;i++)await new Promise(r=>setTimeout(r,100));return NET.invite})()""")
+        assert inv.startswith("MM2."), f"Expected a short invite, observed {inv[:40]!r}"
+        b.ev("(t)=>netGuestJoin(t)", inv)
+        reply = b.ev("""(async()=>{for(let i=0;i<120;i++){const t=document.getElementById('rcode');
+          if(t&&t.value)return t.value;await new Promise(r=>setTimeout(r,100))}return ''})()""")
+        assert reply.startswith("MM2."), f"Expected a short reply, observed {reply[:40]!r}"
+        a.ev("(t)=>netAccept(t)", reply)
+        a.wait("__net().peers>0", "the guest's browser to connect", timeout=30000, observe="__net()")
+        a.ev("setBlock(1026,24,1030,B.GOLD,0)")
+        b.wait("getAny(1026,24,1030)===B.GOLD", "the host's block in the guest world", timeout=15000,
+               observe="getAny(1026,24,1030)")
+        b.ev("setBlock(1027,24,1030,B.GOLD,0)")
+        a.wait("getAny(1027,24,1030)===B.GOLD", "the guest's block in the host world", timeout=15000,
+               observe="getAny(1027,24,1030)")
+        a.ev("__cmd('/endstream')")
+        b.wait("(document.getElementById('panel').textContent||'').includes('host has cancelled the game')",
+               "the guest to be told the host cancelled", timeout=15000,
+               observe="document.getElementById('panel').textContent.slice(0,120)")
+        assert a.ev("playing") and not a.ev("__net().on"), "Expected the host to keep playing alone"

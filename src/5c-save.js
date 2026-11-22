@@ -3,7 +3,7 @@ const JRN_KEY='musliMineCraft_jrn_v1',PROG_KEY='musliMineCraft_prog_v1',DB_NAME=
 const SV={ready:false,has:false,pos:null,useLs:false,changed:false,acc:0,lastBot:-99999,lastLs:-99999,px:0,pz:0,sum:null,migrated:false,tries:0,ver:4,writer:null,importing:false,progOk:true,lockQ:[],release:null,bc:null,merge:false};
 function encMap(mp){const out=[];for(const[k,m]of mp){if(!m.size)continue;const a=[];for(const[li,b]of m)a.push(li*64+b);out.push([k,a])}return out}
 function countBlocks(){let n=0;for(const m of edits.values())for(const b of m.values())if(b)n++;return n}
-function queueSave(){SV.changed=true;if(!saveTimer)saveTimer=setTimeout(saveNow,2000)}
+function queueSave(){if(netGuest())return;SV.changed=true;if(!saveTimer)saveTimer=setTimeout(saveNow,2000)}
 function progObj(){
  const blocks=countBlocks();
  SV.sum={stars:S.stars,mission:Math.min(S.mission+1,MISSIONS.length),blocks,rank:rankOf(S.stars)};
@@ -78,6 +78,8 @@ function saveFallback(force){
 }
 function saveNow(urgent,cb){
  saveTimer=0;SV.changed=false;SV.px=player.x;SV.pz=player.z;
+ /* a guest plays in the host's world: nothing of it belongs in this device's save */
+ if(netGuest()){if(cb)cb();return}
  if(!SV.ready||SV.importing||SV.writer!==true)return;
  if(playing||glide||SV.migrated||SV.has)SV.progOk=saveProg();
  if(PERSIST.ok)flushStore(urgent===true,cb);else{saveFallback(urgent===true);if(cb)cb()}
@@ -153,8 +155,8 @@ function readStores(done){
  let fin=false;const end=ok=>{if(fin)return;fin=true;PERSIST.ok=ok;SV.useLs=!ok;afterLock(()=>{SV.ready=true;done()})};
  try{
   if(!window.indexedDB){end(false);return}
-  const rq=indexedDB.open(DB_NAME,1);
-  rq.onupgradeneeded=()=>{const d=rq.result;if(!d.objectStoreNames.contains('c'))d.createObjectStore('c');if(!d.objectStoreNames.contains('m'))d.createObjectStore('m')};
+  const rq=indexedDB.open(DB_NAME,2);
+  rq.onupgradeneeded=()=>{const d=rq.result;if(!d.objectStoreNames.contains('c'))d.createObjectStore('c');if(!d.objectStoreNames.contains('m'))d.createObjectStore('m');if(!d.objectStoreNames.contains('w'))d.createObjectStore('w')};
   rq.onerror=rq.onblocked=()=>end(false);
   rq.onsuccess=()=>{
    if(fin){try{rq.result.close()}catch(e){}return}

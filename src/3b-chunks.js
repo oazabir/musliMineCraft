@@ -76,6 +76,7 @@ function setBlock(x,y,z,b,who){
  worldDirty=true;queueSave();
  if(who===0)checkMission();
  checkJoin();
+ netLocalEdit(x,y,z,b,who);
  return true;
 }
 function markDirty(c,x,z){

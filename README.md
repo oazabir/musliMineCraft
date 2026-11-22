@@ -32,6 +32,9 @@ More are in `docs/screenshots/`: the museum atrium, builder close-up, swimming, 
 - Stargate portals: three gates stand around the start (to the Museum of Islamic Heritage, the Grand Mosque and the Open Air Prison), and each place has a gate back. Walk into the shimmering horizon: the chevrons lock, the horizon bursts, a warp tunnel flashes past with synthesised sound, and you step out at the other gate.
 - Quests: the map-pin button lists quests (Mosque Visit, Museum Visit, Save the Muslims from Drone Attacks in the Open Air Prison, Garden Walk, Lake Swim, Caravanserai Visit). Tap one to fly there. Finishing a quest the first time gives 2 stars.
 - The Open Air Prison: an island east of spawn, ringed by water, where 24 people run from drone attacks. Build shelters with roofs; each roofed floor spot hides one person. After each attack you earn a point per sheltered person, and stars the first time 5, 10, 15, 20 and all 24 are safe. Reach it by swimming east, with My Skills then Open Air Prison, or with the quest "Save the Muslims from Drone Attacks in the Open Air Prison". Nobody is shown dying: a person caught in the open is knocked down and gets up.
+- A command console: press `/` (or Settings then Console on a touch screen). `/help` lists the commands, `/share` opens a lobby, `/join`, `/players`, `/endstream` and `/leave` work the lobby.
+- Play together without a server. The host types `/share` and sends the invite code to a friend. The friend presses **Join lobby** on the start screen, pastes the code and sends the reply code back. The host types `/join` and pastes it: their browsers talk to each other directly (WebRTC), the world runs on the host's device and is saved there. The codes are short (about 200 characters for the invite, 160 for the reply) because only the few facts the two browsers have to agree on are packed into them, never the whole connection text. `/endstream` closes the lobby, the guests are told the host cancelled the game, and the host keeps playing alone.
+- Several worlds. The start screen lists your worlds under the big Continue button; tap one to open it. **+ New** adds a world and every world keeps its own buildings, stars and position.
 - Saving and resume. Progress and every edited chunk are stored on the device.
 - Adaptive quality, so it runs on low-end Android phones.
 
@@ -98,7 +101,7 @@ Messages with the parent window (when the game is in an iframe):
 Other behaviour:
 
 - Only one tab writes the save (a Web Lock named `musliMineCraft-writer`). A second tab shows "musliMineCraft is open in another tab" and a "Play here" button.
-- Storage: IndexedDB database `musliMineCraft`; `localStorage` keys `musliMineCraft_prog_v1` (progress), `musliMineCraft_jrn_v1` (journal of unconfirmed chunk writes) and `musliMineCraft_save_v1` (fallback, used only if IndexedDB is not available).
+- Storage: IndexedDB database `musliMineCraft` (store `c` = edited chunks, `m` = builder edits, `w` = the worlds that are not open); `localStorage` keys `musliMineCraft_prog_v1` (progress), `musliMineCraft_jrn_v1` (journal of unconfirmed chunk writes), `musliMineCraft_save_v1` (fallback, used only if IndexedDB is not available), `musliMineCraft_worlds_v1` (the worlds list) and `musliMineCraft_active_v1` (the open world).
 - A save from the older IslamineCraft build (`islaminecraft_save_v1`) is migrated once on first start.
 
 ## Museum photo credits
@@ -108,7 +111,7 @@ Other behaviour:
 - The photos are hot-linked from the Metropolitan Museum of Art, the Wellcome Collection and the Rijksmuseum. These sites do not promise that hot-linking will keep working.
 - For production, download the 15 images, put them on your own CDN, and change the `url` values in that one table.
 - The game loads a photo only while its exhibit card is open, and shows the credit line with it. If the load fails, times out or the device is offline, the drawing stays and nothing is shown.
-- These are the only network requests the game can make.
+- These are the only network requests the game makes besides the multiplayer lobby: a WebRTC peer connection between the host and each guest, and one public STUN server (`NET_STUN` in `src/5h-net.js`) used to look up network addresses. There is no game server and nothing is uploaded anywhere. A lobby between two different networks needs that STUN lookup; on one local network the browsers find each other without it.
 - The Claude artifact preview blocks remote images, so only the drawings show there.
 
 ## Building
@@ -154,6 +157,8 @@ docs/screenshots/     screenshots used in this README
 ## Known limitations
 
 - Tested in headless Chromium with SwiftShader (software WebGL) only. It has not yet been tested on real low-end Android hardware.
+- The lobby has no server, so the two codes have to be carried by hand (a chat message, a note, a QR reader): the invite code goes to the guest, the reply code comes back to the host. A lobby across two different networks also needs the public STUN server to be reachable. Both players need the same version of the game, because a code only describes the browser that made it.
+- In a lobby the host is the real world: guests can move, build and see each other, but missions, builders and the Open Air Prison stay on the host's device. A guest goes back to its own world when the host ends the stream.
 - Museum photos are hot-linked and may fail to load. The drawings always work.
 - The Claude artifact preview blocks remote images, so photos do not show there.
 - Real GPU performance, audio output and pixel-level rendering are not covered by the tests.
