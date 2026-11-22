@@ -203,10 +203,10 @@ button:focus-visible{outline:3px solid #ffdd72;outline-offset:2px}
 #mission,#panel,#toast,#worldMap{background:#f1e0b7;border:3px solid var(--ui-edge);border-radius:0;box-shadow:inset 0 0 0 2px var(--ui-light),0 5px #201a16b0,0 10px 24px #1d181555}
 #mission{border-left:7px solid var(--ui-green)}#mission .bar,.why,.skill,.tag,#lockhint,#mgHint,#wbadge,#wfeat span{border-radius:0}
 #mission .bar{background:#bbaa83;box-shadow:inset 0 2px #654f303e}#mission .bar i{background:repeating-linear-gradient(90deg,#32704f 0 8px,#3f845c 8px 10px)}
-#hotbar{gap:3px;padding:4px;background:#322b24;border:2px solid #1d1815;border-radius:0;box-shadow:inset 0 2px #78664c,0 4px #221c16b0}
+#hotbar{display:grid;width:min(530px,calc(100% - var(--sl) - var(--sr) - 16px));box-sizing:border-box;grid-template-columns:repeat(9,minmax(0,1fr));gap:3px;padding:4px;background:#322b24;border:2px solid #1d1815;border-radius:0;box-shadow:inset 0 2px #78664c,0 4px #221c16b0}
 .slot{border-radius:0;border:2px solid #241f1a;background:#625849;box-shadow:inset 2px 2px #342c24,inset -2px -2px #8a775d}
 .slot.sel{border-color:#ffe39a;background:#355b49;box-shadow:inset 2px 2px #20392c,inset -2px -2px #5d8f72}.slot.locked{background:#493f35}.slot canvas{width:32px;height:32px}
-.slot .no{font-family:monospace}.slot:focus-visible{outline-offset:-4px}#selName{bottom:calc(var(--sb) + 76px)}
+#hotbar .slot{width:100%;height:auto;aspect-ratio:1;max-height:54px}#hotbar .slot canvas{max-width:75%;height:auto}#blockInventory{display:grid;grid-template-columns:repeat(auto-fit,minmax(44px,1fr));gap:5px;margin:12px 0}#blockInventory .slot{width:100%;height:44px}.slot .no{font-family:monospace}.slot:focus-visible{outline-offset:-4px}#selName{bottom:calc(var(--sb) + 76px)}
 #panel{border-top:7px solid var(--ui-grout)}#panel h2,.wtag,#worldMap h2{font-family:Georgia,serif}#panel .row{gap:12px}
 #wbadge,#wfeat span{background:#2f3a34;border-color:#a88a53}#wfeat span{box-shadow:inset 0 1px #fff3}#wfill{border-radius:0}#wready .btn{font-weight:800}
 #worldMap{padding:12px;width:min(850px,calc(100% - var(--sl) - var(--sr) - 24px));max-height:calc(100% - var(--st) - var(--sb) - 24px);color:#302820;overflow:auto;overscroll-behavior:contain;touch-action:pan-y}
@@ -277,6 +277,7 @@ button:focus-visible{outline:3px solid #ffdd72;outline-offset:2px}
   <button class="chip" id="btnStats" aria-label="My skills"><svg class="i"><use href="#star5"/></svg><span id="starN">0</span><span id="rank">Apprentice</span></button>
   <div class="chip" id="clock">Dhuhr</div>
   <button class="chip" id="btnQuest" aria-label="Quests"><svg class="i"><use href="#quest"/></svg></button>
+  <button class="chip" id="btnInventory" aria-haspopup="dialog" title="Block inventory (E)">Blocks</button>
   <button class="chip" id="btnSet" aria-label="Settings"><svg class="i"><use href="#gear"/></svg></button>
  </div>
  <div id="mission"></div>

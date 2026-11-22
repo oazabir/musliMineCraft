@@ -109,27 +109,51 @@ function updateMode(){
  const b=$('btnMode');b.className=S.mode;
  b.innerHTML=`<svg class="i s"><use href="#${S.mode==='place'?'plus':'pick'}"/></svg>${S.mode==='place'?'Place':'Break'}`;
 }
+const hotbar=HOTBAR_IDS.slice(0,9);
+let activeSlot=0;
+function blockSlot(id,n){
+ const open=S.unlocked.includes(id)||S.tmp.includes(id),b=document.createElement('button');
+ b.type='button';b.className='slot'+(open?'':' locked')+(id===S.sel?' sel':'');
+ b.setAttribute('aria-label',DEFS[id].name+(open?'':' (locked)'));b.title=DEFS[id].name;
+ const c=document.createElement('canvas');c.width=c.height=16;
+ const t=DEFS[id].t[2],g=c.getContext('2d');g.imageSmoothingEnabled=false;
+ g.drawImage(atlasCanvas,(t&7)*16,(t>>3)*16,16,16,0,0,16,16);b.appendChild(c);
+ if(n!==undefined)b.insertAdjacentHTML('beforeend',`<span class="no">${n+1}</span>`);
+ if(!open)b.insertAdjacentHTML('beforeend','<svg class="i lk"><use href="#lock"/></svg>');
+ return b;
+}
 function buildHotbar(){
  const hb=$('hotbar');hb.innerHTML='';
- HOTBAR_IDS.forEach((id,n)=>{
-  const open=S.unlocked.includes(id)||S.tmp.includes(id),b=document.createElement('button');
-  b.className='slot'+(open?'':' locked')+(id===S.sel?' sel':'');b.setAttribute('aria-label',DEFS[id].name+(open?'':' (locked)'));
-  const c=document.createElement('canvas');c.width=c.height=16;
-  const t=DEFS[id].t[2],g=c.getContext('2d');g.imageSmoothingEnabled=false;
-  g.drawImage(atlasCanvas,(t&7)*16,(t>>3)*16,16,16,0,0,16,16);b.appendChild(c);
-  if(n<9)b.insertAdjacentHTML('beforeend',`<span class="no">${n+1}</span>`);
-  if(!open)b.insertAdjacentHTML('beforeend','<svg class="i lk"><use href="#lock"/></svg>');
-  b.onclick=()=>selectBlock(id);hb.appendChild(b);
+ const found=hotbar.indexOf(S.sel);
+ if(found>=0)activeSlot=found;else hotbar[activeSlot]=S.sel;
+ hotbar.forEach((id,n)=>{
+  const b=blockSlot(id,n);b.onclick=()=>selectBlock(id);hb.appendChild(b);
  });
- const s=hb.querySelector('.sel');if(s)s.scrollIntoView({block:'nearest',inline:'nearest'});
  $('selName').textContent=DEFS[S.sel].name;
 }
+function openInventory(){
+ if(!playing||curModal||mapDialog.open||TP||FLY||MG.on||LIFT_RIDE)return;
+ input.keys.clear();
+ modal('<h2>Block inventory</h2><div id="blockInventory"></div><div class="row"><button class="btn" data-a="close">Close</button></div>',p=>{
+  const grid=p.querySelector('#blockInventory');
+  for(const id of HOTBAR_IDS){
+   const b=blockSlot(id);
+   b.onclick=()=>{
+    if(!selectBlock(id))return;
+    closeModal();
+   };
+   grid.appendChild(b);
+  }
+  const close=p.querySelector('[data-a=close]');close.onclick=closeModal;close.focus();
+ });
+}
+$('btnInventory').onclick=openInventory;
 function selectBlock(id){
- if(!S.unlocked.includes(id)&&!S.tmp.includes(id)){toast(DEFS[id].name+' is locked. Finish missions and open chests to earn it.');return}
- S.sel=id;S.mode='place';updateMode();buildHotbar();queueSave();
+ if(!S.unlocked.includes(id)&&!S.tmp.includes(id)){toast(DEFS[id].name+' is locked. Finish missions and open chests to earn it.');return false}
+ S.sel=id;S.mode='place';updateMode();buildHotbar();queueSave();return true;
 }
 function cycleBlock(dir){
- const open=HOTBAR_IDS.filter(i=>S.unlocked.includes(i)||S.tmp.includes(i));
+ const open=hotbar.filter(i=>S.unlocked.includes(i)||S.tmp.includes(i));
  selectBlock(open[(open.indexOf(S.sel)+dir+open.length)%open.length]);
 }
 const TIPS=['Domes can cover a big room with no pillars in the middle.','Tiles repeat in patterns. Count them: a 5 x 5 square holds 25 tiles.','An astrolabe helped travellers find the time and the stars.','Mud brick keeps a house cool, even in the hot desert.','Volume is length x width x height. Try it on a minaret!','Algebra comes from al-jabr, a word in a book from Baghdad.','A mirror line makes a symmetrical gate: the left matches the right.','The Museum of Islamic Heritage has 26 treasures to find.'];
@@ -141,15 +165,15 @@ function startScreen(){
  $('wready').querySelector('[data-a=play]').textContent=has?'Continue':'Play';
  $('wready').querySelector('[data-a=reset]').style.display=has?'block':'none';
  const su=$('wsum'),bd=$('wbadge');
- if(has&&sm){su.style.display='block';su.textContent=sm.stars+' stars · Mission '+sm.mission+' · '+sm.blocks+' blocks built';bd.style.display='block';bd.textContent=(sm.rank||rankOf(sm.stars))+' · '+sm.stars+' stars'}
+ if(has&&sm){su.style.display='block';su.textContent=sm.stars+' stars Ã‚Â· Mission '+sm.mission+' Ã‚Â· '+sm.blocks+' blocks built';bd.style.display='block';bd.textContent=(sm.rank||rankOf(sm.stars))+' Ã‚Â· '+sm.stars+' stars'}
  else{su.style.display='none';bd.style.display='none'}
  W.on=true;if(RAD<6)RAD=6;
  /* two frames later the illustration fades into the live panorama */
  requestAnimationFrame(()=>requestAnimationFrame(()=>{if(!playing)$('welcome').classList.add('live')}));
 }
 function howCard(){
- const how=touchMode?['Drag the round pad to walk. Drag anywhere else to look.','Tap a block to break or place it. Use the Place / Break button to switch.','Follow the glowing blueprint, open the glowing chests, and tap a builder to build together.','Swim east to the Open Air Prison, or tap My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.']
-  :['Click the game to look around. Move with W A S D and jump with Space.','Left click breaks a block. Right click places one. Keys 1 to 9 pick a block.','Follow the glowing blueprint, open the glowing chests, and click a builder to build together.','Swim east to the Open Air Prison, or open My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.'];
+ const how=touchMode?['Drag the round pad to walk. Drag anywhere else to look.','Tap a block to break or place it. Use the Place / Break button to switch. Tap Blocks for the inventory.','Follow the glowing blueprint, open the glowing chests, and tap a builder to build together.','Swim east to the Open Air Prison, or tap My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.']
+  :['Click the game to look around. Move with W A S D and jump with Space.','Left click breaks a block. Right click places one. Keys 1 to 9 pick a block. Press E for the block inventory and F to use a nearby lift.','Follow the glowing blueprint, open the glowing chests, and click a builder to build together.','Swim east to the Open Air Prison, or open My Skills then Open Air Prison. Build shelters with roofs to keep families safe from the drones.'];
  how.push(`${touchMode?'Tap Map':'Press M'} to travel to landmarks. The Landmarks wall across the lake has gates to these places.`);
  modal(`<svg class="motif i"><use href="#star8"/></svg><h2>How to play</h2><ul class="how">${how.map(h=>`<li>${h}</li>`).join('')}</ul><div class="row"><button class="btn" data-a="ok">Got it</button></div>`,p=>{p.querySelector('[data-a=ok]').onclick=closeModal});
 }
@@ -372,12 +396,19 @@ document.addEventListener('pointerlockerror',()=>{noLock=true});
 window.addEventListener('keydown',e=>{
  const k=e.key.toLowerCase();
  if(LIFT_RIDE)return;
- if(k==='e'&&!e.repeat&&liftPanel()){e.preventDefault();return}
+ if(k==='e'||k==='escape'&&$('blockInventory')&&curModal){
+  if(!e.repeat){
+   if(curModal&&$('blockInventory')){if(k==='escape')wantLock=false;closeModal()}else if(k==='e')openInventory();
+  }
+  e.preventDefault();return;
+ }
+ if(curModal&&$('blockInventory'))return;
+ if(k==='f'&&!e.repeat&&liftPanel()){e.preventDefault();return}
  if(k==='m'&&!e.repeat&&playing&&!curModal){setMapOpen(!mapDialog.open);return}
  if(mapDialog.open)return;
  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
  input.keys.add(k);
- if(playing&&!curModal&&k>='1'&&k<='9')selectBlock(HOTBAR_IDS[+k-1]);
+ if(playing&&!curModal&&k>='1'&&k<='9')selectBlock(hotbar[+k-1]);
 });
 window.addEventListener('keyup',e=>input.keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>{input.keys.clear();MG.fireHeld=false});
