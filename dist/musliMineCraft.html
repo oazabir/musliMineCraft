@@ -3708,13 +3708,13 @@ const MAP_PLACES=[{name:'Abu Dhabi spawn',region:'Abu Dhabi, UAE',x:START.x,z:ST
 ...FEATURED_LMS.map(f=>{const l=lmOf(f.t),p=PORT.find(g=>g.name===f.name);return{name:f.name,region:f.region,x:l.x,z:l.z,gate:PORT[p.to]}})];
 function portalPad(x,z,m){for(const p of PORT){const dx=x+.5-p.x,dz=z+.5-p.z;if(Math.abs(dx*p.tx+dz*p.tz)<=2.6+m&&Math.abs(dx*p.nx+dz*p.nz)<=4.1+m)return p}return null}
 function genPortals(x0,z0){
+const hub=GATE_HUB,wallX=Math.floor(hub.x)-1,half=(hub.count-1)*hub.step/2+2;
 for(const p of PORT){if(p.x+6<x0||p.x-6>x0+16||p.z+6<z0||p.z-6>z0+16)continue;
-for(let z=z0;z<z0+16;z++)for(let x=x0;x<x0+16;x++){const dx=x+.5-p.x,dz=z+.5-p.z,a=Math.abs(dx*p.tx+dz*p.tz),b=Math.abs(dx*p.nx+dz*p.nz);if(a>2.6||b>4.1)continue;
+for(let z=z0;z<z0+16;z++)for(let x=x0;x<x0+16;x++){const dx=x+.5-p.x,dz=z+.5-p.z,a=Math.abs(dx*p.tx+dz*p.tz),b=Math.abs(dx*p.nx+dz*p.nz);if(a>2.6||b>4.1||p.name!=='the start'&&x<wallX)continue;
 for(let y=Math.max(1,p.base-4);y<p.base;y++)put(x,y,z,B.LIME);
 put(x,p.base,z,a>1.6||b>3.1?B.LIMEP:B.MARBLE);
 for(let y=p.base+1;y<=p.base+8;y++)put(x,y,z,0);
 }}
-const hub=GATE_HUB,wallX=Math.floor(hub.x)-2,half=(hub.count-1)*hub.step/2+2;
 if(wallX>=x0&&wallX<x0+16){
 for(let z=z0;z<z0+16;z++)if(Math.abs(z+.5-hub.z)<=half){
 for(let y=hub.y+1;y<hub.y+8;y++)put(wallX,y,z,B.LIME);
@@ -3765,6 +3765,11 @@ return lerp(lerp(img[a],img[a+3],x-i),lerp(img[b],img[b+3],x-i),y-j);
 function portalGeo(p,t,o){
 const near=Math.hypot(player.x-p.x,player.z-p.z)<14;
 const box=(x,y,z,w,h,d,v,lit=false)=>{
+if(p.name!=='the start'){
+const back=Math.max(z-d/2,-.51/PGZ),front=z+d/2;
+if(front<=back)return;
+z=(back+front)/2;d=front-back;
+}
 o[0]=pbox(o[0],p.x+p.tx*x*PGS+p.nx*z*PGZ,p.base+1+(y-1)*PGY,p.z+p.tz*x*PGS+p.nz*z*PGZ,p.tx,0,p.tz,0,1,0,p.nx,0,p.nz,w*PGS/2,h*PGY/2,d*PGZ/2,...v,lit);
 };
 const stone=[.89,.85,.82],trim=[.99,.97,.94],shadow=[.72,.67,.63],green=[.27,.52,.16];
