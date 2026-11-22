@@ -1683,6 +1683,10 @@ class TestMuseum:
             }
           }
           const rooms=doha?DOHA_MIA_ROOMS.map(([y,w,n,e,s,d])=>[d-3,y+1,s+1]):EXP.map(([f,s,z])=>[s*(f<2?20:16),f*6+1,z]);
+          if(doha)for(const [side,north,,door,kind] of DOHA_MIA_SIDE){
+            rooms.push([side*7-3,1,door]);
+            if(dohaMiaArtifact(kind,0,2,kind==='tile'||kind==='textile'?0:1)<=0)throw Error('Gallery artifact missing');
+          }
           return{roof:todo.some(p=>p[1]===(doha?24:25)),missing:rooms.filter(p=>!seen.has(p.join()))};
         }""", which)
         assert result["roof"] and not result["missing"], f"Expected a walkable route to the roof and all display rooms, observed {result}"

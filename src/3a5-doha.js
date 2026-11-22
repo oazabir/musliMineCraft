@@ -26,11 +26,40 @@ for(const [floor,pair,steps] of [
 }
 /* Room boxes in atrium coordinates: level, west, north, east, south, door, display. */
 const DOHA_MIA_ROOMS=[
- [0,-9,-8,-5,-2,-7,'ceramic'],[0,5,-8,9,-2,7,'lantern'],
  [5,-8,-10,-4,-3,-6,'astrolabe'],[5,6,-10,9,-3,7,'folio'],
  [10,-6,-8,-3,-2,-5,'textile'],[15,-5,-7,-2,-2,-4,'ewer'],
  [20,-3,-3,-1,0,-2,'tile']
 ];
+const DOHA_MIA_SIDE=[
+ [-1,-11,-6,-8,'ceramic'],[-1,-5,0,-2,'astrolabe'],[-1,1,6,2,'textile'],
+ [1,-11,-6,-8,'lantern'],[1,-5,0,-2,'ewer'],[1,1,6,2,'tile']
+];
+function dohaMiaSideRoom(x,y,z){
+ const a=Math.abs(x);
+ if(a<6||a>10||y<1||y>4)return -1;
+ for(const [side,north,south,door,kind] of DOHA_MIA_SIDE){
+  if(Math.sign(x)!==side||z<north||z>south)continue;
+  if(a===6&&z===door&&y<=3)return B.AIR;
+  const artifact=dohaMiaArtifact(kind,a-8,y,z-north);
+  if(artifact>=0)return artifact;
+  if(a===6||a===10||z===north||z===south)return y===4&&a===6&&z===door?B.LANTERN:B.LIMEP;
+  return B.AIR;
+ }
+ return -1;
+}
+let dohaTitle=null;
+function dohaMiaTitle(){
+ const l=lmOf('dohaMia');
+ const near=playing&&!curModal&&Math.abs(player.x-l.x)<34&&player.z>l.z+10.7&&player.z<l.z+44;
+ const p=near?project(l.x-2.5,l.y0+4.5,l.z+11.03):null;
+ if(!p||Math.abs(p[0])>1||Math.abs(p[1])>1){if(dohaTitle)dohaTitle.hidden=true;return}
+ if(!dohaTitle){
+  dohaTitle=document.createElement('div');dohaTitle.id='dohaTitle';
+  dohaTitle.textContent='Museum of Islamic Art';$('tags').appendChild(dohaTitle);
+ }
+ dohaTitle.hidden=false;
+ dohaTitle.style.left=((p[0]+1)*vw/2)+'px';dohaTitle.style.top=((1-p[1])*vh/2)+'px';
+}
 function dohaMiaArtifact(kind,x,y,z){
  if(kind==='textile'&&z===0&&Math.abs(x)<=1&&y>=1&&y<=3)return x===0&&y===2?B.STAR:B.CARPET;
  if(kind==='folio'&&z===0&&Math.abs(x)<=1&&y>=1&&y<=2)return y===2&&x===0?B.GOLD:B.BLUE;
@@ -121,6 +150,7 @@ function dohaMia(l,lx,y,z){
  if(y%5===1&&y>=6&&y<=16&&x===3&&z>-9&&z<2&&!(px>0&&z<=-4&&y===16))return B.LATTICE;
  if(y===t[3]&&n<5){
   if(!dohaMiaTier(DOHA_MIA_TIERS[n+1],x,z))return B.LIME;
+ const sideRoom=dohaMiaSideRoom(px,y,z);if(sideRoom>=0)return sideRoom;
   return x+Math.abs(z+4)<=1?B.AIR:B.MARBLE;
  }
  if(y===17&&x+Math.abs(z+4)===2)return B.LANTERN;

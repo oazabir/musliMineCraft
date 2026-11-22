@@ -610,7 +610,7 @@ function frame(now){
  else{busyFrame=streamWork(4,2,now)>0;if(now-lastUnload>400){lastUnload=now;unloadFar()}}
  if(beamsDirty&&now-beamsT>300){beamsT=now;rebuildBeams()}
  $('building').style.display=playing&&player.hold?'block':'none';
- drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);museumHud(dt);fillExGeo(now);uiWater();liftHud();
+ drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);dohaMiaTitle();museumHud(dt);fillExGeo(now);uiWater();liftHud();
  hitView=null;
  if(playing&&!curModal&&!mapDialog.open){
   let r=null;
