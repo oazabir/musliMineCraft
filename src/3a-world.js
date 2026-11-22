@@ -368,7 +368,7 @@ const FIXED=[['mosque',0,3,-108,-29],['mosque',1,2,-30,108],['mosque',2,0,-46,-1
  /* Saudi Arabia to the west and south-west: oasis town, caravan stop and mosques. */
  ['haram',0,0,-520,245],['mosque',0,0,-520,165],['village',0,0,-620,310],['caravan',0,0,-485,390],['charbagh',0,0,-660,235],['landmarks',0,0,-37,-11],
  ...FEATURED_LMS.map(l=>[l.t,0,0,l.dx,l.dz])];
-const GATE_HUB={x:987-6.5*.963,z:1013-6.5*.268,step:4.76,nx:.963,nz:.268,y:16,count:4+FEATURED_LMS.length,tx:-.268,tz:.963};
+const GATE_HUB={x:981.5,z:1011.5,step:5,nx:1,nz:0,y:16,count:4+FEATURED_LMS.length,tx:0,tz:1};
 const hubDist=(x,z)=>{const dx=x-GATE_HUB.x,dz=z-GATE_HUB.z,s=dx*GATE_HUB.tx+dz*GATE_HUB.tz,d=dx*GATE_HUB.nx+dz*GATE_HUB.nz;
  return Math.max(Math.abs(s)-(GATE_HUB.count-1)*GATE_HUB.step/2-3,Math.abs(d)-4,0)};
 const SPAWN_PALMS=[[-17,7],[-7,-13],[-21,-10],[-2,12]];

@@ -5,11 +5,13 @@ const PORT_ROWS=[[1,.76,.32],[1.32,1.08,.35],[1.67,1.27,2.4],[4.07,1.08,.34],[4.
 let PORT=null;
 function portalList(){
  if(PORT)return PORT;
- const mk=(x,z,nx,nz,name,to,level,precise=false)=>{const n=Math.hypot(nx,nz)||1;nx/=n;nz/=n;const cx=precise?x:Math.floor(x)+.5,cz=precise?z:Math.floor(z)+.5;
+ const mk=(x,z,nx,nz,name,to,level)=>{
+  if(Math.abs(nx)>=Math.abs(nz)){nx=Math.sign(nx);nz=0}else{nz=Math.sign(nz);nx=0}
+  const cx=Math.floor(x)+.5,cz=Math.floor(z)+.5;
   const base=level??Math.max(WL+1,groundTop(Math.floor(x),Math.floor(z)));
   return{x:cx,z:cz,nx,nz,tx:-nz,tz:nx,base,cy:base+1+PR-.05,name,to,act:0,kw:0}};
  const haram=lmOf('haram'),museum=museumLm();
- const hub=(i,name,to)=>{const s=(i-(GATE_HUB.count-1)/2)*GATE_HUB.step;return mk(GATE_HUB.x+GATE_HUB.tx*s,GATE_HUB.z+GATE_HUB.tz*s,GATE_HUB.nx,GATE_HUB.nz,name,to,GATE_HUB.y,true)};
+ const hub=(i,name,to)=>{const s=(i-(GATE_HUB.count-1)/2)*GATE_HUB.step;return mk(GATE_HUB.x+GATE_HUB.tx*s,GATE_HUB.z+GATE_HUB.tz*s,GATE_HUB.nx,GATE_HUB.nz,name,to,GATE_HUB.y)};
  /* Keep the original four pairs at their existing indices. */
  PORT=[hub(0,'Museum of Islamic Heritage',4),hub(1,'Grand Mosque',5),hub(2,'Open Air Prison',6),hub(3,'Masjid al-Haram and the Kaaba',7),
   mk(museum.x+20,museum.z+52,-20,-79,'the start',0),mk(950,1019,916-950,995-1019,'the start',1),
@@ -35,9 +37,16 @@ function genPortals(x0,z0){
    put(x,p.base,z,a>1.6||b>3.1?B.LIMEP:B.MARBLE);
    for(let y=p.base+1;y<=p.base+8;y++)put(x,y,z,0);
   }}
+ const hub=GATE_HUB,wallX=Math.floor(hub.x)-2,half=(hub.count-1)*hub.step/2+2;
+ if(wallX>=x0&&wallX<x0+16){
+  for(let z=z0;z<z0+16;z++)if(Math.abs(z+.5-hub.z)<=half){
+   for(let y=hub.y+1;y<hub.y+8;y++)put(wallX,y,z,B.LIME);
+   put(wallX,hub.y+8,z,B.LIMEP);
+  }
+ }
 }
 /* --- drawing: masonry, portal surface, and sparks --- */
-const PO=new Float32Array(252*88*PORT.length),PT=new Float32Array(42*140*PORT.length),PA=new Float32Array(42*40*PORT.length),PE=new Float32Array(42*1800);
+const PO=new Float32Array(252*240*PORT.length),PT=new Float32Array(42*624*PORT.length),PA=new Float32Array(42*40*PORT.length),PE=new Float32Array(42*4200);
 let pBuf=null,pTextN=0,pTextUploaded=false;
 const PBC=new Float32Array(24),PLIT=[1,1,1];
 function pbox(o,cx,cy,cz,ux,uy,uz,vx,vy,vz,wx,wy,wz,hu,hv,hw,r,g,b,lit){
@@ -53,56 +62,109 @@ function ptri(A,o,ax,ay,az,bx,by,bz,cx,cy,cz,c1,c2,c3){
  A[o++]=bx;A[o++]=by;A[o++]=bz;A[o++]=c2[0];A[o++]=c2[1];A[o++]=c2[2];A[o++]=c2[3];
  A[o++]=cx;A[o++]=cy;A[o++]=cz;A[o++]=c3[0];A[o++]=c3[1];A[o++]=c3[2];A[o++]=c3[3];return o;
 }
+/* Cache a low resolution elevation from the destination's block generator. */
+const PVW=30,PVH=40;
+function portalPreview(p){
+ const out=new Float32Array(PVW*PVH*3),place=MAP_PLACES.find(q=>q.gate===PORT[p.to]);
+ const l=place&&fixedList().find(q=>q.x===place.x&&q.z===place.z);
+ const span=l?Math.max(l.hx*1.9,l.h*.32):22,high=l?Math.max(l.h+1,span*1.3):18;
+ for(let j=0;j<PVH;j++)for(let i=0;i<PVW;i++){
+  const u=(i+.5)/PVW,v=(j+.5)/PVH,x=Math.round((u-.5)*span),y=Math.floor(v*high)-1;
+  let col=[.20+.16*v,.13+.13*v,.40+.22*v];
+  if(l&&Math.abs(x)<=l.hx&&y>=l.ymin&&y<=l.h){
+   for(let z=l.hz;z>=-l.hz;z--){
+    const b=l.fn(l,x,y,z);
+    if(b>0){col=GHOST_COL[b]||[.72,.62,.54];break}
+   }
+  }else if(place&&!l&&v<.30&&gzD(GZ.x+x,GZ.z)<0)col=[.45,.52,.30];
+  else if(!place&&v<.54)col=v>.12&&v<.45&&i%4===1?[.48,.11,.70]:[.67,.52,.44];
+  out.set(col,(j*PVW+i)*3);
+ }
+ return out;
+}
+function portalPreviewColor(img,u,v,k){
+ const x=clamp(u*PVW-.5,0,PVW-1.001),y=clamp(v*PVH-.5,0,PVH-1.001);
+ const i=Math.floor(x),j=Math.floor(y),a=(j*PVW+i)*3+k,b=a+PVW*3;
+ return lerp(lerp(img[a],img[a+3],x-i),lerp(img[b],img[b+3],x-i),y-j);
+}
 function portalGeo(p,t,o){
  const near=Math.hypot(player.x-p.x,player.z-p.z)<14;
  const box=(x,y,z,w,h,d,v,lit=false)=>{
   o[0]=pbox(o[0],p.x+p.tx*x*PGS+p.nx*z*PGZ,p.base+1+(y-1)*PGY,p.z+p.tz*x*PGS+p.nz*z*PGZ,p.tx,0,p.tz,0,1,0,p.nx,0,p.nz,w*PGS/2,h*PGY/2,d*PGZ/2,...v,lit);
  };
- const stone=[.84,.85,.87],trim=[.95,.95,.96],shadow=[.59,.62,.67],dark=[.26,.21,.18];
+ const stone=[.89,.85,.82],trim=[.99,.97,.94],shadow=[.72,.67,.63],green=[.27,.52,.16];
  for(const side of [-1,1]){
-  box(side*1.71,1.10,0,1.18,.20,1.78,shadow);
-  box(side*1.67,1.26,0,1.00,.16,1.42,trim);
-  box(side*1.76,2.93,0,.98,3.18,.89,stone);
-  box(side*2.10,2.91,0,.28,3.24,1.12,shadow);
-  for(let j=0;j<8;j++)box(side*2.10,1.54+j*.39,0,.31,.11,1.15,j%2?stone:shadow);
-  box(side*1.61,4.63,0,1.23,.30,1.19,trim);
-  box(side*1.45,4.88,0,1.03,.22,1.02,stone);
-  for(const face of [-1,1]){
-   for(let j=0;j<5;j++)box(side*1.67,1.91+j*.48,face*.46,.23,.11,.06,dark);
-   for(const y of [1.55,4.40]){
-    box(side*1.67,y,face*.51,.60,.35,.15,stone);
-    for(let j=-1;j<=1;j++)box(side*1.67+j*.14,y,face*.60,.05,.24,.04,trim);
-   }
-   for(const y of [2.00,3.97])box(side*2.11,y,face*.59,.055,.43,.05,[.80,.94,1],true);
+  box(side*1.72,1.09,0,1.65,.18,2.20,shadow);
+  box(side*1.66,1.25,0,1.34,.14,1.84,trim);
+  box(side*1.68,2.94,0,.82,3.24,1.05,stone);
+  for(let j=0;j<8;j++)box(side*1.69,1.52+j*.39,0,.89,.09,1.14,j%2?stone:trim);
+  box(side*2.17,2.94,-.10,.28,3.12,.62,shadow);
+  for(const [y,x,w,d] of [[1.38,2.19,.57,1.27],[2.18,2.25,.50,.88],[3.80,2.26,.55,1.10],[4.87,2.34,.65,1.53],[5.04,2.51,.51,1.45]]){
+   box(side*x,y,0,w,.19,d,y>4?trim:stone);
   }
+  box(side*1.72,4.53,0,1.42,.22,1.36,trim);
+  for(const face of [-1,1]){
+   box(side*1.66,1.48,face*.61,.68,.27,.26,trim);
+   const iron=[.17,.20,.22],brass=[.48,.34,.17];
+   for(const [offset,depth,low,top] of [[2.39,.72,2.91,4.91],[1.48,1.04,2.66,4.79]]){
+    const x=side*offset,z=face*depth;
+    box(x,top,face*(depth+.32)/2,.16,.12,depth-.24,stone);
+    for(let y=low+.20;y<top-.06;y+=.16){
+     const flat=Math.round((y-low)*100)%32<16,w=flat?.105:.048,d=flat?.048:.105;
+     box(x,y,z,w,.115,d,iron);
+     box(x,y+.065,z,.038,.043,.038,iron);
+    }
+    box(x,low,z,.23,.24,.23,[1,.76,.33],true);
+    box(x,low, z,.14,.17,.243,[1,.94,.67],true);
+    box(x,low+.14,z,.29,.065,.29,brass);
+    box(x,low-.14,z,.27,.065,.27,brass);
+    for(const rail of [-1,1])box(x+rail*.106,low,z,.027,.24,.237,iron);
+   }
+   for(let j=0;j<5;j++){
+    const x=side*(2.08+hash2(j,side,87)*.28);
+    box(x,4.43-j*.34,face*.29,.22,.28,.22,j%2?green:[.49,.66,.22]);
+   }
+  }
+  for(let j=0;j<5;j++)box(side*(1.29+j*.15),5.35+hash2(j,side,31)*.24,0,.26,.25,.51,j%2?green:[.49,.66,.22]);
  }
+ box(0,1.035,0,5.98,.07,5.20,shadow);
+ for(const face of [-1,1])for(let i=-2;i<=2;i++){
+  const x=i*.96,z=face*(Math.abs(i)===2?1.82:2.22);
+  box(x,1.06,z,.96,.12,.84,i%2?stone:trim);
+  for(let j=-1;j<=1;j++)box(x+j*.16,1.126,z,.066,.014,.40,shadow);
+ }
+ for(const side of [-1,1])for(const z of [-.83,0,.83]){
+  box(side*2.67,1.055,z,.68,.11,.83,stone);
+  box(side*2.67,1.12,z,.40,.028,.46,trim);
+ }
+ box(0,1.08,0,1.52,.16,2.23,shadow);
  for(const [y,w,h] of PORT_ROWS){
-  const edge=1.29;
-  for(const side of [-1,1])if(w<edge)box(side*(w+edge)/2,y+h/2,0,edge-w,h,.82,stone);
+  const edge=1.28;
+  for(const side of [-1,1])if(w<edge)box(side*(w+edge)/2,y+h/2,0,edge-w,h,.89,shadow);
  }
- box(0,4.86,0,2.52,.24,1.10,trim);
- box(0,5.10,0,1.76,.24,.93,stone);
- box(0,5.33,0,1.20,.22,.81,trim);
- for(const x of [-1.45,0,1.45]){
-  const y=x?5:5.44,f=.5+.5*Math.sin(11*t+x*6);
-  box(x,y+.09,0,.40,.18,.37,[.02,.53,.72],true);
-  box(x-.055,y+.25,0,.24,.33,.24,[.05,.72+.22*f,1],true);
-  box(x+.07,y+.32+.08*f,.03,.13,.25,.15,[.36,.96,1],true);
- }
+ box(0,4.91,0,3.31,.35,1.33,stone);
+ box(0,5.15,0,4.84,.16,1.66,trim);
+ box(0,5.33,0,3.66,.20,1.30,stone);
+ box(0,5.49,0,2.50,.12,1.03,trim);
  const kw=p.kw>0?Math.sin(p.kw*Math.PI)*1.5:0;
- const quad=(A,k,x,y,w,h,z,c)=>{
+ const quad=(A,k,x,y,w,h,z,c,b=c,d=c,e=c)=>{
   x*=PGS;y=1+(y-1)*PGY;w*=PGS;h*=PGY;z*=PGZ;
   const X=p.x+p.tx*x+p.nx*z,Z=p.z+p.tz*x+p.nz*z,Y=p.base+y,dx=p.tx*w,dz=p.tz*w;
-  o[k]=ptri(A,o[k],X,Y,Z,X+dx,Y,Z+dz,X+dx,Y+h,Z+dz,c,c,c);
-  o[k]=ptri(A,o[k],X,Y,Z,X+dx,Y+h,Z+dz,X,Y+h,Z,c,c,c);
+  o[k]=ptri(A,o[k],X,Y,Z,X+dx,Y,Z+dz,X+dx,Y+h,Z+dz,c,b,d);
+  o[k]=ptri(A,o[k],X,Y,Z,X+dx,Y+h,Z+dz,X,Y+h,Z,c,d,e);
  };
  for(let row=0;row<PORT_ROWS.length;row++){
-  const [y,w,h]=PORT_ROWS[row],cols=near?10:4,rows=Math.max(1,Math.round(h*(near?4:2)));
+  const [y,w,h]=PORT_ROWS[row],cols=near?24:6,rows=Math.max(1,Math.round(h*(near?8:3)));
+  const img=p.preview||(p.preview=portalPreview(p));
   for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
-   const seed=hash2(i,j+row*12,p.to),pulse=.5+.5*Math.sin(t*(2+seed*3)+seed*27);
-   const bright=seed>.82?pulse*.55:pulse*.15;
-   const c=[.13+bright+p.act*.13,.035+bright*.10,.24+bright,1];
-   quad(PT,1,-w+2*w*i/cols,y+h*j/rows,2*w/cols,h/rows,kw,c);
+   const x=-w+2*w*i/cols,py=y+h*j/rows,dx=2*w/cols,dy=h/rows;
+   const shade=(sx,sy)=>{
+    const v=(sy-1)/3.74,u=.5+sx/2.54+.043*Math.sin(v*19+t*2.1);
+    const glow=.035*(1+Math.sin(sy*6+sx*4-t*2)),c=[.12+glow+p.act*.13,.025+glow*.16,.24+glow,1];
+    for(let k=0;k<3;k++)c[k]+=.135*(portalPreviewColor(img,u-.012,v,k)+portalPreviewColor(img,u+.012,v,k)+portalPreviewColor(img,u,v-.012,k)+portalPreviewColor(img,u,v+.012,k));
+    return c;
+   };
+   quad(PT,1,x,py,dx,dy,kw,shade(x,py),shade(x+dx,py),shade(x+dx,py+dy),shade(x,py+dy));
   }
  }
  for(let i=0;i<(near?36:12);i++){
@@ -121,10 +183,10 @@ function engraveQuad(o,p,x,y,z,s,c){
  o=ptri(PE,o,X,y,Z,X+dx,y,Z+dz,X+dx,y+s,Z+dz,c,c,c);
  return ptri(PE,o,X,y,Z,X+dx,y+s,Z+dz,X,y+s,Z,c,c,c);
 }
-function engraveText(o,p,text,cy,c,s=.08){
+function engraveText(o,p,text,cy,c,s=.08,width=8,z=-.43){
  const words=text.toUpperCase().split(/\s+/),lines=[];let line='';
- for(const w of words){const n=line?line+' '+w:w;if(n.length>8&&line){lines.push(line);line=w}else line=n}if(line)lines.push(line);
- const advance=s*4,gap=.12,total=lines.length*s*5+(lines.length-1)*gap,top=cy+total/2,z=-.43;
+ for(const w of words){const n=line?line+' '+w:w;if(n.length>width&&line){lines.push(line);line=w}else line=n}if(line)lines.push(line);
+ const advance=s*4,gap=Math.min(.12,s*1.5),total=lines.length*s*5+(lines.length-1)*gap,top=cy+total/2;
  for(let r=0;r<lines.length;r++){
   const q=lines[r],left=-(q.length*advance-s)/2,ytop=top-r*(s*5+gap);
   for(let i=0;i<q.length;i++){
@@ -137,26 +199,25 @@ function engraveText(o,p,text,cy,c,s=.08){
 function buildPortalEngraving(){
  if(pTextN)return;
  let o=0;const ink=[.08,.075,.07,1];
- for(const p of PORT)if(p.name!=='the start')o=engraveText(o,p,p.name,p.base+5.3,ink);
- o=engraveText(o,GATE_HUB,'Landmarks',GATE_HUB.y+7.4,[.025,.025,.025,1],.11);pTextN=o;
-}
-function portalBackboard(o){
- o=pbox(o,GATE_HUB.x-GATE_HUB.nx*.55,GATE_HUB.y+4,GATE_HUB.z-GATE_HUB.nz*.55,
-  GATE_HUB.tx,0,GATE_HUB.tz,0,1,0,GATE_HUB.nx,0,GATE_HUB.nz,23.5,4,.1,.72,.70,.65,false);
- return pbox(o,GATE_HUB.x-GATE_HUB.nx*.2,GATE_HUB.y+8.08,GATE_HUB.z-GATE_HUB.nz*.2,
-  GATE_HUB.tx,0,GATE_HUB.tz,0,1,0,GATE_HUB.nx,0,GATE_HUB.nz,24,.16,.5,.66,.56,.40,false);
+ for(const p of PORT)o=engraveText(o,p,p.name,p.base+1+3.91*PGY,ink,p.name.length>20?.0195:.022,20,.665*PGZ+.012);
+ for(const l of fixedList()){
+  const art=l.t==='dohaMia';if(!art&&l.t!=='museum')continue;
+  const name=art?'Museum of Islamic Art':'Museum of Islamic Heritage';
+  const facade={x:l.x+(art?-2.5:.5),z:l.z+(art?11:26-MZC),nx:0,nz:1,tx:-1,tz:0};
+  o=engraveText(o,facade,name,l.y0+5.5,ink,.13,32,.015);
+ }
+ pTextN=o;
 }
 function portalDraw(now){
  if(!(playing||glide))return;
  buildPortalEngraving();
- const t=now/1000,e=cam.e,fw=cam.fw,lim=(farFog+12)*(farFog+12),o=[0,0,0,0],wx=GATE_HUB.x-e[0],wz=GATE_HUB.z-e[2],wallVisible=wx*wx+wz*wz<lim&&wx*fw[0]+(GATE_HUB.y+4-e[1])*fw[1]+wz*fw[2]>-29;
- if(wallVisible)o[0]=portalBackboard(o[0]);
+ const t=now/1000,e=cam.e,fw=cam.fw,lim=(farFog+12)*(farFog+12),o=[0,0,0,0];
  for(const p of PORT){const dx=p.x-e[0],dz=p.z-e[2];if(dx*dx+dz*dz>lim||dx*fw[0]+(p.cy-e[1])*fw[1]+dz*fw[2]<-PR-2)continue;portalGeo(p,t,o)}
  if(!o[0]&&!o[1]&&!o[2]&&!pTextN)return;
  if(!pBuf||!gl.isBuffer(pBuf[0])){pBuf=[gl.createBuffer(),gl.createBuffer(),gl.createBuffer(),gl.createBuffer()];pTextUploaded=false}
  const arrs=[PO,PT,PA,PE];
  for(let i=0;i<4;i++){
-  pObj[i].b=pBuf[i];pObj[i].n=i===3?(wallVisible?pTextN/7:0):o[i]/7;
+  pObj[i].b=pBuf[i];pObj[i].n=i===3?pTextN/7:o[i]/7;
   if(i===3){if(pTextUploaded)continue;gl.bindBuffer(gl.ARRAY_BUFFER,pBuf[i]);gl.bufferData(gl.ARRAY_BUFFER,arrs[i].subarray(0,pTextN),gl.STATIC_DRAW);pTextUploaded=true;continue}
   if(!o[i])continue;gl.bindBuffer(gl.ARRAY_BUFFER,pBuf[i]);gl.bufferData(gl.ARRAY_BUFFER,arrs[i].subarray(0,o[i]),gl.DYNAMIC_DRAW)
  }
