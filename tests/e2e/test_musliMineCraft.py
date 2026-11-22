@@ -3195,9 +3195,25 @@ def _walk_into_gate(g, i):
 
 
 class TestTowerElevators:
+    def test_helipad_helicopter_can_take_off_land_and_exit(self, desktop):
+        g = desktop
+        g.ev("""(()=>{const [x,y,z]=HELI_HOME;forceLoad(x>>4,z>>4,2);
+          Object.assign(player,{x,y,z:z+2,vx:0,vy:0,vz:0,hold:false,ground:true});})()""")
+        g.page.keyboard.press("f")
+        assert g.ev("HELI.on")
+        g.page.keyboard.down("Space")
+        try:
+            g.wait("HELI.y>HELI_HOME[1]+2", "the helicopter to climb")
+        finally:
+            g.page.keyboard.up("Space")
+        g.page.keyboard.press("f")
+        g.wait("HELI.y===HELI_HOME[1]", "the helicopter to land on the pad")
+        g.page.keyboard.press("f")
+        assert g.ev("!HELI.on&&!collides(player.x,player.y,player.z)")
+
     def test_tower_bases_pick_up_the_upper_facade_palette(self, loaded):
         assert loaded.ev("""(()=>{const burj=lmOf('burj'),sail=lmOf('sail');
-          return burj.fn(burj,-6,3,7)===B.BLUE&&burj.fn(burj,-6,4,7)===B.LIMEP
+          return burj.fn(burj,-6,2,5)===B.BLUE&&burj.fn(burj,-6,4,5)===B.LIMEP
             &&sail.fn(sail,4,2,-8)===B.TURQ;
         })()""")
 

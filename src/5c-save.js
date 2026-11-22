@@ -8,7 +8,7 @@ function progObj(){
  const blocks=countBlocks();
  SV.sum={stars:S.stars,mission:Math.min(S.mission+1,MISSIONS.length),blocks,rank:rankOf(S.stars)};
  return{v:4,stars:S.stars,mission:S.mission,unlocked:S.unlocked,skills:S.skills,settings:S.settings,sel:S.sel,mode:S.mode,
-  pos:(playing||glide)?(liftSavePos()||[player.x,player.y,player.z,player.yaw,player.pitch]):(SV.pos||null),day:(playing||glide)?dayT:(SV.dayKeep===undefined?dayT:SV.dayKeep),playT:Math.floor(S.playT),act:Math.floor(activeSec),
+  pos:(playing||glide)?(liftSavePos()||(HELI.on?[HELI_HOME[0],HELI_HOME[1],HELI_HOME[2]+2,0,0]:null)||[player.x,player.y,player.z,player.yaw,player.pitch]):(SV.pos||null),day:(playing||glide)?dayT:(SV.dayKeep===undefined?dayT:SV.dayKeep),playT:Math.floor(S.playT),act:Math.floor(activeSec),
   prayer:S.prayer,pass:S.pass,passFl:S.passFl,title:S.title,gz:S.gz,q:S.q,bd:botSaveState(),sum:SV.sum,idb:PERSIST.ok?1:0,ts:Date.now()};
 }
 function saveProg(){if(SV.importing||SV.writer!==true)return false;try{localStorage.setItem(PROG_KEY,JSON.stringify(progObj()));return true}catch(e){return false}}

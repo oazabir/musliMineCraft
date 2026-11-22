@@ -105,7 +105,7 @@ for(let i=0;i<MAP_PLACES.length;i++){
  row.className='mapPlace';row.innerHTML=`<i aria-hidden="true">${i+1}</i><span><b>${p.name}</b><small>${p.region}</small></span>`;
  pin.onclick=row.onclick=()=>mapTravel(p);$('mapPins').appendChild(pin);$('mapPlaces').appendChild(row);
 }
-$('map').onclick=()=>{if(!LIFT_CABIN)setMapOpen(true)};$('mapClose').onclick=()=>setMapOpen(false);
+$('map').onclick=()=>{if(!LIFT_CABIN&&!HELI.on)setMapOpen(true)};$('mapClose').onclick=()=>setMapOpen(false);
 window.addEventListener('resize',()=>{if(mapDialog.open)layoutMapPins()});
 function updateMode(){
  const b=$('btnMode');b.className=S.mode;
@@ -284,6 +284,7 @@ function confirmReset(back){
 }
 function resetAll(){
  LIFT_CABIN=null;if(LIFT_RIDE)liftFinish();
+ Object.assign(HELI,{x:HELI_HOME[0],y:HELI_HOME[1],z:HELI_HOME[2],yaw:Math.PI,on:false,landing:false});
  clearTimeout(saveTimer);saveTimer=0;
  edits.clear();bedits.clear();blClear();PERSIST.dirty.clear();PERSIST.botDirty=false;worldDirty=false;resetState();SV.has=false;SV.pos=null;SV.sum=null;
  for(const b of bots){b.on=false;b.done=[];b.ds=null;b.site=null;b.st=0;b.cells.length=0}
@@ -411,9 +412,10 @@ window.addEventListener('keydown',e=>{
   e.preventDefault();return;
  }
  if(curModal&&$('blockInventory'))return;
- if(k==='f'&&!e.repeat&&liftPanel()){e.preventDefault();return}
+ if(k==='f'&&!e.repeat&&(heliAction()||liftPanel())){e.preventDefault();return}
+ if(HELI.on&&['shift','pageup','pagedown'].includes(k)){e.preventDefault();input.keys.add(k);return}
  if(k==='/'&&!e.repeat&&!curModal&&!mapDialog.open&&!LIFT_CABIN){conOpen(true);e.preventDefault();return}
- if(k==='m'&&!e.repeat&&playing&&!curModal&&!LIFT_CABIN){setMapOpen(!mapDialog.open);return}
+ if(k==='m'&&!e.repeat&&playing&&!curModal&&!LIFT_CABIN&&!HELI.on){setMapOpen(!mapDialog.open);return}
  if(mapDialog.open)return;
  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
  input.keys.add(k);
@@ -443,6 +445,7 @@ $('btnQuest').addEventListener('click',questPanel);
 $('btnStats').addEventListener('click',skillsPanel);
 $('btnPass').addEventListener('click',passportPanel);
 $('liftChip').addEventListener('click',liftPanel);
+$('heliChip').addEventListener('click',heliAction);
 $('helpout').addEventListener('click',()=>{if(helpOut()){toast('Back on dry land');$('helpout').classList.remove('on')}else toast('Try walking towards the shore')});
 
 /* ===== 12. Loader, main loop and boot ===== */
@@ -590,12 +593,12 @@ function frame(now){
  if(document.hidden){last=now;return}
  const elapsed=(now-last)/1000||0,dt=Math.min(.05,elapsed);last=now;
  if(playing&&!curModal&&!mapDialog.open){
- if(LIFT_RIDE)liftStep(elapsed);else if(LIFT_CABIN){player.ground=true}else if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(Math.min(.12,elapsed));else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
-  if(!LIFT_CABIN)liftBoardOnApproach();
+ if(HELI.on)heliStep(dt);else if(LIFT_RIDE)liftStep(elapsed);else if(LIFT_CABIN){player.ground=true}else if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(Math.min(.12,elapsed));else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
+  if(!LIFT_CABIN&&!HELI.on)liftBoardOnApproach();
   activeSec+=dt;if(activeSec>=BREAK_SECONDS&&!LIFT_RIDE){activeSec=0;breakReminder()}
-  if(!TP&&!FLY&&!MG.on&&!LIFT_RIDE&&!LIFT_CABIN)prayerStep(elapsed);
+  if(!TP&&!FLY&&!MG.on&&!LIFT_RIDE&&!LIFT_CABIN&&!HELI.on)prayerStep(elapsed);
   else{prayerHold=0;prayerAnchor=null}
-  edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on&&!LIFT_RIDE)portalTick(dt);saveTick(dt);
+  edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on&&!LIFT_RIDE&&!HELI.on)portalTick(dt);saveTick(dt);
  }else if(glide)glideStep(dt);
  else if(!playing){if(W.on)welcomeCam(dt);else player.yaw+=dt*.08}
  if(curModal||mapDialog.open){prayerHold=0;prayerAnchor=null}
@@ -610,7 +613,7 @@ function frame(now){
  else{busyFrame=streamWork(4,2,now)>0;if(now-lastUnload>400){lastUnload=now;unloadFar()}}
  if(beamsDirty&&now-beamsT>300){beamsT=now;rebuildBeams()}
  $('building').style.display=playing&&player.hold?'block':'none';
- drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);dohaMiaTitle();museumHud(dt);fillExGeo(now);uiWater();liftHud();
+ drawMap(now);updateCamera();fillBotGeo();updateTags();updateSigns(dt);dohaMiaTitle();museumHud(dt);fillExGeo(now);uiWater();liftHud();heliHud();
  hitView=null;
  if(playing&&!curModal&&!mapDialog.open){
   let r=null;

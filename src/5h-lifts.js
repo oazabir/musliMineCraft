@@ -163,3 +163,70 @@ function liftDraw(){
  part(p,-.45,1,0,.03,1,.47,metal);part(p,.45,1,0,.03,1,.47,metal);
  for(let i=0;i<e.stops.length;i++)part(p,.415,.72+i*.29,0,.015,.078,.10,[.89,.66,.27]);
 }
+/* The helicopter starts on the Burj Al Arab helipad. */
+const HELI=(()=>{
+ const l=lmOf('sail'),at=[];lm2w(l,0,-13,at);
+ return{x:at[0]+.5,y:l.y0+23,z:at[1]+.5,yaw:Math.PI,on:false,landing:false};
+})();
+const HELI_HOME=[HELI.x,HELI.y,HELI.z];
+function heliNear(){
+ return playing&&!curModal&&!mapDialog.open&&!FLY&&!TP&&!MG.on&&!LIFT_RIDE&&!LIFT_CABIN
+  &&Math.abs(player.y-HELI.y)<1.5&&Math.hypot(player.x-HELI.x,player.z-HELI.z)<4;
+}
+function heliAction(){
+ if(!HELI.on&&!heliNear())return false;
+ if(HELI.on){
+  if(!solidAt(Math.floor(HELI.x),Math.floor(HELI.y-.04),Math.floor(HELI.z))){HELI.landing=!HELI.landing;return true}
+  const exit=heliExitSpot();if(!exit){toast('Land near clear ground to exit.');return true}
+  HELI.on=HELI.landing=false;
+  Object.assign(player,{x:exit[0],y:exit[1],z:exit[2],ground:true,hold:false});queueSave();
+ }else{
+  HELI.on=true;HELI.landing=false;player.yaw=HELI.yaw;player.pitch=0;heliSeat();
+  toast(touchMode?'Use the joystick and Jump to fly. Tap Land to descend.':'WASD to fly, Space to climb, Shift to descend, F to land.');
+ }
+ input.keys.clear();input.jx=input.jy=0;input.jump=false;
+ return true;
+}
+function heliSeat(){
+ Object.assign(player,{x:HELI.x,y:HELI.y+.18,z:HELI.z,stepOff:0,vx:0,vy:0,vz:0,water:false,ground:false});
+}
+function heliExitSpot(){
+ for(const [dx,dz] of [[0,2],[2,0],[0,-2],[-2,0],[0,1],[1,0],[0,-1],[-1,0]]){
+  const x=HELI.x+dx,z=HELI.z+dz,y=HELI.y;
+  if(solidAt(Math.floor(x),Math.floor(y-.04),Math.floor(z))&&!collides(x,y,z))return[x,y,z];
+ }
+ return null;
+}
+function heliStep(dt){
+ const keys=input.keys,up=input.jump||keys.has(' ')||keys.has('pageup');
+ const down=keys.has('shift')||keys.has('pagedown')||HELI.landing;
+ const forward=clamp(input.jy+Number(keys.has('w')||keys.has('arrowup'))-Number(keys.has('s')||keys.has('arrowdown')),-1,1);
+ const side=clamp(input.jx+Number(keys.has('d')||keys.has('arrowright'))-Number(keys.has('a')||keys.has('arrowleft')),-1,1);
+ const sy=Math.sin(player.yaw),cy=Math.cos(player.yaw);
+ const move=(x,y,z)=>{
+  if(y<WL+1||y>680||collides(x,y,z))return false;
+  Object.assign(HELI,{x,y,z});return true;
+ };
+ if(up)HELI.landing=false;
+ const dy=up?8:down?-7:0;
+ if(dy&&!move(HELI.x,HELI.y+dy*dt,HELI.z)&&dy<0)move(HELI.x,Math.floor(HELI.y),HELI.z);
+ if(!HELI.landing)move(HELI.x+(-sy*forward+cy*side)*15*dt,HELI.y,HELI.z+(-cy*forward-sy*side)*15*dt);
+ HELI.yaw=player.yaw;heliSeat();
+}
+function heliHud(){
+ const b=$('heliChip');
+ b.hidden=!HELI.on&&!heliNear();
+ if(!b.hidden)b.textContent=HELI.on?(HELI.landing?'Landing · F':heliExitSpot()?'Exit helicopter · F':'Land · F'):'Fly helicopter · F';
+}
+function heliDraw(){
+ if(Math.hypot(HELI.x-player.x,HELI.z-player.z)>farFog||botN+720>botGeo.length/7)return;
+ const b=HELI,white=[.93,.94,.93],blue=[.09,.40,.65],dark=[.13,.17,.20];
+ if(!b.on){part(b,0,.82,0,.69,.60,1.23,white);part(b,0,1.00,-.80,.62,.38,.43,blue)}
+ part(b,0,.47,0,.74,.17,1.22,blue);
+ part(b,0,.83,1.53,.16,.16,1.17,white);
+ part(b,0,1.14,2.48,.11,.45,.29,blue);
+ for(const side of [-1,1])part(b,side*.67,.11,0,.08,.08,1.26,dark);
+ const rotor={...b,yaw:b.yaw+(b.on?performance.now()*.018:0)};
+ part(rotor,0,1.72,0,2.0,.055,.095,dark);
+ part(rotor,0,1.72,0,.095,.055,2.0,dark);
+}

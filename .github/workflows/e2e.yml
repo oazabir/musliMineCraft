@@ -34,6 +34,7 @@ jobs:
         working-directory: tests/e2e
         env:
           SLOW: "1"
+        shell: bash
         run: python -m pytest -q 2>&1 | tee pytest-output.txt
 
       - name: Upload test output

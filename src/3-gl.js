@@ -28,14 +28,23 @@ gl_FragColor=vec4(mix(v_c.rgb,u_fog,clamp((v_d-u_near)/(u_far-u_near),0.,1.)*u_f
  progH=program(`attribute vec3 a_pos;attribute vec4 a_col;uniform mat4 u_vp;uniform vec3 u_cam;varying vec4 v_c;varying float v_d;void main(){v_c=a_col;v_d=distance(a_pos,u_cam);gl_Position=u_vp*vec4(a_pos,1.);}`,
 `precision mediump float;uniform vec3 u_amb,u_hz;uniform vec2 u_ck;varying vec4 v_c;varying float v_d;void main(){float h=clamp(.5+.42*smoothstep(70.,360.,v_d),0.,.95)*(1.-.55*u_ck.y);gl_FragColor=vec4(mix(v_c.rgb*u_amb,u_hz,h),v_c.a);}`,['a_pos','a_col']);
  progS=program(`attribute vec2 a_p;varying vec2 v_p;void main(){v_p=a_p;gl_Position=vec4(a_p,.9999,1.);}`,
-`precision mediump float;uniform vec3 u_f,u_r,u_u,u_hz,u_zen,u_sun;uniform vec2 u_t,u_ck;varying vec2 v_p;
+`precision mediump float;uniform vec3 u_f,u_r,u_u,u_hz,u_zen,u_sun,u_eye;uniform vec2 u_t,u_ck;varying vec2 v_p;
 void main(){vec3 ray=normalize(u_f+u_r*v_p.x*u_t.x+u_u*v_p.y*u_t.y);
 vec3 c=ray.y<0.?u_hz:mix(u_hz,u_zen,sqrt(clamp(ray.y*1.8,0.,1.)));
 float s=dot(ray,u_sun),m=dot(ray,-u_sun);
 c+=vec3(.35,.2,.05)*pow(max(s,0.),30.)*clamp(u_sun.y+.4,0.,1.);
 c=mix(c,vec3(1.,.96,.8),smoothstep(.9985,.9992,s)*step(-.05,u_sun.y));
 c=mix(c,vec3(.92,.94,1.),smoothstep(.9988,.9993,m)*step(-.05,-u_sun.y));
-if(u_ck.y>0.){c+=vec3(.5,.34,.12)*pow(max(s,0.),6.)*u_ck.y*.6;if(ray.y>.03){vec2 q=ray.xz/(ray.y+.3)*2.1+vec2(u_ck.x*.015,0.);float n=sin(q.x*1.7)*cos(q.y*2.3)+.5*sin(q.x*3.9+q.y*1.3)+.25*sin(q.y*6.1-q.x*2.7);c=mix(c,vec3(1.,.97,.9),smoothstep(.45,1.,n)*smoothstep(.03,.3,ray.y)*u_ck.y*.85);}}
+if(u_ck.y>0.)c+=vec3(.5,.34,.12)*pow(max(s,0.),6.)*u_ck.y*.6;
+float altitude=105.-u_eye.y;
+if(ray.y*altitude>0.&&abs(ray.y)>.025){
+ float travel=altitude/ray.y;
+ vec2 q=(u_eye.xz+ray.xz*min(travel,1100.))*.022+vec2(u_ck.x*.035,0.);
+ float n=sin(q.x)*cos(q.y*1.35)+.45*sin(q.x*2.4+q.y*1.3)+.22*cos(q.y*4.1-q.x*2.7);
+ float cloud=smoothstep(.36,.76,n)*(1.-smoothstep(420.,920.,travel));
+ vec3 shade=mix(vec3(.19,.23,.32),vec3(.98,.98,.96),smoothstep(-.24,.16,u_sun.y));
+ c=mix(c,shade,cloud*.88);
+}
 gl_FragColor=vec4(c,1.);}`,['a_p']);
  atlasTex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,atlasTex);
  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,atlasCanvas);
@@ -267,6 +276,7 @@ function render(time){
  gl.clearColor(hzV[0],hzV[1],hzV[2],1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  gl.useProgram(progS.p);const s=progS.u;
  gl.uniform3fv(s.u_f,cam.fw);gl.uniform3fv(s.u_r,cam.rt);gl.uniform3fv(s.u_u,cam.up);gl.uniform2f(s.u_t,cam.tx,cam.ty);
+ gl.uniform3fv(s.u_eye,cam.e);
  gl.uniform3fv(s.u_hz,hzV);gl.uniform3fv(s.u_zen,zenV);gl.uniform3fv(s.u_sun,sky.sun);gl.uniform2f(s.u_ck,ckT,menuK);
  gl.bindBuffer(gl.ARRAY_BUFFER,quadBuf);gl.enableVertexAttribArray(0);gl.disableVertexAttribArray(1);
  gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);gl.drawArrays(gl.TRIANGLES,0,3);

@@ -456,7 +456,7 @@ function fillBotGeo(){
  }
  netDraw();
  haramDraw();
- gzDraw();machinePostDraw();liftDraw();
+ gzDraw();machinePostDraw();liftDraw();heliDraw();
 }
 function botPick(o,d){
  let best=null,bt=1e9;
