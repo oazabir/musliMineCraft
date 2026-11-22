@@ -3515,6 +3515,32 @@ class TestConsoleWorldsLobby:
         assert g.ev("input.keys.has('w')"), "Expected movement to work again after the console closed"
         g.ev("document.dispatchEvent(new KeyboardEvent('keyup',{key:'w',bubbles:true}))")
 
+    def test_every_key_goes_into_the_console_until_it_closes(self, desktop):
+        """Typing in the console must reach it: e does not open the inventory, f the lifts, m the map or a digit a block,
+        and the bindings come back as soon as the console closes."""
+        g = desktop
+        g.page.keyboard.press("/")
+        g.wait("__con().on", "the command console to open", observe="__con()")
+        g.wait("document.activeElement&&document.activeElement.id==='conIn'", "the console input to take the keyboard",
+               observe="[document.activeElement&&document.activeElement.id]")
+        g.freeze_bots()
+        before = g.ev("[S.sel,activeSlot]")
+        g.page.keyboard.type("share")
+        g.page.keyboard.type("efm5 /share")
+        v = g.ev("document.getElementById('conIn').value")
+        assert v == "shareefm5 /share", f"Expected every character to reach the console input, observed {v!r}"
+        r = g.ev("[input.keys.size,curModal,!!document.getElementById('blockInventory'),mapDialog.open,S.sel,activeSlot,!!LIFT_RIDE]")
+        assert r[0] == 0, f"Expected no game key to be held while the console is open, observed {r[0]} keys"
+        assert not r[1] and not r[2], f"Expected e to leave the inventory closed, observed curModal={r[1]} inventory={r[2]}"
+        assert not r[3], "Expected m to leave the map closed while the console is open"
+        assert not r[6], "Expected f to leave the lifts alone while the console is open"
+        assert r[4:6] == before, f"Expected the selected block to stay {before}, observed {r[4:6]}"
+        g.page.keyboard.press("Escape")
+        g.wait("!__con().on", "the console to close on Escape", observe="__con()")
+        g.page.keyboard.press("e")
+        g.wait("!!document.getElementById('blockInventory')", "e to open the inventory again once the console is closed",
+               observe="[!!document.getElementById('blockInventory'),!!curModal]")
+
     def test_the_console_does_not_cover_the_joystick_on_a_touch_screen(self, started):
         """On a phone the console sits above the joystick, so a touch player is never stuck without movement."""
         g = started

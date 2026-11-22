@@ -401,6 +401,8 @@ document.addEventListener('pointerlockerror',()=>{noLock=true});
 window.addEventListener('keydown',e=>{
  const k=e.key.toLowerCase();
  if(LIFT_RIDE)return;
+ /* the console owns the keyboard while it is open: every letter must reach its input, so no bindings run */
+ if(CON.on){if(k==='escape'){e.preventDefault();conOpen(false)}return}
  if(k==='e'||k==='escape'&&$('blockInventory')&&curModal){
   if(!e.repeat){
    if(curModal&&$('blockInventory')){if(k==='escape')wantLock=false;closeModal()}else if(k==='e')openInventory();
@@ -409,7 +411,6 @@ window.addEventListener('keydown',e=>{
  }
  if(curModal&&$('blockInventory'))return;
  if(k==='f'&&!e.repeat&&liftPanel()){e.preventDefault();return}
- if(CON.on){if(k==='escape'){conOpen(false);e.preventDefault()}return}
  if(k==='/'&&!e.repeat&&!curModal&&!mapDialog.open){conOpen(true);e.preventDefault();return}
  if(k==='m'&&!e.repeat&&playing&&!curModal){setMapOpen(!mapDialog.open);return}
  if(mapDialog.open)return;
