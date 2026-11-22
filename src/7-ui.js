@@ -103,7 +103,7 @@ for(let i=0;i<MAP_PLACES.length;i++){
  row.className='mapPlace';row.innerHTML=`<i aria-hidden="true">${i+1}</i><span><b>${p.name}</b><small>${p.region}</small></span>`;
  pin.onclick=row.onclick=()=>mapTravel(p);$('mapPins').appendChild(pin);$('mapPlaces').appendChild(row);
 }
-$('map').onclick=()=>setMapOpen(true);$('mapClose').onclick=()=>setMapOpen(false);
+$('map').onclick=()=>{if(!LIFT_CABIN)setMapOpen(true)};$('mapClose').onclick=()=>setMapOpen(false);
 window.addEventListener('resize',()=>{if(mapDialog.open)layoutMapPins()});
 function updateMode(){
  const b=$('btnMode');b.className=S.mode;
@@ -165,7 +165,7 @@ function startScreen(){
  $('wready').querySelector('[data-a=play]').textContent=has?'Continue':'Play';
  $('wready').querySelector('[data-a=reset]').style.display=has?'block':'none';
  const su=$('wsum'),bd=$('wbadge');
- if(has&&sm){su.style.display='block';su.textContent=sm.stars+' stars Ã‚Â· Mission '+sm.mission+' Ã‚Â· '+sm.blocks+' blocks built';bd.style.display='block';bd.textContent=(sm.rank||rankOf(sm.stars))+' Ã‚Â· '+sm.stars+' stars'}
+ if(has&&sm){su.style.display='block';su.textContent=sm.stars+' stars ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· Mission '+sm.mission+' ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· '+sm.blocks+' blocks built';bd.style.display='block';bd.textContent=(sm.rank||rankOf(sm.stars))+' ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· '+sm.stars+' stars'}
  else{su.style.display='none';bd.style.display='none'}
  W.on=true;if(RAD<6)RAD=6;
  /* two frames later the illustration fades into the live panorama */
@@ -279,7 +279,7 @@ function confirmReset(back){
    p.querySelector('[data-a=yes]').onclick=()=>{closeModal();resetAll()}});
 }
 function resetAll(){
- if(LIFT_RIDE)liftFinish();
+ LIFT_CABIN=null;if(LIFT_RIDE)liftFinish();
  clearTimeout(saveTimer);saveTimer=0;
  edits.clear();bedits.clear();blClear();PERSIST.dirty.clear();PERSIST.botDirty=false;worldDirty=false;resetState();SV.has=false;SV.pos=null;SV.sum=null;
  for(const b of bots){b.on=false;b.done=[];b.ds=null;b.site=null;b.st=0;b.cells.length=0}
@@ -343,6 +343,7 @@ function act(px,py,button){
  if(MG.on){if(button===2)leaveMachinePost();return}
  const r=playerRay(px,py),mode=button===0?'break':button===2?'place':S.mode;
  const hit=cast(r.o,r.d,REACH,mode==='place'?S.sel:0,mode==='break'),bp=botPick(r.o,r.d);
+ if(liftClick(r,hit)||LIFT_CABIN)return;
  if(button===2&&hit&&!hit.ghost&&machinePostBlock(hit.x,hit.y,hit.z)){enterMachinePost();return}
  const xp=exPick(r.o,r.d);
  if(xp&&(!hit||xp.t<hit.t||(hit.b===B.GLASS&&xp.t<hit.t+2.5))&&(!bp||xp.t<bp.t)){openExhibit(xp.i);return}
@@ -404,7 +405,7 @@ window.addEventListener('keydown',e=>{
  }
  if(curModal&&$('blockInventory'))return;
  if(k==='f'&&!e.repeat&&liftPanel()){e.preventDefault();return}
- if(k==='m'&&!e.repeat&&playing&&!curModal){setMapOpen(!mapDialog.open);return}
+ if(k==='m'&&!e.repeat&&playing&&!curModal&&!LIFT_CABIN){setMapOpen(!mapDialog.open);return}
  if(mapDialog.open)return;
  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
  input.keys.add(k);
@@ -501,16 +502,96 @@ function uiWater(){
  const k=playing&&player.waterT>20?1:playing&&player.trapT>20?2:0;
  if(k!==hoKind){hoKind=k;const h=$('helpout');h.classList.toggle('on',k>0);if(k)h.textContent=k===1?'Swim to shore':'Climb out'}
 }
+const WAQT_NAMES=['Fajr','Dhuhr','Asr','Maghrib','Isha'],WAQT_SECONDS=600,PRAYER_SECONDS=30;
+const prayerHud=$('prayerHud'),prayerStatus=$('prayerStatus'),prayerBar=$('prayerBar');
+let prayerHold=0,prayerAnchor=null,prayerState=null,prayerCell='',prayerLocal=[];
+const isMasjid=l=>l&&(l.t==='mosque'||l.t==='haram');
+function insideMasjid(l){
+ const x=Math.floor(player.x)-l.x,z=Math.floor(player.z)-l.z,y=player.y-l.y0;
+ if(l.t==='haram')return Math.abs(x)<=52&&Math.abs(z)<=52&&y>=.95&&y<14;
+ const lx=[x,z,-x,-z][l.o],lz=[z,-x,-z,x][l.o],P=l.P;
+ return Math.abs(lx)<P.hw&&lz>P.hb&&lz<P.hf&&y>=.95&&y<P.wh-1;
+}
+function currentMasjid(){
+ const x=Math.floor(player.x/RG),z=Math.floor(player.z/RG),key=x+','+z;
+ if(key!==prayerCell){
+  prayerCell=key;prayerLocal=fixedList().filter(isMasjid);
+  for(let a=x-1;a<=x+1;a++)for(let b=z-1;b<=z+1;b++){const l=lmCell(a,b);if(isMasjid(l))prayerLocal.push(l)}
+ }
+ return prayerLocal.find(insideMasjid);
+}
+function moveToNearestMasjid(){
+ const x=player.x,z=player.z,dist=l=>Math.hypot(l.x-x,l.z-z);
+ const options=fixedList().filter(isMasjid),radius=Math.min(...options.map(dist));
+ for(let a=Math.max(0,Math.floor((x-radius)/RG));a<=Math.min(Math.ceil(WX/RG)-1,Math.floor((x+radius)/RG));a++)
+ for(let b=Math.max(0,Math.floor((z-radius)/RG));b<=Math.min(Math.ceil(WZ/RG)-1,Math.floor((z+radius)/RG));b++){
+  const l=lmCell(a,b);if(isMasjid(l)&&dist(l)<=radius)options.push(l);
+ }
+ options.sort((a,b)=>dist(a)-dist(b));
+ for(const l of options){
+  const [lx,lz]=l.t==='haram'?[13,6]:[1,Math.floor((l.P.hb+l.P.hf)/2)];
+  const tx=l.x+[lx,-lz,-lx,lz][l.o]+.5,tz=l.z+[lz,lx,-lz,-lx][l.o]+.5;
+  if(placeSafe(tx,tz,undefined,undefined,l.y0+1)&&insideMasjid(l)){
+   input.keys.clear();input.jx=input.jy=0;input.jump=false;return true;
+  }
+ }
+ return false;
+}
+function prayerStep(dt){
+ const p=S.prayer,movingThrough=TP||FLY||MG.on||LIFT_RIDE;
+ if(prayerState!==p){prayerState=p;prayerAnchor=null;prayerHold=0}
+ const mosque=!p.done&&!movingThrough&&currentMasjid();
+ const still=mosque&&player.ground&&!player.water&&!input.jump&&Math.hypot(player.vx,player.vz)<.08;
+ if(!still){prayerHold=0;prayerAnchor=null}
+ else{
+  const a=prayerAnchor;
+  if(!a||a.l!==mosque||Math.hypot(player.x-a.x,player.y-a.y,player.z-a.z)>.10){
+   prayerHold=0;prayerAnchor={l:mosque,x:player.x,y:player.y,z:player.z};
+  }
+  prayerHold+=Math.min(dt,WAQT_SECONDS-p.time);
+  if(prayerHold>=PRAYER_SECONDS){
+   p.done=true;prayerHold=0;prayerAnchor=null;toast(WAQT_NAMES[p.waqt]+' prayer complete.');queueSave();
+  }
+ }
+ p.time+=dt;
+ if(p.time>=WAQT_SECONDS){
+  if(!p.done){
+   const hadPoint=S.stars>0;
+   S.stars=Math.max(0,S.stars-1);updateHud();
+   if(hadPoint&&S.stars===0){
+    const moved=moveToNearestMasjid();
+    toast(moved?'Missed prayer. You lost 1 point and were taken to a masjid.':'Missed prayer. You lost 1 point.');
+   }else toast(hadPoint?'Missed prayer. You lost 1 point.':'Prayer missed.');
+  }
+  p.time%=WAQT_SECONDS;p.waqt=(p.waqt+1)%WAQT_NAMES.length;p.done=false;
+  prayerHold=0;prayerAnchor=null;queueSave();
+ }
+}
+function showPrayer(){
+ prayerHud.hidden=!playing;
+ if(!playing)return;
+ const p=S.prayer,left=Math.ceil(WAQT_SECONDS-p.time),warn=!p.done&&left<=120;
+ const text=WAQT_NAMES[p.waqt]+' Â· '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0')+
+  (p.done?' Â· Prayer complete':prayerHold>0?' Â· Praying â€” stand still':warn?' Â· Pray in a masjid or lose 1 point':' Â· Pray in a masjid');
+ if(prayerStatus.textContent!==text)prayerStatus.textContent=text;
+ prayerHud.classList.toggle('urgent',warn);prayerBar.hidden=prayerHold<=0;
+ if(prayerHold>0)prayerBar.value=prayerHold;
+}
 function frame(now){
  requestAnimationFrame(frame);
  if(document.hidden){last=now;return}
  const elapsed=(now-last)/1000||0,dt=Math.min(.05,elapsed);last=now;
  if(playing&&!curModal&&!mapDialog.open){
- if(LIFT_RIDE)liftStep(dt);else if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(Math.min(.12,elapsed));else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
+ if(LIFT_RIDE)liftStep(elapsed);else if(LIFT_CABIN){player.ground=true}else if(MG.on){player.vx=player.vy=player.vz=0;if(MG.fireHeld){MG.fireT-=dt;if(MG.fireT<=0){MG.fireT=MG_RATE;machineFire(locked()||!aim?undefined:aim[0],locked()||!aim?undefined:aim[1])}}}else if(FLY)flyStep(dt);else if(TP)tpStep(Math.min(.12,elapsed));else{let r=dt;while(r>0){const s=Math.min(r,1/60);stepPlayer(s);r-=s}}
+  if(!LIFT_CABIN)liftBoardOnApproach();
   activeSec+=dt;if(activeSec>=BREAK_SECONDS&&!LIFT_RIDE){activeSec=0;breakReminder()}
+  if(!TP&&!FLY&&!MG.on&&!LIFT_RIDE&&!LIFT_CABIN)prayerStep(elapsed);
+  else{prayerHold=0;prayerAnchor=null}
   edgeHint-=dt;stepBots(dt);gzTick(dt);questTick(dt);if(!TP&&!MG.on&&!LIFT_RIDE)portalTick(dt);saveTick(dt);
  }else if(glide)glideStep(dt);
  else if(!playing){if(W.on)welcomeCam(dt);else player.yaw+=dt*.08}
+ if(curModal||mapDialog.open){prayerHold=0;prayerAnchor=null}
+ showPrayer();
  if(playing||glide)dayT=(dayT+dt/DAY_SECONDS)%1;else dayT=W.day;
  {const mt=W.on&&!playing&&!glide?1:0;menuK+=(mt-menuK)*Math.min(1,dt*(mt?2:3));if(menuK<.01&&!mt)menuK=0}
  const label=updateSky();

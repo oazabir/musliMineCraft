@@ -9,7 +9,7 @@ function progObj(){
  SV.sum={stars:S.stars,mission:Math.min(S.mission+1,MISSIONS.length),blocks,rank:rankOf(S.stars)};
  return{v:4,stars:S.stars,mission:S.mission,unlocked:S.unlocked,skills:S.skills,settings:S.settings,sel:S.sel,mode:S.mode,
   pos:(playing||glide)?(liftSavePos()||[player.x,player.y,player.z,player.yaw,player.pitch]):(SV.pos||null),day:(playing||glide)?dayT:(SV.dayKeep===undefined?dayT:SV.dayKeep),playT:Math.floor(S.playT),act:Math.floor(activeSec),
-  pass:S.pass,passFl:S.passFl,title:S.title,gz:S.gz,q:S.q,bd:botSaveState(),sum:SV.sum,idb:PERSIST.ok?1:0,ts:Date.now()};
+  prayer:S.prayer,pass:S.pass,passFl:S.passFl,title:S.title,gz:S.gz,q:S.q,bd:botSaveState(),sum:SV.sum,idb:PERSIST.ok?1:0,ts:Date.now()};
 }
 function saveProg(){if(SV.importing||SV.writer!==true)return false;try{localStorage.setItem(PROG_KEY,JSON.stringify(progObj()));return true}catch(e){return false}}
 function notifySave(){
@@ -129,13 +129,15 @@ function applyProg(d){
  if(typeof d.day==='number'&&isFinite(d.day))dayT=clamp(d.day,0,.999);
  if(typeof d.pass==='string'&&/^[012]{26}$/.test(d.pass))S.pass=d.pass;
  if(Array.isArray(d.passFl)&&d.passFl.length===4)S.passFl=d.passFl.map(v=>v?1:0);
+ const prayer=d.prayer;
+ S.prayer={time:validNum(prayer?.time,0,0,599.999),waqt:Math.floor(validNum(prayer?.waqt,0,0,4)),done:prayer?.done===true};
  S.title=!!d.title;S.playT=validNum(d.playT,0,0,1e9);SV.act=validNum(d.act,0,0,1e9);
  {const g=d.gz&&typeof d.gz==='object'?d.gz:{};S.gz={pts:validNum(g.pts,0,0,1e9),best:validNum(g.best,0,0,24),ms:validNum(g.ms,0,0,31),seen:!!g.seen}}
  S.q=validNum(d.q,0,0,63);
  botLoadState(Array.isArray(d.bd)?d.bd:null);
  const p=d.pos;
  SV.hasP=Array.isArray(p)||d.stars>0||d.mission>0||!!(d.sum&&d.sum.blocks>0);
- SV.pos=(d.v>=3&&Array.isArray(p)&&p.length===5&&p.every(v=>typeof v==='number'&&isFinite(v))&&p[0]>8&&p[0]<WX-8&&p[2]>8&&p[2]<WZ-8&&p[1]>=1&&p[1]<H-2)?p.slice():null;
+ SV.pos=(d.v>=3&&Array.isArray(p)&&p.length===5&&p.every(v=>typeof v==='number'&&isFinite(v))&&p[0]>8&&p[0]<WX-8&&p[2]>8&&p[2]<WZ-8&&p[1]>=1&&(p[1]<H-2||LIFT_SITES.some(e=>e.stops.some(q=>q.y===p[1]&&q.x===p[0]&&q.z===p[2]))))?p.slice():null;
  if(d.sum&&typeof d.sum==='object')SV.sum={stars:validNum(d.sum.stars,0,0,1e9),mission:validNum(d.sum.mission,1,1,99),blocks:validNum(d.sum.blocks,0,0,1e9),rank:typeof d.sum.rank==='string'?d.sum.rank.slice(0,24):''};
  return true;
 }
@@ -211,7 +213,7 @@ function storeInit(){
 }
 function saveTick(dt){
  S.playT+=dt;SV.acc+=dt;
- if(SV.acc>=15){SV.acc=0;if(SV.changed||Math.hypot(player.x-SV.px,player.z-SV.pz)>1.5)saveNow(false)}
+ if(SV.acc>=15){SV.acc=0;if(SV.changed||S.prayer.time>0||Math.hypot(player.x-SV.px,player.z-SV.pz)>1.5)saveNow(false)}
 }
 /* a saved position that is now inside a block or water is moved upward; spawn only when nothing works */
 function restorePos(){

@@ -2,12 +2,13 @@
 const player={x:0,y:0,z:0,vx:0,vy:0,vz:0,yaw:-Math.PI/2,pitch:-.2,ground:false,water:false,stepOff:0,hold:false,waterT:0,trapT:0};
 const HALF=.3, HEIGHT=1.8;
 function solidAt(x,y,z){
- if(x<0||x>=WX||z<0||z>=WZ||y<0)return true;if(y>=H)return false;
+ if(x<0||x>=WX||z<0||z>=WZ||y<0)return true;if(y>=H)return summitSolid(x,y,z)||liftShaftSolid(x,y,z);
  if(liftShaftSolid(x,y,z))return true;
  const c=chunkAt(x>>4,z>>4);if(!c||c.st!==2)return true;
  return DEFS[c.v[(y<<8)|((z&15)<<4)|(x&15)]].solid;
 }
 function collides(px,py,pz){
+ if(liftDoorCollision(px,py,pz,HALF,HEIGHT))return true;
  for(let y=Math.floor(py);y<=Math.floor(py+HEIGHT-1e-4);y++)for(let z=Math.floor(pz-HALF);z<=Math.floor(pz+HALF);z++)for(let x=Math.floor(px-HALF);x<=Math.floor(px+HALF);x++)if(solidAt(x,y,z))return true;
  return false;
 }

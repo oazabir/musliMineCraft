@@ -1,7 +1,7 @@
 'use strict';
 /* ===== 1. Constants and helpers ===== */
 const GAME='musliMineCraft', SAVE_KEY='musliMineCraft_save_v1', OLD_KEY='islaminecraft_save_v1';
-const WX=2048, WZ=2048, H=48, CS=16, NC=128, CV=CS*CS*H, WL=12;
+const WX=2048, WZ=2048, H=80, CS=16, NC=128, CV=CS*CS*H, WL=12;
 const OX=971, OZ=973, SPAWN={x:1024,z:1024}, LAKE={x:1011,z:1021};
 const SPAWN_YAW=1.3, SPAWN_PITCH=.1;
 const START={x:1025,z:1024},PLOT_X=1042.5,PLOT_Z=1024.5;

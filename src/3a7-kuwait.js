@@ -1,6 +1,11 @@
 /* Kuwait Towers: enamelled reservoirs, a glazed lookout and the floodlight needle. */
 const KUWAIT_MAIN={x:-7,z:0,h:31},KUWAIT_WATER={x:7,z:-4,h:25},KUWAIT_LIGHT={x:14,z:6,h:17};
 const KT_RESTAURANT=13,KT_LOOKOUT=21,KT_RESERVOIR=16;
+const KUWAIT_LIFT={shaft:[-7,0],stops:[
+ {name:'Lobby',x:-7,y:1,z:1,yaw:Math.PI},
+ {name:'Restaurant',x:-7,y:KT_RESTAURANT+1,z:1,yaw:Math.PI},
+ {name:'Observation sphere',x:-7,y:KT_LOOKOUT,z:1,yaw:Math.PI}
+]};
 function kuwaitBulb(x,y,z,r,room){
  const d2=x*x+y*y+z*z;
  if(d2>r*r+.5)return -1;
@@ -24,6 +29,11 @@ function kuwaitTowers(l,x,y,z){
  const mainX=x-KUWAIT_MAIN.x,mainZ=z-KUWAIT_MAIN.z,waterX=x-KUWAIT_WATER.x,waterZ=z-KUWAIT_WATER.z,lightX=x-KUWAIT_LIGHT.x,lightZ=z-KUWAIT_LIGHT.z;
  const oval=x*x*196+z*z*400,plaza=oval<=78400,avenue=Math.abs(mainX)<=2&&z>=4;
  const mound=mainX*mainX+mainZ*mainZ,entrance=mainZ>=3&&Math.abs(mainX)<=2;
+ if(mainX===0&&mainZ===0&&y>=1&&y<=KT_LOOKOUT+1)return B.AIR;
+ if(mainX===0&&mainZ===1)for(const p of KUWAIT_LIFT.stops){
+  if(y===p.y-1)return B.MARBLE;
+  if(y===p.y||y===p.y+1)return B.AIR;
+ }
  if(y<0)return plaza||avenue?B.ARCH:-1;
  if(y===0){
   if(avenue)return B.PATH;

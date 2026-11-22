@@ -62,7 +62,7 @@ function resize(){
  setProj();
 }
 function setProj(){
- const t=1/Math.tan(fovY/2),n=.1,f=240;
+ const t=1/Math.tan(fovY/2),n=.1,f=950;
  PROJ.fill(0);PROJ[0]=t/aspect;PROJ[5]=t;PROJ[10]=(f+n)/(n-f);PROJ[11]=-1;PROJ[14]=2*f*n/(n-f);
  {const n2=2,f2=900;PROJS.fill(0);PROJS[0]=t/aspect;PROJS[5]=t;PROJS[10]=(f2+n2)/(n2-f2);PROJS[11]=-1;PROJS[14]=2*f2*n2/(n2-f2)}
 }
@@ -204,6 +204,46 @@ function silDraw(time){
  gl.depthMask(false);gl.drawArrays(gl.TRIANGLES,0,SIL.n);gl.depthMask(true);
  gl.disable(gl.BLEND);
 }
+/* The tall skyline uses static meshes and the same depth buffer as terrain. */
+let upperTowerMeshes=null;
+function drawUpperTowers(){
+ if(!upperTowerMeshes)upperTowerMeshes=[['burj',burjUpper],['sail',arabUpper]].map(([type,build])=>{
+  const l=lmOf(type),verts=[],at=[0,0];
+  const quad=(a,b,c,d,col,shade=1)=>{
+   for(const v of [a,b,c,a,c,d]){
+    lm2w(l,v[0],v[2],at);
+    verts.push(at[0]+.5,l.y0+v[1],at[1]+.5,col[0]*shade,col[1]*shade,col[2]*shade,1);
+   }
+  };
+  const box=(x,y,z,X,Y,Z,c)=>{
+   quad([x,Y,z],[X,Y,z],[X,Y,Z],[x,Y,Z],c);
+   quad([x,y,z],[X,y,z],[X,Y,z],[x,Y,z],c,.78);
+   quad([X,y,z],[X,y,Z],[X,Y,Z],[X,Y,z],c,.89);
+   quad([X,y,Z],[x,y,Z],[x,Y,Z],[X,Y,Z],c,.95);
+   quad([x,y,Z],[x,y,z],[x,Y,z],[x,Y,Z],c,.72);
+   quad([x,y,Z],[X,y,Z],[X,y,z],[x,y,z],c,.60);
+  };
+  build(quad,box);
+  const {summit:y,shaft:[x,z]}=type==='burj'?BURJ_LIFT:ARAB_LIFT;
+  const deck=[.60,.67,.69],rail=[.32,.47,.54],trim=[.85,.71,.40];
+  box(x-3.5,y-1,z-3.5,x+3.5,y,z+3.5,deck);
+  for(const side of [-1,1]){
+   const a=Math.min(side*2.5,side*3.5),b=a+1;
+   box(x+a,y,z-3.5,x+b,y+1,z+3.5,rail);
+   box(x-2.5,y,z+a,x+2.5,y+1,z+b,rail);
+   box(x+a,y+.88,z-3.5,x+b,y+1,z+3.5,trim);
+   box(x-2.5,y+.88,z+a,x+2.5,y+1,z+b,trim);
+  }
+  return{l,data:new Float32Array(verts),b:null,n:verts.length/7};
+ });
+ for(const o of upperTowerMeshes){
+  if(Math.hypot(o.l.x-cam.e[0],o.l.z-cam.e[2])>570)continue;
+  if(!o.b||!gl.isBuffer(o.b)){
+   o.b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,o.b);gl.bufferData(gl.ARRAY_BUFFER,o.data,gl.STATIC_DRAW);
+  }
+  drawColor(o,gl.TRIANGLES,1,.30);
+ }
+}
 function render(time){
  updateCamera();
  for(let c=0;c<3;c++){hzV[c]=sky.hz[c]/255;zenV[c]=sky.zen[c]/255}
@@ -251,8 +291,9 @@ function render(time){
  gl.useProgram(progC.p);const cu=progC.u;gl.uniformMatrix4fv(cu.u_vp,false,VP);gl.uniform3fv(cu.u_cam,cam.e);gl.uniform3fv(cu.u_fog,hzV);
  gl.uniform1f(cu.u_near,farFog*.38);gl.uniform1f(cu.u_far,farFog);
  gl.enableVertexAttribArray(0);gl.enableVertexAttribArray(1);gl.disableVertexAttribArray(2);
+ drawUpperTowers();
  if(botN){botObj.b=botBuf;botObj.n=botN;gl.bindBuffer(gl.ARRAY_BUFFER,botBuf);gl.bufferSubData(gl.ARRAY_BUFFER,0,botGeo.subarray(0,botN*7));drawColor(botObj,gl.TRIANGLES,1,1)}
- portalDraw(time);
+ portalDraw(time);drawLandmarkPhotos();
  gl.enable(gl.BLEND);
  const pulse=.75+.25*Math.sin(time*.003);
  gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);

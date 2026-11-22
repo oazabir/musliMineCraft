@@ -350,10 +350,10 @@ function haramDraw(){
  if(!playing)return;const l=fixedList().find(q=>q.t==='haram');if(!l)return;
  const dx=l.x-player.x,dz=l.z-player.z,lim=farFog+22;if(dx*dx+dz*dz>lim*lim)return;
  if(!haramCrowdReady){haramCrowdReady=true;const rnd=mulberry(SEED+913),TAU=Math.PI*2;
-  for(let r=0;r<12;r++){const rad=5.4+r*.98,n=Math.floor(TAU*rad/.66),off=rnd()*TAU;
+  for(let r=0;r<9;r++){const rad=6.5+r*2.65,n=Math.floor(TAU*rad/3.8),off=rnd()*TAU;
    for(let i=0;i<n;i++){const look=Object.assign({},BLOOK[Math.floor(rnd()*MAXB)]);
     if(look.m){look.dress=[.96,.95,.9];look.pants=[.9,.89,.84];look.sash=[.72,.71,.67]}
-    const p={r:rad,a:off+TAU*i/n,sp:.09+rnd()*.055,phase:rnd()*TAU,look};
+    const p={r:rad+(rnd()-.5)*1.4,a:off+TAU*(i+.55*rnd())/n,sp:(.68+rnd()*.38)/rad,phase:rnd()*TAU,look};
     p.fig={x:0,y:0,z:0,yaw:0,ph:0,leg:0,arm:0,st:BS.WANDER,look};HARAM_CROWD.push(p)}
   }
  }
@@ -366,7 +366,6 @@ function haramDraw(){
   const door={x:k.x+3.57,y:base+1.5,z:k.z,yaw:0};part(door,0,1.35,0,.035,.87,.58,dark);part(door,0,1.35,-.015,.04,.76,.47,gold);
   const stone={x:k.x+3.58,y:base+.48,z:k.z+3.53,yaw:0};part(stone,0,0,0,.23,.24,.065,[.76,.76,.72]);part(stone,0,0,-.045,.17,.18,.035,[.008,.008,.008]);
   for(let i=-3;i<=3;i++){part(k,i,.0+band-k.y+.42,-3.585,.09,.045,.025,gold);part(k,i,.0+band-k.y+.42,3.585,.09,.045,.025,gold);part(k,3.585,.0+band-k.y+.42,i,.025,.045,.09,gold);part(k,-3.585,.0+band-k.y+.42,i,.025,.045,.09,gold)}
-  for(const sx of[-1,1])for(const sz of[-1,1]){const tower={x:l.x+.5+sx*19.5,y:l.y0+16,z:l.z+.5+sz*19.5,yaw:0};part(tower,0,.08,0,.53,.1,.53,gold);part(tower,0,.34,0,.2,.19,.2,gold);part(tower,0,.59,0,.07,.08,.07,gold)}
  }
  /* Tawaf circles counter-clockwise when viewed from above. */
  for(let i=0;i<HARAM_CROWD.length;i++){

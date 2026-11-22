@@ -1,14 +1,17 @@
 /* Burj Al Arab: curving causeway, open atrium, scenic lift and two cantilevers. */
-const ARAB_LIFT={shaft:[1,5],stops:[
+const ARAB_SKY_HEIGHT=112;
+const ARAB_LIFT={shaft:[1,5],summit:ARAB_SKY_HEIGHT,stops:[
  {name:'Atrium lobby',x:0,y:1,z:5,yaw:Math.PI},
  {name:'Skyview lounge',x:0,y:20,z:5,yaw:Math.PI},
- {name:'Helipad level',x:0,y:23,z:5,yaw:0}
+ {name:'Helipad level',x:0,y:23,z:5,yaw:0},
+ {name:'Mast summit',x:0,y:ARAB_SKY_HEIGHT,z:5,yaw:0}
 ]};
 const BAA_W=[8,8,9,9,9,9,9,9,9,9,9,9,9,8,8,8,7,7,6,6,5,5,4,4,3,2,1];
 const BAA_EDGE=[-8,-9,-10,-11,-11,-12,-12,-12,-12,-12,-12,-11,-11,-11,-10,-10,-9,-8,-8,-7,-6,-5,-4,-3,-1,1,3];
 function burjArabLiftBlock(x,y,z){
- if(y<1||y>25)return -1;
+ if(y<1)return -1;
  if(x===1&&z===5)return 0;
+ if(y>25)return -1;
  if(x===0&&z===5){
   if(y===19||y===22)return B.MARBLE;
   if(ARAB_LIFT.stops.some(s=>y===s.y||y===s.y+1))return 0;
@@ -85,4 +88,31 @@ function silBurjAlArab(l,add,pk,lod){
  add(-1,1,4,2,27,7,2);add(0,28,5,0,31,5,2);
  add(-3,22,-16,3,22,-10,2);add(-1,22,-12,1,22,-5,2);
  add(-4,19,6,4,22,12,4);pk.push([0,5,31]);
+}
+
+function arabUpper(q,box){
+ const white=[.92,.94,.92],steel=[.67,.77,.80],blue=[.20,.42,.60],window=[.31,.56,.72];
+ /* Full-height mast and a curved sail that narrows into it. */
+ box(-1,24,4,1,96,6,white);box(-.36,95,4.64,.36,ARAB_SKY_HEIGHT,5.36,white);
+ const rim=y=>{const t=(y-20)/77;return{z:-11+16*Math.pow(t,2.2),w:9.2*(1-.88*Math.pow(t,1.45))}};
+ for(let y=20;y<97;y+=2){
+  const top=Math.min(97,y+2),a=rim(y),b=rim(top);
+  q([-a.w,y,a.z],[a.w,y,a.z],[b.w,top,b.z],[-b.w,top,b.z],y%8===0?white:y%4===0?window:blue);
+  for(const side of [-1,1]){
+   const x=side*a.w,X=side*b.w;
+   q([x,y,a.z],[side*1.05,y,5],[side*1.05,top,5],[X,top,b.z],y%8===0?steel:blue);
+   q([x-side*.35,y,a.z-.09],[x+side*.35,y,a.z-.09],[X+side*.35,top,b.z-.09],[X-side*.35,top,b.z-.09],white);
+   if(y%4===0){
+    const span=a.w*.72,face=a.z-.16;
+    q([side*span,y+.18,face],[side*.65,y+.18,face],[side*.65,y+.43,face],[side*span,y+.43,face],steel);
+   }
+  }
+ }
+ for(const side of [-1,1])for(const [y,top] of [[27,38],[41,54],[57,70],[73,86],[87,96]]){
+  const a=rim(y),b=rim(top);
+  q([side*(a.w+.05),y,a.z],[side*1.12,top,5],[side*1.12,top+1,5],[side*(a.w+.05),y+1,a.z],white);
+ }
+ box(-1.4,72,5,1.4,73.5,12,steel);
+ box(-4.8,73.5,10,4.8,74.15,15.5,[.47,.62,.54]);
+ box(-4.8,74.15,14.9,4.8,74.32,15.5,white);
 }

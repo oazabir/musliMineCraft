@@ -270,7 +270,6 @@ function museumHud(dt){
  if(mFloor>=0&&mFloor<4){const l=museumLm(),f=mFloor;
   for(const s of[-1,1]){const x=bcx()+s*11,z=bcz()-6,dx=x-player.x,dz=z-player.z;if(dx*dx+dz*dz<22*22)slots.push([-1,x,l.y0+f*6+5.6,z,f===0?(s<0?'Stars and Numbers: astronomy and maths':'Stars and Numbers: light and machines'):f===1?(s<0?'The Art of the Book':'Healing'):f===2?'Fire, Clay and Thread':'Journeys and Buildings',false])}
  }
- if(mFloor<0){const l=museumLm(),x=bcx(),z=bcz()+25,dx=x-player.x,dz=z-player.z;if(dx*dx+dz*dz<60*60)slots.push([-1,x,l.y0+8,z,'Museum of Islamic Heritage',false])}
  for(let k=0;k<4;k++){
   const L=mLabs[k],sl=slots[k];let on=false;
   if(sl){const p=project(sl[1],sl[2],sl[3]);

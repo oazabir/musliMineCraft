@@ -1659,6 +1659,12 @@ class TestSkyline:
 
 
 class TestMuseum:
+    def test_doha_has_additional_art_objects(self, loaded):
+        assert loaded.ev("""(()=>{const l=lmOf('dohaMia');return [
+          l.fn(l,-7,17,-6)===B.GOLD,
+          l.fn(l,-5,22,-3)===B.STAR,
+          l.fn(l,15,2,4)===B.BLUE]})()""") == [True, True, True]
+
     @pytest.mark.parametrize("which", ["heritage", "doha"])
     def test_continuous_stairs_reach_the_roof_and_exhibit_rooms(self, started, which):
         result = started.ev("""(which)=>{
@@ -1758,7 +1764,7 @@ class TestSixBuilders:
         _wait_bots(g, 6)
         g.ev("(()=>{const b=bots.find(b=>b.name==='Idris');for(let k=0;k<120&&b.st!==BS.BUILD;k++)__stepBots(5)})()")
         t = g.ev("(()=>{const b=bots.find(b=>b.name==='Idris');return botTag(b)})()")
-        assert t.startswith("Idris · building a "), t
+        assert t.startswith("Idris Ã‚Â· building a "), t
 
     def test_bots_never_end_up_inside_blocks(self, started):
         g = started
@@ -1774,7 +1780,7 @@ class TestDismantle:
         _wait_bots(g, 6)
         g.ev("window.__ev=[];const o=botTag;")
         seen = g.ev("""(()=>{let s=false;for(let k=0;k<400&&!s;k++){__stepBots(5);for(const b of bots)if(b.on&&botTag(b).indexOf('tidying up')>0)s=true}return s})()""")
-        assert seen, "Expected some bot to show '<name> · tidying up' within 2000 s of game time"
+        assert seen, "Expected some bot to show '<name> Ã‚Â· tidying up' within 2000 s of game time"
 
     def test_tidying_removes_blocks_top_down_slowly(self, started):
         g = started
@@ -3185,25 +3191,64 @@ def _walk_into_gate(g, i):
 
 
 class TestTowerElevators:
-    @pytest.mark.parametrize("type_", ["burj", "sail"])
+    @pytest.mark.parametrize("type_", ["burj", "sail", "kuwait"])
     def test_take_elevator_and_return_to_the_lobby(self, desktop, type_):
         g = desktop
+        if type_ == "burj":
+            assert g.ev("(()=>{const l=lmOf('burj');return l.h===63&&l.hx===19&&l.hz===21&&l.y0+l.h<H-1})()")
         stops = g.ev("""(type)=>{
           const e=LIFT_SITES.find(e=>e.type===type),p=e.stops[0];
           forceLoad(Math.floor(p.x/16),Math.floor(p.z/16),2);
           Object.assign(player,{x:p.x,y:p.y,z:p.z,yaw:p.yaw,pitch:0,vy:0,ground:true,hold:false});
           return e.stops.map(s=>({...s,clear:liftStanding(s),open:[s.y,s.y+1].every(y=>getB(Math.floor(e.shaft.x),y,Math.floor(e.shaft.z))===B.AIR)}));
         }""", type_)
-        assert len(stops) == 3 and all(s["clear"] and s["open"] for s in stops), f"Expected usable elevator landings, observed {stops}"
+        assert len(stops) == (3 if type_ == "kuwait" else 4) and all(s["clear"] and s["open"] for s in stops), f"Expected usable elevator landings, observed {stops}"
         for stop in (stops[-1], stops[0]):
-            g.page.keyboard.press("e")
-            control = g.page.locator("#panel").get_by_role("button", name=stop["name"], exact=True)
-            control.wait_for(state="visible")
-            g.modal_ready()
+            g.ev("""(() => {
+                const {e,p}=liftNear();
+                p.openAt=undefined;
+                const {nx,nz}=liftAxes(e,p);
+                if(!liftDoorCollision(p.x-nx*.49,p.y,p.z-nz*.49,.3,1.8))
+                    throw Error('Expected collision at the closed door');
+                const ray={o:[p.x, p.y+1.5, p.z],d:[-nx,0,-nz]};
+                if(!liftClick(ray,null)||liftOpening(p,p.openAt+1)<.99||
+                   liftOpening(p,p.openAt+5.3)<.99||liftOpening(p,p.openAt+5.7)>.01)
+                    throw Error('Expected the split door to stay open for five seconds');
+                p.openAt-=1;
+                if(liftDoorCollision(p.x-nx*.49,p.y,p.z-nz*.49,.3,1.8))
+                    throw Error('Expected the open door to clear the landing');
+                liftClick(ray,null);
+            })()""")
+            control = g.page.locator("#liftControls").get_by_role("button", name=stop["name"].split(" · ")[0], exact=False)
             control.click()
             g.wait(f"!LIFT_RIDE&&Math.hypot(player.x-{stop['x']},player.y-{stop['y']},player.z-{stop['z']})<.05"
                    f"&&!collides(player.x,player.y,player.z)&&solidAt({int(stop['x'])},{stop['y']-1},{int(stop['z'])})",
                    "the elevator to arrive on a clear landing", timeout=8000, observe="[player.x,player.y,player.z,LIFT_RIDE?.t]")
+
+
+class TestPrayer:
+    def test_waqt_requires_stillness_and_penalizes_a_missed_prayer(self, started):
+        result = started.ev("""(() => {
+          S.stars=1;
+          S.prayer={time:479,waqt:0,done:false};
+          if(!moveToNearestMasjid())return {arrived:false};
+          prayerStep(1);showPrayer();
+          const warning=prayerHud.classList.contains('urgent');
+          const progress=prayerBar.value;
+          prayerStep(10);
+          player.vx=1;prayerStep(1);
+          player.vx=0;prayerStep(29);
+          const reset=!S.prayer.done;
+          prayerStep(1);
+          const completed=S.prayer.done;
+          prayerStep(600-S.prayer.time);
+          const kept=S.stars===1&&S.prayer.waqt===1;
+          placeSafe(START.x+.5,START.z+.5);
+          prayerStep(600);
+          return {arrived:!!currentMasjid(),warning,progress,reset,completed,kept,stars:S.stars};
+        })()""")
+        assert result == dict(arrived=True, warning=True, progress=1, reset=True,
+                              completed=True, kept=True, stars=0)
 
 
 class TestPortals:
@@ -3259,6 +3304,16 @@ class TestPortals:
         g.page.wait_for_timeout(int(T(1500)))
         assert not g.ev("__tpState().on"), "Arriving must not send the player straight back"
 
+    def test_freestanding_gate_has_matching_tiles_and_lettering_on_both_sides(self, loaded):
+        r = loaded.ev("""(()=>{const p=PORT[4];buildPortalEngraving();
+          forceLoad(Math.floor(p.x/16),Math.floor(p.z/16),1);
+          const count=[0,0];
+          for(let i=0;i<pTextN;i+=7){const x=PE[i]-p.x,z=PE[i+2]-p.z,d=x*p.nx+z*p.nz;
+            if(Math.abs(x*p.tx+z*p.tz)<1.5&&Math.abs(d)>.3&&Math.abs(d)<.6&&Math.abs(PE[i+1]-p.base-4)<1)count[d<0?0:1]++}
+          const tile=(side,d)=>getB(Math.floor(p.x+side*d*p.nx),p.base,Math.floor(p.z+side*d*p.nz));
+          return {count,matching:[1,2,3,4].every(d=>tile(1,d)===tile(-1,d))};})()""")
+        assert r["matching"] and r["count"][0] == r["count"][1] > 0, r
+
     def test_gate_sounds_and_labels(self, desktop):
         g = desktop
         g.ev("initAudio();psfx.open();psfx.arrive();portalHum(.1,2)")
@@ -3296,12 +3351,14 @@ class TestPortals:
         g = loaded
         r = g.ev("""(()=>{const l=fixedList().find(q=>q.t==='haram');return{
           courtyard:haram(l,48,0,0),edge:haram(l,55,0,0),extension:haram(l,0,15,-40),hall:haram(l,8,8,-40),
-          clock:haram(l,-61,23,-4),clockTop:haram(l,-68,31,-4),extent:[l.ex,l.ez]}})()""")
+          clock:haram(l,-61,23,-4),clockTop:haram(l,-68,31,-4),extent:[l.ex,l.ez],
+          southRoof:haram(l,0,9,44),eastRoof:haram(l,44,9,0),gate:haram(l,0,2,52),openMataf:haram(l,21,4,0)}})()""")
         assert r["courtyard"] == g.ev("B.PATH"), f"The mataf should span a broad courtyard, observed {r}"
         assert r["edge"] == g.ev("B.ARCH"), f"Expected a perimeter around the expanded courtyard, observed {r}"
         assert r["extension"] == g.ev("B.LIMEP") and r["hall"] == g.ev("B.MARBLE"), f"Expected the northern prayer hall and roof, observed {r}"
         assert r["clock"] == g.ev("B.GOLD") and r["clockTop"] == g.ev("B.GOLD"), f"Expected the Abraj Al-Bait clock face and crown, observed {r}"
         assert r["extent"] == [78, 75], f"Expected an expanded Haram footprint, observed {r}"
+        assert r["southRoof"] == r["eastRoof"] == g.ev("B.LIMEP") and r["gate"] == 0 and r["openMataf"] == -1
 
     def test_landmarks_back_panel_is_compact_with_floor_aligned_gates(self, loaded):
         g = loaded
@@ -3319,8 +3376,9 @@ class TestPortals:
         g = started
         r = g.ev("""(()=>{const l=fixedList().find(q=>q.t==='haram');player.x=l.x+.5;player.y=l.y0+3;player.z=l.z+.5;updateCamera();
           botN=0;haramCrowdReady=false;haramDraw();let lo=1,hi=0,ok=true,animated=0;
-          for(const p of HARAM_CROWD){lo=Math.min(lo,p.sp);hi=Math.max(hi,p.sp);ok=ok&&p.fig.look===p.look;if(p.fig.ph>0)animated++}
+          for(const p of HARAM_CROWD){lo=Math.min(lo,p.sp*p.r);hi=Math.max(hi,p.sp*p.r);ok=ok&&p.fig.look===p.look;if(p.fig.ph>0)animated++}
           return{n:HARAM_CROWD.length,lo,hi,ok,animated,body:botGeo[3],frame:botGeo[252*7+3],stone:botGeo[288*7+3]}})()""")
-        assert r["n"] > 500 and r["ok"] and r["animated"] > 0, f"Tawaf figures should use the builder models, observed {r}"
-        assert r["lo"] >= .09 and r["hi"] < .15, f"Tawaf figures should walk slowly, observed {r}"
+        assert 200 < r["n"] < 300 and r["ok"] and r["animated"] > 0, f"Expected a sparser crowd using builder models, observed {r}"
+        assert .6 < r["lo"] and r["hi"] < 1.2, f"Tawaf figures should walk slowly, observed {r}"
+        assert g.ev("Math.max(...HARAM_CROWD.map(p=>p.r))") > 27
         assert r["stone"] < r["body"] < r["frame"], f"The Kaaba should be slightly grey with a black stone and silver setting, observed {r}"

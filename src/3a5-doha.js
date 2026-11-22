@@ -28,17 +28,26 @@ for(const [floor,pair,steps] of [
 const DOHA_MIA_ROOMS=[
  [0,-9,-8,-5,-2,-7,'ceramic'],[0,5,-8,9,-2,7,'lantern'],
  [5,-8,-10,-4,-3,-6,'astrolabe'],[5,6,-10,9,-3,7,'folio'],
- [10,-6,-8,-3,-2,-5,'textile'],[15,-5,-7,-2,-2,-4,'ceramic'],
- [20,-3,-3,-1,0,-2,'folio']
+ [10,-6,-8,-3,-2,-5,'textile'],[15,-5,-7,-2,-2,-4,'ewer'],
+ [20,-3,-3,-1,0,-2,'tile']
 ];
 function dohaMiaArtifact(kind,x,y,z){
  if(kind==='textile'&&z===0&&Math.abs(x)<=1&&y>=1&&y<=3)return x===0&&y===2?B.STAR:B.CARPET;
  if(kind==='folio'&&z===0&&Math.abs(x)<=1&&y>=1&&y<=2)return y===2&&x===0?B.GOLD:B.BLUE;
+ if(kind==='tile'&&z===0&&Math.abs(x)<=1&&y>=1&&y<=3)return x===0&&y===2?B.STAR:(x+y)%2===0?B.TURQ:B.BLUE;
  if(z!==1)return -1;
  if(y===1&&(x===0||kind==='ceramic'&&Math.abs(x)===1))return B.LIMEP;
  if(kind==='ceramic'&&y===2&&Math.abs(x)<=1)return x===0?B.BLUE:B.TURQ;
  if(kind==='ceramic'&&y===3&&x===0)return B.TURQ;
  if(kind==='lantern'&&y===2&&x===0)return B.LANTERN;
+ if(kind==='ewer'){
+  if(y===2&&(x===0||x===1))return x===0?B.GOLD:B.ARCH;
+  if(y===3&&(x===0||x===-1))return B.GOLD;
+ }
+ if(kind==='bowl'&&Math.abs(x)<=1){
+  if(y===2)return B.BLUE;
+  if(y===3&&x!==0)return B.TURQ;
+ }
  if(kind==='astrolabe'){
   if(y===2&&Math.abs(x)<=1)return x===0?B.LATTICE:B.GOLD;
   if(y===3&&x===0)return B.GOLD;
@@ -68,6 +77,8 @@ function dohaMia(l,lx,y,z){
   if(lx===12||lx===18||z===-8||z===7)return y>=2&&y<=3&&z%3!==0?B.LATTICE:B.LIME;
   const artifact=dohaMiaArtifact('lantern',lx-15,y,z+6);
   if(artifact>=0)return artifact;
+  const bowl=dohaMiaArtifact('bowl',lx-15,y,z-3);
+  if(bowl>=0)return bowl;
   return B.AIR;
  }
  if(lx>=9&&lx<=11&&z>=-9&&z<=8)return y===0?(z%4===0?B.STAR:B.ARCH):-1;

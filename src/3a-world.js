@@ -294,11 +294,22 @@ function haram(l,lx,y,lz){
   if(y>=16&&y<=18&&(ax>=39||lz===-52||lz===-30))return y===18?B.ARCH:B.MARBLE;
   if(y===19&&ax<=40)return B.GOLD;
  }
- /* long side prayer halls link the old arcades to the expansion */
- if(ax>=34&&ax<=52&&lz>=-25&&lz<=29){
-  if(y===1||y===2)return B.MARBLE;
-  if(y>=3&&y<=15){if(ax===34||ax===52||(lz%8===0))return y===15?B.ARCH:y%5===0?B.LATTICE:B.MARBLE;return -1}
-  if(y===16&&(ax<=51))return B.LIMEP;
+ /* The east, west and south prayer galleries wrap the open mataf. */
+ if((ax>=34&&ax<=52&&lz>=-31&&lz<=52)||(lz>=34&&lz<=52&&ax<=52)){
+  const south=lz>=ax,depth=south?lz:ax,along=south?lx:lz;
+  const bay=Math.abs(along%8),post=bay===0||depth===52&&bay===1;
+  const entrance=depth===52&&Math.abs(along)<=3;
+  if(y===0)return B.MARBLE;
+  if(y===9)return B.LIMEP;
+  if(y===10)return depth===34||depth===52?B.ARCH:-1;
+  if(y>0&&y<9){
+   if(entrance&&y<=5)return B.AIR;
+   if(post&&(depth===34||depth===42||depth===52))return y===1||y===7?B.ARCH:B.MARBLE;
+   if(depth===34&&y>=7||depth===52&&y>=6)return B.ARCH;
+   if(depth===52&&y>=3)return B.LATTICE;
+   if(depth===42&&bay===4&&y===8)return B.LANTERN;
+   return B.AIR;
+  }
  }
  /* expansion minarets at the north corners */
  if((ax===39||ax===41)&&(lz===-51||lz===-31)){
@@ -318,9 +329,6 @@ function haram(l,lx,y,lz){
   }
   if(y<=31){const r=31-y;return Math.abs(tx)<=r&&Math.abs(tz)<=r?(y>=30?B.GOLD:B.LIMEP):-1}
  }
- if(ax>=18&&ax<=20&&az>=18&&az<=20){if(y<=1)return B.ARCH;if(y<=10)return y%4===0?B.LATTICE:B.MARBLE;if(y===11)return B.ARCH;if(y<=14)return y===14?B.TURQ:B.MARBLE;if(y===15)return B.GOLD}
- if(m===21){const along=ax===21?az:ax;if(y<=2)return B.ARCH;if(y<=7){if(along%4===0)return B.MARBLE;if(y===6)return B.ARCH;if(y===4&&along%4===2)return B.LATTICE;return -1}if(y===8)return B.ARCH;if(y===9)return B.GOLD}
- if(m===18){const along=ax===18?az:ax;if(along%3===0&&y<=5)return y===1?B.ARCH:B.MARBLE;if(y===5&&along%3===1)return B.ARCH;if(y===6)return B.ARCH}
  if(ax<=3&&az<=3&&y>=1&&y<=7)return B.STONE;
  return -1;
 }
@@ -335,7 +343,7 @@ const LMT={
  flowers:{fn:flowers,p:()=>({hx:10,hz:10,h:5,ymin:-1})}
  ,haram:{fn:haram,p:()=>({hx:78,hz:75,h:31,top:31,ymin:0})},
  landmarks:{fn:()=>-1,p:()=>({hx:15,hz:26,h:8,y0:16,ymin:0})},
- burj:{fn:burjKhalifa,p:()=>({hx:9,hz:10,h:31,top:31,y0:15,ymin:0})},
+ burj:{fn:burjKhalifa,p:()=>({hx:19,hz:21,h:63,top:63,y0:15,ymin:0})},
  sail:{fn:burjAlArab,p:()=>({hx:16,hz:20,h:31,top:31,y0:15,ymin:-2})},
  dohaMia:{fn:dohaMia,p:()=>({hx:19,hz:20,h:26,top:26,ymin:0})},
  petra:{fn:petraTreasury,p:()=>({hx:19,hz:20,h:27,top:27,ymin:0})},
@@ -349,7 +357,8 @@ function makeLm(type,v,o,x,z,fixed,id){
  for(const p of pts){const h=raw(x+p[0],z+p[1]);s+=h;mn=Math.min(mn,h);mx=Math.max(mx,h)}
  if(!fixed&&(mn<WL+1.5||mx-mn>7.5))return null;
  const cap=Math.max(WL+3,Math.min(type==='mosque'?18:22,H-2-(P.top||P.h)));
- const y0=P.y0||clamp(Math.round(s/pts.length),WL+3,cap);
+ const edge=fixed?Math.round(mx):Math.round(s/pts.length);
+ const y0=type==='landmarks'?P.y0:fixed?clamp(Math.max(P.y0||0,edge),WL+1,H-2-(P.top||P.h)):clamp(edge,WL+3,cap);
  return{t:type,v,o,x,z,hx,hz,ex,ez,y0,h:P.h,ymin:P.ymin||0,P,fn:T0.fn,tp:P.top2||null,id:id};
 }
 /* Abu Dhabi's central district, then smaller landmark clusters across the Gulf. */
@@ -397,9 +406,9 @@ function lmCell(rx,rz){
 const chunkLms=[];
 function gatherLms(x0,z0,x1,z1){
  chunkLms.length=0;
- for(const l of fixedList())if(l.x+l.ex+9>=x0&&l.x-l.ex-9<=x1&&l.z+l.ez+9>=z0&&l.z-l.ez-9<=z1)chunkLms.push(l);
+ for(const l of fixedList())if(l.x+l.ex+17>=x0&&l.x-l.ex-9<=x1&&l.z+l.ez+17>=z0&&l.z-l.ez-9<=z1)chunkLms.push(l);
  for(let rz=Math.floor((z0-60)/RG);rz<=Math.floor((z1+60)/RG);rz++)for(let rx=Math.floor((x0-60)/RG);rx<=Math.floor((x1+60)/RG);rx++){
-  const l=lmCell(rx,rz);if(l&&l.x+l.ex+9>=x0&&l.x-l.ex-9<=x1&&l.z+l.ez+9>=z0&&l.z-l.ez-9<=z1)chunkLms.push(l)}
+  const l=lmCell(rx,rz);if(l&&l.x+l.ex+17>=x0&&l.x-l.ex-9<=x1&&l.z+l.ez+17>=z0&&l.z-l.ez-9<=z1)chunkLms.push(l)}
 }
 const CI={top:0,om:0,hm:0,fl:0,plot:0};
 function colInfo(x,z){
@@ -407,7 +416,8 @@ function colInfo(x,z){
  for(let i=0;i<chunkLms.length;i++){const l=chunkLms[i];let dx,dz;
   if(l.t==='landmarks'){const vx=x-l.x,vz=z-l.z,s=vx*GATE_HUB.tx+vz*GATE_HUB.tz,d=vx*GATE_HUB.nx+vz*GATE_HUB.nz;dx=Math.abs(s)-24;dz=d< -8?-8-d:d>4?d-4:0}
   else{dx=Math.abs(x-l.x)-l.ex;dz=Math.abs(z-l.z)-l.ez}
-  const d=Math.hypot(Math.max(dx,0),Math.max(dz,0));if(d<8){h=lerp(h,l.y0,1-smooth(d/8));if(dx<=0&&dz<=0)fl=1}}
+  const d=Math.hypot(Math.max(dx,0),Math.max(dz,0));const apron=l.id<100&&l.t!=='landmarks'?3:0,grade=apron?16:8;
+  if(d<grade){h=lerp(l.y0,h,smooth(clamp((d-apron)/(grade-apron),0,1)));if(dx<=0&&dz<=0)fl=1}}
  const dp=Math.hypot(Math.max(PLOT.x0-x,0,x-PLOT.x1),Math.max(PLOT.z0-z,0,z-PLOT.z1));
  h=lerp(PLOT_Y,h,smooth(clamp(dp/8,0,1)));
  const hd=hubDist(x,z);if(hd<4){h=lerp(GATE_HUB.y,h,smooth(hd/4));if(hd===0)fl=1}

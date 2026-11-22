@@ -1,5 +1,5 @@
 /* Tower lifts use physical landings and clear shafts reserved for the cabin. */
-const LIFT_SITES=[['burj',BURJ_LIFT],['sail',ARAB_LIFT]].map(([type,model])=>{
+const LIFT_SITES=[['burj',BURJ_LIFT],['sail',ARAB_LIFT],['kuwait',KUWAIT_LIFT]].map(([type,model])=>{
  const l=lmOf(type),xz=(x,z)=>{const p=[0,0];lm2w(l,x,z,p);return{x:p[0]+.5,z:p[1]+.5}};
  return{name:lmName(l),type,shaft:xz(...model.shaft),stops:model.stops.map(p=>({...p,...xz(p.x,p.z),y:l.y0+p.y,yaw:p.yaw-l.o*Math.PI/2}))};
 });
@@ -12,27 +12,91 @@ for(const e of LIFT_SITES){
 }
 function liftShaftSolid(x,y,z){const h=LIFT_SHAFT_CELLS.get(x+z*WX);return h&&y>=h[0]&&y<=h[1]}
 const liftProtected=(x,y,z)=>LIFT_RESERVED.has(gkey(x,y,z));
-let LIFT_RIDE=null;
+function summitSolid(x,y,z){
+ for(const e of LIFT_SITES){
+  const p=e.stops[e.stops.length-1];if(p.y<H||y<p.y-1||y>p.y)continue;
+  const d=Math.max(Math.abs(x-Math.floor(e.shaft.x)),Math.abs(z-Math.floor(e.shaft.z)));
+  if(y===p.y-1?d<=3:d===3)return true;
+ }
+ return false;
+}
+function liftDoorCollision(x,y,z,half,height){
+ for(const e of LIFT_SITES)for(const p of e.stops){
+  if(y>=p.y+2||y+height<=p.y||Math.abs(x-p.x)>1.5||Math.abs(z-p.z)>1.5)continue;
+  const {nx,nz}=liftAxes(e,p),dx=x-p.x,dz=z-p.z;
+  if(Math.abs(dx*nx+dz*nz+.49)<half+.04&&Math.abs(dx*nz-dz*nx)<half+.48&&liftOpening(p)<.9)return true;
+ }
+ return false;
+}
+let LIFT_RIDE=null,LIFT_CABIN=null;
+const liftClock=()=>performance.now()/1000;
+function liftOpening(p,t=liftClock()){
+ const age=t-(p.openAt??-Infinity);
+ return sstep(0,.32,age)*(1-sstep(5.32,5.64,age));
+}
+function liftDoorAction(e,p){
+ if(LIFT_CABIN){liftExit();return true}
+ if(liftOpening(p)<.9){p.openAt=liftClock();return true}
+ if(!liftStanding(p))return true;
+ LIFT_CABIN={e,p};
+ Object.assign(player,{x:e.shaft.x,y:p.y,z:e.shaft.z,vx:0,vy:0,vz:0,yaw:liftAxes(e,p).yaw,pitch:0});
+ input.keys.clear();input.jx=input.jy=0;input.jump=false;
+ return true;
+}
+function liftExit(){
+ const c=LIFT_CABIN;if(!c)return;
+ LIFT_CABIN=null;c.p.openAt=liftClock();
+ Object.assign(player,{x:c.p.x,y:c.p.y,z:c.p.z,yaw:c.p.yaw,pitch:0,vx:0,vy:0,vz:0,ground:true});
+}
+function liftBoardOnApproach(){
+ const n=liftNear();if(!n||LIFT_CABIN||liftOpening(n.p)<.9)return;
+ const {nx,nz}=liftAxes(n.e,n.p),dx=player.x-n.p.x,dz=player.z-n.p.z;
+ if(dx*nx+dz*nz<-.20&&Math.abs(dx*nz-dz*nx)<.40&&player.vx*nx+player.vz*nz<-.16)liftDoorAction(n.e,n.p);
+}
+function liftClick(ray,hit){
+ if(LIFT_CABIN){
+  const {e,p}=LIFT_CABIN,dir=liftAxes(e,p),{o,d}=ray;
+  const dot=d[0]*dir.rx+d[2]*dir.rz;
+  if(dot<=0)return false;
+  const t=(.42-(o[0]-e.shaft.x)*dir.rx-(o[2]-e.shaft.z)*dir.rz)/dot;
+  if(t<=0||t>2)return false;
+  const side=(o[0]+t*d[0]-e.shaft.x)*dir.nx+(o[2]+t*d[2]-e.shaft.z)*dir.nz;
+  if(Math.abs(side)>.18)return false;
+  const i=Math.round((o[1]+t*d[1]-p.y-.72)/.29);
+  if(i>=0&&i<e.stops.length){if(e.stops[i]!==p)liftStart(e,p,e.stops[i]);return true}
+  return false;
+ }
+ for(const e of LIFT_SITES)for(const p of e.stops){
+  if(Math.abs(player.y-p.y)>1||Math.hypot(player.x-p.x,player.z-p.z)>4)continue;
+  const {nx,nz}=liftAxes(e,p),x=p.x-nx*.49,z=p.z-nz*.49,{o,d}=ray,den=d[0]*nx+d[2]*nz;
+  if(den>=-.01)continue;
+  const t=((x-o[0])*nx+(z-o[2])*nz)/den;
+  if(t<0||t>4||hit&&hit.t<t-.05)continue;
+  const y=o[1]+d[1]*t-p.y,w=(o[0]+d[0]*t-x)*nz-(o[2]+d[2]*t-z)*nx;
+  if(y>=0&&y<=2&&Math.abs(w)<=.49)return liftDoorAction(e,p);
+ }
+ return false;
+}
+function liftAxes(e,p){
+ const nx=Math.sign(p.x-e.shaft.x),nz=Math.sign(p.z-e.shaft.z);
+ return{nx,nz,rx:nz,rz:-nx,yaw:Math.atan2(nx,nz)};
+}
 function liftNear(){
  if(!playing||curModal||FLY||TP||MG.on||mapDialog.open||LIFT_RIDE)return null;
  for(const e of LIFT_SITES)for(const p of e.stops)if(Math.abs(player.y-p.y)<.6&&Math.hypot(player.x-p.x,player.z-p.z)<1.55)return{e,p};
  return null;
 }
 function liftPanel(){
- const n=liftNear();if(!n)return false;
- const {e,p}=n;
- modal(`<h2>${e.name} elevator</h2><p>Current floor: ${p.name}</p><div class="liftFloors">${e.stops.map((q,i)=>`<button class="btn alt sm" data-floor="${i}"${p===q?' disabled':''}>${q.name}</button>`).join('')}</div><div class="row"><button class="btn sm" data-a="ok">Close</button></div>`,panel=>{
-  panel.querySelector('[data-a=ok]').onclick=closeModal;
-  panel.querySelectorAll('[data-floor]').forEach(b=>b.onclick=()=>{const to=e.stops[+b.dataset.floor];wantLock=false;closeModal();liftStart(e,p,to)});
- });
- return true;
+ if(LIFT_CABIN){liftExit();return true}
+ const n=liftNear();return n?liftDoorAction(n.e,n.p):false;
 }
 function liftStanding(p){return solidAt(Math.floor(p.x),p.y-1,Math.floor(p.z))&&!collides(p.x,p.y,p.z)}
 function liftStart(e,from,to){
  if(!liftStanding(from)||!liftStanding(to)){toast('The elevator landing is blocked.');return}
+ const boarded=LIFT_CABIN?.p===from;LIFT_CABIN=null;
  input.keys.clear();input.jx=input.jy=0;input.jump=false;aim=null;
- LIFT_RIDE={e,from,to,t:0,duration:clamp(Math.abs(to.y-from.y)/7,.7,3.6),yaw:player.yaw};
- player.x=from.x;player.y=from.y;player.z=from.z;player.stepOff=0;player.vx=player.vy=player.vz=0;
+ LIFT_RIDE={e,from,to,t:boarded?.38:0,duration:clamp(Math.abs(to.y-from.y)/7,.7,3.6),yaw:player.yaw};
+ player.x=boarded?e.shaft.x:from.x;player.y=from.y;player.z=boarded?e.shaft.z:from.z;player.stepOff=0;player.vx=player.vy=player.vz=0;
  $('app').classList.add('lifting');
 }
 function liftFinish(){LIFT_RIDE=null;$('app').classList.remove('lifting')}
@@ -44,11 +108,18 @@ function liftStep(dt){
  const k=sstep(duration+door,duration+door*2,t);
  player.x=lerp(e.shaft.x,to.x,k);player.z=lerp(e.shaft.z,to.z,k);player.y=to.y;
  const turn=Math.atan2(Math.sin(to.yaw-r.yaw),Math.cos(to.yaw-r.yaw));player.yaw=r.yaw+turn*k;player.pitch*=1-Math.min(1,dt*8);
- if(k===1){Object.assign(player,{ground:true,water:false,hold:false,stepOff:0,pitch:0});input.keys.clear();input.jx=input.jy=0;input.jump=false;liftFinish();queueSave();toast(to.name)}
+ if(k===1){to.openAt=liftClock();Object.assign(player,{ground:true,water:false,hold:false,stepOff:0,pitch:0});input.keys.clear();input.jx=input.jy=0;input.jump=false;liftFinish();queueSave();toast(to.name)}
 }
-function liftSavePos(){const p=LIFT_RIDE?.from;return p?[p.x,p.y,p.z,p.yaw,0]:null}
+function liftSavePos(){
+ let p=LIFT_RIDE?.from||LIFT_CABIN?.p;
+ if(!p&&player.y>=H)for(const e of LIFT_SITES){
+  const top=e.stops[e.stops.length-1];
+  if(top.y>=H&&Math.abs(player.y-top.y)<4&&Math.abs(player.x-e.shaft.x)<3.5&&Math.abs(player.z-e.shaft.z)<3.5){p=top;break}
+ }
+ return p?[p.x,p.y,p.z,p.yaw,0]:null;
+}
 function liftRestorePos(pos){
- if(LIFT_RIDE)liftFinish();
+ LIFT_CABIN=null;if(LIFT_RIDE)liftFinish();
  for(const e of LIFT_SITES)for(const p of e.stops){
   if(Math.abs(p.y-pos[1])>.65||Math.hypot(p.x-pos[0],p.z-pos[2])>.75)continue;
   forceLoad(Math.floor(p.x/16),Math.floor(p.z/16),2);
@@ -56,13 +127,39 @@ function liftRestorePos(pos){
  }
  return false;
 }
+let liftHudCabin=null;
 function liftHud(){
- const b=$('liftChip'),n=liftNear(),text=LIFT_RIDE?`Going to ${LIFT_RIDE.to.name}`:n?(touchMode?'Elevator':'Elevator · E'):'';
+ const b=$('liftChip'),n=liftNear(),c=LIFT_CABIN,text=LIFT_RIDE?`Going to ${LIFT_RIDE.to.name}`:c?'Exit elevator':n?(liftOpening(n.p)>.9?'Enter elevator':'Open elevator Ã‚Â· F'):'';
  b.hidden=!text;b.disabled=!!LIFT_RIDE;
  if(b.textContent!==text)b.textContent=text;
+ const panel=$('liftControls');panel.hidden=!c;
+ if(c===liftHudCabin)return;
+ liftHudCabin=c;panel.replaceChildren();if(!c)return;
+ c.e.stops.forEach((stop,i)=>{
+  const button=document.createElement('button'),number=stop.name.match(/Levels? (.+)/)?.[1]||i+1;
+  button.className='btn alt sm';button.innerHTML=`<span>${stop.name.split(' Ã‚Â· ')[0]}</span><small>Floor ${number}</small>`;
+  button.disabled=stop===c.p;button.onclick=()=>liftStart(c.e,c.p,stop);panel.appendChild(button);
+ });
 }
 function liftDraw(){
- if(!LIFT_RIDE||botN+72>botGeo.length/7)return;
- const p={...LIFT_RIDE.e.shaft,y:player.y,yaw:0};
- part(p,0,-.045,0,.47,.04,.47,[.62,.66,.65]);part(p,0,2.39,0,.47,.05,.47,[.73,.72,.64]);
+ const metal=[.55,.60,.62],trim=[.27,.31,.33],dark=[.12,.15,.17];
+ for(const e of LIFT_SITES)for(const p of e.stops){
+  if(Math.abs(player.y-p.y)>15||Math.hypot(player.x-p.x,player.z-p.z)>30||botN+300>botGeo.length/7)continue;
+  const {nx,nz,yaw}=liftAxes(e,p),door={x:p.x-nx*.49,z:p.z-nz*.49,y:p.y,yaw};
+  if(liftOpening(p)<.01)part(door,0,1.03,-.08,.49,1.03,.035,dark);
+  part(door,0,2.025,0,.51,.025,.045,trim);
+  const gap=liftOpening(p);
+  for(const side of [-1,1]){
+   part(door,side*.50,1,0,.027,1,.05,trim);
+   const width=.485*(1-gap);
+   if(width>.005)part(door,side*(.49-width/2),1,.005,width/2,1,.04,metal);
+  }
+ }
+ const cabin=LIFT_RIDE||LIFT_CABIN;
+ if(!cabin||botN+360>botGeo.length/7)return;
+ const e=cabin.e,stop=cabin.p||cabin.from,{yaw}=liftAxes(e,stop),p={...e.shaft,y:player.y,yaw};
+ part(p,0,-.045,0,.47,.04,.47,metal);part(p,0,2.025,0,.47,.025,.47,metal);
+ part(p,0,1,-.45,.47,1,.03,trim);
+ part(p,-.45,1,0,.03,1,.47,metal);part(p,.45,1,0,.03,1,.47,metal);
+ for(let i=0;i<e.stops.length;i++)part(p,.415,.72+i*.29,0,.015,.078,.10,[.89,.66,.27]);
 }
