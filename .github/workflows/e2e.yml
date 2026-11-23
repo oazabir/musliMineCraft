@@ -37,6 +37,13 @@ jobs:
         shell: bash
         run: python -m pytest -q 2>&1 | tee pytest-output.txt
 
+      # the log is only visible inside the run; surface the failing names as annotations
+      - name: Name the failing tests
+        if: failure()
+        working-directory: tests/e2e
+        shell: bash
+        run: grep -E '^(FAILED|ERROR) ' pytest-output.txt | sed 's/^/::error::/' || true
+
       - name: Upload test output
         if: failure()
         uses: actions/upload-artifact@v4
