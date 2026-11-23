@@ -6,6 +6,8 @@ const CON={on:false,hist:[],hi:0};
 var NET={on:false,role:'',guest:false,me:'',peers:[],players:new Map(),lanes:new Map(),pending:null,invite:'',tick:0,q:[],sent:[],sim:false,seq:0,laneSeq:0,lane:0,entered:false};
 /* one lane is one invite: every friend answers its own, so a lobby can hold many players */
 const NET_MAX=8,NET_SEND=.07,NET_LANE_TTL=300000;
+/* an invite that arrived in a #join= link, waiting for the join card to show it */
+let NET_PRE='';
 function netGuest(){return !!(NET&&NET.guest)}
 /* ---- console ---- */
 function conLog(txt,cls){
@@ -19,8 +21,16 @@ function conCopy(t,b){
  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>done(true),()=>done(false));return}}catch(e){}
  done(false);
 }
-/* a code is long, so it lives in a selectable box with a copy button */
-function conCode(label,txt){
+/* the invite as a link: opening it fills the code into the join card, so a guest only taps Join */
+function netLink(code){return String(location.href).split('#')[0]+'#join='+code}
+function netShareCard(link){
+ if(navigator.share){
+  try{navigator.share({title:'musliMineCraft',text:'Join my musliMineCraft world',url:link}).catch(()=>{});return}catch(e){}
+ }
+ conLog('This browser has no share sheet. Use Copy link instead.','er');
+}
+/* a code is long, so it lives in a selectable box with copy and, where the browser has one, a share sheet */
+function conCode(label,txt,link){
  conLog(label);
  const box=document.createElement('div');box.className='ccode';
  const ta=document.createElement('textarea');ta.readOnly=true;ta.rows=2;ta.className='cta';ta.value=txt;ta.setAttribute('aria-label',label);
@@ -28,6 +38,16 @@ function conCode(label,txt){
  const b=document.createElement('button');b.type='button';b.className='conBtn';b.textContent='Copy';
  b.onclick=()=>conCopy(txt,b);
  box.appendChild(ta);box.appendChild(b);
+ if(link){
+  const lk=document.createElement('button');lk.type='button';lk.className='conBtn';lk.textContent='Copy link';
+  lk.onclick=()=>conCopy(link,lk);
+  box.appendChild(lk);
+  if(navigator.share){
+   const sh=document.createElement('button');sh.type='button';sh.className='conBtn';sh.textContent='Share';sh.setAttribute('aria-label','Share the invite link');
+   sh.onclick=()=>netShareCard(link);
+   box.appendChild(sh);
+  }
+ }
  const l=$('conLog');l.appendChild(box);l.scrollTop=l.scrollHeight;
 }
 function conOpen(on){
@@ -195,8 +215,15 @@ function netEnc(o){
   return 'MMC1.'+b.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
  }catch(e){return ''}
 }
+/* a paste arrives in a chat message, broken over lines, or as a whole link: find the code inside it */
+function netCodeText(text){
+ let t=String(text||'').replace(/\s+/g,'');
+ const j=t.indexOf('#join=');if(j>=0)t=t.slice(j+6);
+ const m=/MM(?:2|C1)\.[A-Za-z0-9_-]+/.exec(t);
+ return m?m[0]:t;
+}
 function netDec(text){
- const t=String(text||'').replace(/\s+/g,'');
+ const t=netCodeText(text);
  if(t.slice(0,4)==='MM2.')return netUnpack(t.slice(4));
  const i=t.indexOf('.');
  if(i<1||t.slice(0,i)!=='MMC1')return null;
@@ -363,8 +390,11 @@ function netShare(){
    NET.invite=netPack(sdp,false,lane)||netEnc({v:1,t:'offer',sdp:sdp,lane:lane});
    const l=NET.lanes.get(lane);if(l)l.invite=NET.invite;
    if(!NET.invite){conLog('The invite could not be made.','er');netDropPeer(p);return}
+   const link=netLink(NET.invite);if(l)l.link=link;
    conLog('Send this invite code to one friend:');
-   conCode('Invite code',NET.invite);
+   conCode('Invite code',NET.invite,link);
+   conLog('Or share this link, which fills the code in for them:');
+   conLog(link);
    conLog('Type /share again for another friend, then paste each reply you get back with /join.');
   });
  }).catch(()=>{conLog('The invite could not be made.','er');netDropPeer(p)});
@@ -636,9 +666,10 @@ function netDraw(){
 }
 /* ---- the "Join lobby" card on the start screen ---- */
 function joinLobbyCard(){
- modal('<h2>Join a lobby</h2><p>A friend opens a lobby with <b>/share</b> in the game console and sends you the invite code. Paste it here.</p><textarea id="jcode" class="cta" rows=3 aria-label="Invite code" placeholder="MM2..."></textarea><div class="row"><button class="btn alt" data-a="no">Close</button><button class="btn" data-a="go">Join</button></div>',p=>{
+   modal('<h2>Join a lobby</h2><p>A friend opens a lobby with <b>/share</b> in the game console and sends you the invite code or its link. Paste either one here.</p><textarea id="jcode" class="cta" rows=3 aria-label="Invite code" placeholder="MM2..."></textarea><div class="row"><button class="btn alt" data-a="no">Close</button><button class="btn" data-a="go">Join</button></div>',p=>{
+  const ta=p.querySelector('#jcode');if(NET_PRE)ta.value=NET_PRE;
   p.querySelector('[data-a=no]').onclick=closeModal;
-  p.querySelector('[data-a=go]').onclick=()=>{const v=p.querySelector('#jcode').value;netGuestJoin(v)};
+  p.querySelector('[data-a=go]').onclick=()=>{const v=p.querySelector('#jcode').value;NET_PRE='';netGuestJoin(v)};
  });
 }
 /* ---- wiring ---- */
@@ -657,6 +688,26 @@ function joinLobbyCard(){
   const i=$('conIn');if(!i||!String(i.value).trim())conOpen(false);
  },true);
  const nb=$('wneww');if(nb)nb.onclick=worldNew;
+})();
+/* a #join= link opens the join card with the code already in it; the hash is cleared so a reload does not reopen it.
+   A link tapped while the game is already open only changes the hash, so hashchange is watched too. */
+(function netJoinLink(){
+ const go=()=>{
+  const b=document.querySelector('[data-a=play]');
+  if(b&&b.offsetParent===null&&!playing){setTimeout(go,200);return}
+  if(!curModal)joinLobbyCard();else toast('Your invite is ready. Open Join lobby.');
+ };
+ const take=()=>{
+  const h=location.hash||'',i=h.indexOf('#join=');
+  if(i<0)return;
+  const code=netCodeText(h.slice(i+6));
+  if(!netDec(code))return;
+  NET_PRE=code;
+  try{history.replaceState(null,'',String(location.href).split('#')[0])}catch(e){try{location.hash=''}catch(e2){}}
+  setTimeout(go,200);
+ };
+ take();
+ addEventListener('hashchange',take);
 })();
 worldsInit();
 /* ---- hooks for automated tests ---- */

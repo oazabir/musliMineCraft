@@ -304,8 +304,8 @@ class Game:
                 seen = f"<could not read: {e}>"
             pytest.fail(f"Expected {what} within {T(timeout)} ms, but observed: {json.dumps(seen, default=str)[:600]}")
 
-    def goto(self):
-        self.page.goto(GAME_URL, wait_until="commit")
+    def goto(self, url=None):
+        self.page.goto(url or GAME_URL, wait_until="commit")
 
     def ready(self):
         self.wait("!!document.querySelector('[data-a=play]') && document.querySelector('[data-a=play]').offsetParent !== null",
@@ -3484,6 +3484,9 @@ class TestConsoleWorldsLobby:
         assert inv.startswith("MM2."), f"Expected a short MM2 invite, observed {inv[:40]!r}"
         assert len(inv) < 340, f"Expected a short invite code, observed {len(inv)} characters"
         assert not re.search(r"\s", inv), "Expected the code to be one unbroken line so it survives a chat message"
+        assert "#join=" + inv in g.ev("__con().text"), "Expected the console to offer the invite as a link too"
+        btns = g.ev("[...document.querySelectorAll('#conLog .ccode button')].map(b=>b.textContent)")
+        assert "Copy link" in btns, f"Expected a Copy link button beside the invite, observed {btns}"
         d = g.ev("(a)=>__netParse(a)", inv)
         assert d and d["t"] == "offer", f"Expected an offer, observed {str(d)[:200]}"
         sdp = d["sdp"]
@@ -3497,6 +3500,36 @@ class TestConsoleWorldsLobby:
         g.ev("__cmd('/endstream')")
         g.wait("!__net().on", "the lobby to close on /endstream", observe="__net()")
         assert g.ev("playing"), "Expected the host to keep playing alone after /endstream"
+
+    def test_a_join_link_fills_the_invite_in_and_a_messy_paste_still_parses(self, game):
+        """A #join= link opens the join card with the invite already in it, and a paste broken over lines or wrapped in the link still parses."""
+        g = game(DESKTOP)
+        g.start(play=False)
+        sdp = "\r\n".join([
+            "v=0", "o=- 1 1 IN IP4 0.0.0.0", "s=-", "t=0 0", "a=group:BUNDLE 0",
+            "m=application 9 UDP/DTLS/SCTP webrtc-datachannel", "c=IN IP4 0.0.0.0",
+            "a=ice-ufrag:abcd", "a=ice-pwd:efghijklmnopqrstuvwx",
+            "a=candidate:1 1 udp 100 192.0.2.10 5000 typ host",
+            "a=fingerprint:sha-256 " + ":".join(["AA"] * 32),
+            "a=setup:actpass", "a=mid:0", "a=sctp-port:5000"]) + "\r\n"
+        code = g.ev("(s)=>__netCode({t:'offer',lane:3,sdp:s})", sdp)
+        assert code.startswith("MM2.") and len(code) < 340, f"Test set-up: expected a short invite, observed {code[:40]!r}"
+        messy = "Join my world!\n  " + code[:60] + "\n" + code[60:] + "  \n"
+        d = g.ev("(t)=>__netParse(t)", messy)
+        assert d and d["t"] == "offer" and d["lane"] == 3, f"Expected a code broken over lines to parse, observed {str(d)[:200]}"
+        link = GAME_URL + "#join=" + code
+        d = g.ev("(t)=>__netParse(t)", link)
+        assert d and d["t"] == "offer" and d["lane"] == 3, f"Expected a pasted #join link to parse, observed {str(d)[:200]}"
+        g2 = game(DESKTOP)               # the guest opens the shared link in a fresh page
+        g2.goto(link)
+        g2.ready()
+        g2.wait("(()=>{const t=document.querySelector('#jcode');return !!t&&t.offsetParent!==null&&t.value.length>40})()",
+                "the join card to open with the invite from the link already in the box", timeout=20000,
+                observe="[!!curModal,(document.querySelector('#jcode')||{}).value]")
+        assert "Join a lobby" in g2.modal_text(), f"Expected the join card, observed {g2.modal_text()!r}"
+        assert g2.ev("document.querySelector('#jcode').value") == code, \
+            f"Expected the link's code in the box, observed {g2.ev('document.querySelector(\"#jcode\").value')[:60]!r}"
+        assert g2.ev("location.hash") == "", f"Expected the link to clear itself, observed {g2.ev('location.href')!r}"
 
     def test_the_start_screen_lists_your_worlds_below_the_continue_button(self, loaded):
         """The worlds list stands under the big Continue button and a world row enters that world."""
