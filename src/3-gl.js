@@ -22,7 +22,8 @@ v_uv=vec2(tu+.02+.96*cu,tv+.02+.96*cv)*.125;v_sh=a_s.xy;v_d=distance(p,u_cam);gl
 void main(){vec4 t=texture2D(u_tex,v_uv);if(u_pass<.5&&t.a<.5)discard;if(u_pass>.5&&u_ck.y>0.){vec2 q=floor(v_uv*128.);t.rgb+=step(.94,fract(sin(dot(q,vec2(12.9898,78.233))+u_ck.x*1.7)*43758.5))*u_ck.y*.4;}
 vec3 l=mix(v_sh.x*u_amb,vec3(1.15),v_sh.y);vec3 c=mix(t.rgb*l,u_fog,clamp((v_d-u_near)/(u_far-u_near),0.,1.));
 gl_FragColor=vec4(c,u_pass<.5?1.:t.a);}`,['a_p','a_s']);
- progC=program(`attribute vec3 a_pos;attribute vec4 a_col;uniform mat4 u_vp;uniform vec3 u_cam;varying vec4 v_c;varying float v_d;void main(){v_c=a_col;v_d=distance(a_pos,u_cam);gl_Position=u_vp*vec4(a_pos,1.);}`,
+ /* Negative alpha marks opaque decals and encodes their depth bias layer. */
+ progC=program(`attribute vec3 a_pos;attribute vec4 a_col;uniform mat4 u_vp;uniform vec3 u_cam;varying vec4 v_c;varying float v_d;void main(){v_c=a_col;v_d=distance(a_pos,u_cam);gl_Position=u_vp*vec4(a_pos,1.);if(a_col.a<0.){gl_Position.z+=a_col.a*.000065*gl_Position.w;v_c.a=1.;}}`,
 `precision mediump float;uniform float u_a,u_fa,u_near,u_far;uniform vec3 u_fog;varying vec4 v_c;varying float v_d;void main(){
 gl_FragColor=vec4(mix(v_c.rgb,u_fog,clamp((v_d-u_near)/(u_far-u_near),0.,1.)*u_fa),v_c.a*u_a);}`,['a_pos','a_col']);
  progH=program(`attribute vec3 a_pos;attribute vec4 a_col;uniform mat4 u_vp;uniform vec3 u_cam;varying vec4 v_c;varying float v_d;void main(){v_c=a_col;v_d=distance(a_pos,u_cam);gl_Position=u_vp*vec4(a_pos,1.);}`,

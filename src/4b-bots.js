@@ -334,6 +334,7 @@ function botLoadState(a){
 /* ---- drawing ---- */
 const bcp=new Float32Array(24),FQ=[[0,1,3,2,.8],[4,5,7,6,.8],[0,1,5,4,.55],[2,3,7,6,1],[0,2,6,4,.68],[1,3,7,5,.68]],QI=[0,1,2,0,2,3];
 function part(b,ox,oy,oz,hx,hy,hz,col,sw,pv){
+ if((botN+36)*7>botGeo.length)return;
  const sy=Math.sin(b.yaw),cy=Math.cos(b.yaw),cs=Math.cos(sw||0),sn=Math.sin(sw||0);
  for(let i=0;i<8;i++){
   let lx=ox+(i&1?hx:-hx),ly=oy+(i&2?hy:-hy),lz=oz+(i&4?hz:-hz);
@@ -385,11 +386,12 @@ let plog=null;
 const pq=new Float32Array(12);
 /* one front-facing plate (face details): local z = oz, facing forward (-z) */
 const PQI=[0,1,3,0,3,2];
-function plate(b,ox,oy,oz,hx,hy,col){
+function plate(b,ox,oy,oz,hx,hy,col,layer=1){
+ if((botN+6)*7>botGeo.length)return;
  const sy=Math.sin(b.yaw),cy=Math.cos(b.yaw),am=partAmb||sky.amb;
  for(let i=0;i<4;i++){const lx=ox+(i&1?hx:-hx),ly=oy+(i&2?hy:-hy);pq[i*3]=b.x+lx*cy+oz*sy;pq[i*3+1]=b.y+ly;pq[i*3+2]=b.z-lx*sy+oz*cy}
  for(let ki=0;ki<6;ki++){const k=PQI[ki],o=botN*7,p=k*3;botGeo[o]=pq[p];botGeo[o+1]=pq[p+1];botGeo[o+2]=pq[p+2];
-  botGeo[o+3]=col[0]*.85*am[0];botGeo[o+4]=col[1]*.85*am[1];botGeo[o+5]=col[2]*.85*am[2];botGeo[o+6]=1;botN++}
+  botGeo[o+3]=col[0]*.85*am[0];botGeo[o+4]=col[1]*.85*am[1];botGeo[o+5]=col[2]*.85*am[2];botGeo[o+6]=-layer;botN++}
 }
 const EYE=[.1,.08,.1],WHT=[1,1,1],MOUTH=[.62,.2,.2],BLUSH=[1,.55,.5];
 function drawBotFig(b){
@@ -410,7 +412,7 @@ function drawBotFig(b){
  part(b,0,1.67,0,.27,.27,.25,L.skin);
  const fz=-.255;
  plate(b,-.1,1.7,fz,.04,.05,EYE);plate(b,.1,1.7,fz,.04,.05,EYE);
- plate(b,-.09,1.72,fz-.002,.013,.016,WHT);plate(b,.11,1.72,fz-.002,.013,.016,WHT);
+ plate(b,-.09,1.72,fz,.013,.016,WHT,2);plate(b,.11,1.72,fz,.013,.016,WHT,2);
  const bc=L.bcol;
  plate(b,-.1,1.81,fz,.06,.012,bc);plate(b,.1,1.81,fz,.06,.012,bc);
  plate(b,0,1.55,fz-.03,.055,.012,MOUTH);plate(b,-.065,1.565,fz-.03,.014,.014,MOUTH);plate(b,.065,1.565,fz-.03,.014,.014,MOUTH);
@@ -453,7 +455,7 @@ function fillBotGeo(){
   const dx=b.x-player.x,dz=b.z-player.z;if(dx*dx+dz*dz>farFog*farFog*1.1)continue;
   /* bots behind the camera are not uploaded */
   if((b.x-cam.e[0])*cam.fw[0]+(b.y+1-cam.e[1])*cam.fw[1]+(b.z-cam.e[2])*cam.fw[2]<-3)continue;
-  drawBotFig(b);
+  if((botN+720)*7<=botGeo.length)drawBotFig(b);
  }
  netDraw();
  haramDraw();

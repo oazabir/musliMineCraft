@@ -1739,6 +1739,18 @@ class TestMuseum:
 
 
 class TestSixBuilders:
+    def test_face_depth_layers_and_geometry_budget(self, started):
+        result = started.ev("""(()=>{
+          const n=__botParts(0).verts;
+          const layers=new Set();for(let i=0;i<n;i++)layers.add(botGeo[i*7+6]);
+          const saved=botN;botN=Math.floor(botGeo.length/7)-3;
+          const before=botN,b=getBot(0);
+          part(b,0,0,0,1,1,1,[1,1,1]);plate(b,0,0,0,1,1,[1,1,1]);
+          const bounded=botN===before;botN=saved;
+          return {layers:[...layers].sort(),bounded};
+        })()""")
+        assert result == {"layers": [-1, -2, 1], "bounded": True}
+
     SPEC = ["house", "market", "arch", "garden", "well", "tower"]
 
     def test_six_bots_with_distinct_names_and_colours_are_around(self, started):
