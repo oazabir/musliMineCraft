@@ -2334,7 +2334,9 @@ class TestCharacters:
     def test_join_card_shows_the_characters_portrait(self, started):
         g = started
         _wait_bots(g, 6)
-        g.ev("(()=>{const b=bots[2];b.on=true;b.st=BS.BUILD;openBotCard(b)})()")
+        # a builder only has a design to offer once it picked a site, which can land a beat after it appears
+        g.wait("bots.some(b=>b.tpl)", "a builder to have picked what to build", observe="bots.map(b=>!!b.tpl)")
+        g.ev("(()=>{const b=bots.find(x=>x.tpl);b.on=true;b.st=BS.BUILD;openBotCard(b)})()")
         g.modal_ready()
         assert g.ev("!!document.querySelector('#panel img.portrait')&&document.querySelector('#panel img.portrait').src.startsWith('data:image')")
 
