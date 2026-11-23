@@ -8,8 +8,8 @@ const BURJ_MASS=[
 const BURJ_SKY_HEIGHT=630;
 const BURJ_LIFT={shaft:[0,0],summit:BURJ_SKY_HEIGHT,stops:[
  {name:'Lobby',x:0,y:2,z:2,yaw:Math.PI},
- {name:'At the Top Ã‚Â· Levels 124Ã¢â‚¬â€œ125',x:0,y:36,z:2,yaw:Math.PI},
- {name:'At the Top SKY Ã‚Â· Level 148',x:0,y:46,z:2,yaw:Math.PI},
+ {name:'At the Top \u00b7 Levels 124\u2013125',x:0,y:36,z:2,yaw:Math.PI},
+ {name:'At the Top SKY \u00b7 Level 148',x:0,y:46,z:2,yaw:Math.PI},
  {name:'Spire summit',x:0,y:BURJ_SKY_HEIGHT,z:2,yaw:Math.PI}
 ]};
 const BURJ_STRIDE=21,BURJ_CENTER=10;

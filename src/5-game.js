@@ -84,6 +84,7 @@ function startMission(i,clear){
    const cur=getAny(g[0],g[1],g[2]);
    if(clear&&cur!==g[3]&&cur!==0)setBlock(g[0],g[1],g[2],0,2);
   }
+  const need=ghostCells.map(g=>g[3]);for(const id of need)hotbarEnsure(id,need);
  }
  rebuildGhost();updateMissionUI();buildHotbar();
 }
@@ -100,6 +101,7 @@ function completeMission(){
  S.stars+=5;S.skills.building++;sfx.done();confetti();
  const reward=m.reward;let rewardTxt='';
  if(!S.unlocked.includes(reward)){S.unlocked.push(reward);rewardTxt=`<p><b>New block unlocked: ${DEFS[reward].name}</b></p>`}
+ hotbarEnsure(reward);
  const next=S.mission+1;
  S.mission=next;queueSave();updateHud();buildHotbar();
  modal(`<svg class="motif i"><use href="#star8"/></svg><h2>${m.name} is built!</h2><p>+5 stars</p>${rewardTxt}

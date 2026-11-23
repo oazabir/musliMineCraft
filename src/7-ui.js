@@ -112,6 +112,15 @@ function updateMode(){
  b.innerHTML=`<svg class="i s"><use href="#${S.mode==='place'?'plus':'pick'}"/></svg>${S.mode==='place'?'Place':'Break'}`;
 }
 const hotbar=HOTBAR_IDS.slice(0,9);
+/* A mission may need a block the nine slots do not show yet: give it a slot so the blueprint is never a dead end. */
+function hotbarEnsure(id,keep){
+ if(hotbar.includes(id))return;
+ const skip=h=>h===S.sel||S.tmp.includes(h);
+ let k=hotbar.findIndex(h=>!skip(h)&&!S.unlocked.includes(h));
+ if(k<0)k=hotbar.findIndex(h=>!skip(h)&&!STARTER.includes(h)&&!(keep&&keep.includes(h)));
+ if(k<0)k=hotbar.findIndex(h=>!skip(h)&&!(keep&&keep.includes(h)));
+ if(k>=0)hotbar[k]=id;else if(hotbar.length<12)hotbar.push(id);
+}
 let activeSlot=0;
 function blockSlot(id,n){
  const open=S.unlocked.includes(id)||S.tmp.includes(id),b=document.createElement('button');
@@ -126,8 +135,9 @@ function blockSlot(id,n){
 }
 function buildHotbar(){
  const hb=$('hotbar');hb.innerHTML='';
- const found=hotbar.indexOf(S.sel);
- if(found>=0)activeSlot=found;else hotbar[activeSlot]=S.sel;
+ let found=hotbar.indexOf(S.sel);
+ if(found<0){hotbarEnsure(S.sel);found=hotbar.indexOf(S.sel)}
+ if(found>=0)activeSlot=found;
  hotbar.forEach((id,n)=>{
   const b=blockSlot(id,n);b.onclick=()=>selectBlock(id);hb.appendChild(b);
  });
@@ -220,7 +230,7 @@ function menuChunksReady(){for(let cz=61;cz<=62;cz++)for(let cx=56;cx<=61;cx++){
 /* places the camera centre and the two work crews for this screen shape (called once the chunks are meshed) */
 function menuInit(){
  const as=aspect<.8?0:aspect<1.6?1:2,kf=aspect<1?1:1.3,tf=Math.tan((fovBase+(aspect<1?.2:0))/2)*aspect;
- WM.cx=[974,1000,954][as];WM.cz=996;WM.act.length=0;WM.st.length=0;
+ WM.cx=[992,1000,954][as];WM.cz=996;WM.act.length=0;WM.st.length=0;
  /* [crew, forward distance, screen x (+ = left), trade bot] */
  const spec=[[0,9.2,.66,0],[0,9.8,.30,2],[1,9.6,-.66,5],[1,10,-.30,3]],sp=[[12,.9],[12.6,-.9]];
  for(let k=0;k<2;k++){
@@ -678,6 +688,6 @@ window.__stepBots=(sec)=>{const s0=playing;for(let t=0;t<sec;t+=.1){streamWork(3
 window.__cam=(x,y,z,yaw,pitch)=>{forceLoad(Math.floor(x/16),Math.floor(z/16),3);qCx=-9999;Object.assign(player,{x,y:y-1.62,z,yaw,pitch,hold:false,vy:0});window.__fly=true};
 window.__sil=()=>{silBuild(player.x,player.z);return{tris:SIL.n/3,drawCalls:1,list:SIL.list.map(e=>({id:e.l.id,t:e.l.t,v:e.l.v,o:e.l.o,x:e.l.x,z:e.l.z,y0:e.l.y0,ex:e.l.ex,ez:e.l.ez,a:e.a,tg:e.t,lod:e.lod,boxes:e.boxes,peaks:e.peaks,loaded:silLoaded(e.l)}))}};
 window.__wset=t=>{W.t=t;W.snap=1;welcomeCam(0);if(WM.ready)menuAnim()};
-window.__wm=()=>({period:WP,ready:WM.ready,t:W.t,on:W.on&&!playing,act:WM.act.map(a=>({i:a.i,x:a.x,y:a.y,z:a.z,work:a.work,k:a.k})),str:WM.st.map(s=>({x:s.x,y:s.y,z:s.z,n:s.n,N:s.N})),mq:{dome:[907,37.5,995],mins:[[915,46.5,984],[915,46.5,1006],[900,46.5,984],[900,46.5,1006]],mid:[910,28,995]}});
+window.__wm=()=>({period:WP,ready:WM.ready,t:W.t,on:W.on&&!playing,act:WM.act.map(a=>({i:a.i,x:a.x,y:a.y,z:a.z,work:a.work,k:a.k})),str:WM.st.map(s=>({x:s.x,y:s.y,z:s.z,n:s.n,N:s.N})),mq:{dome:[907,44.5,995],mins:[[900,53.5,984],[900,53.5,1006],[928,53.5,984],[928,53.5,1006]],mid:[910,28,995]}});
 window.__ready=()=>LD.phase==='ready'||playing;
 requestAnimationFrame(()=>setTimeout(boot,0));

@@ -17,6 +17,8 @@ import os
 import re
 import time
 from pathlib import Path
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 import pytest
 from playwright.sync_api import Error as PWError
@@ -1609,8 +1611,9 @@ class TestWellbeingAndSettings:
 # =========================================================================== V3: SKYLINE, MUSEUM, SIX BOTS, DISMANTLE, SAVE, WELCOME, WATER
 TABLET = ("tablet-1024x768", 1024, 768, True)
 LANDSCAPE = ("phone-844x390", 844, 390, True)
+# the skyline ring around the start: the Abu Dhabi cluster, not the far regional clusters (Qatar, Saudi, the featured towers)
 RING_JS = """(()=>{const sx=1024,sz=1024;return fixedList().filter(l=>['mosque','museum','charbagh','village','caravan'].includes(l.t)).map(l=>{
-  const dx=l.x-sx,dz=l.z-sz;return{id:l.id,t:l.t,d:Math.hypot(dx,dz),a:((Math.atan2(dx,-dz)*180/Math.PI)+360)%360}})})()"""
+  const dx=l.x-sx,dz=l.z-sz;return{id:l.id,t:l.t,d:Math.hypot(dx,dz),a:((Math.atan2(dx,-dz)*180/Math.PI)+360)%360}}).filter(r=>r.d<=160)})()"""
 
 
 class TestSkyline:
@@ -1768,7 +1771,7 @@ class TestSixBuilders:
         _wait_bots(g, 6)
         g.ev("(()=>{const b=bots.find(b=>b.name==='Idris');for(let k=0;k<120&&b.st!==BS.BUILD;k++)__stepBots(5)})()")
         t = g.ev("(()=>{const b=bots.find(b=>b.name==='Idris');return botTag(b)})()")
-        assert t.startswith("Idris Ãƒâ€šÃ‚Â· building a "), t
+        assert t.startswith("Idris \u00b7 building a "), t
 
     def test_bots_never_end_up_inside_blocks(self, started):
         g = started
@@ -2024,7 +2027,7 @@ MENU_FRAME = """(k)=>{
  const mq=[wm.mq.dome].concat(wm.mq.mins),sc=mq.map(scr),vs=mq.map(p=>vis(p,3));
  const xs=sc.filter(inF).map(s=>s[0]),ys=sc.filter(inF).map(s=>s[1]);
  const mid=scr(wm.mq.mid);
- const real=(()=>{const c=chunkAt(907>>4,995>>4);return !!c&&c.st===2&&getB(907,37,995)!==0&&getB(915,46,984)!==0})();
+ const real=(()=>{const c=chunkAt(907>>4,995>>4);return !!c&&c.st===2&&getB(907,44,995)!==0&&getB(900,53,984)!==0})();
  const chars=wm.act.map(a=>{const h=scr([a.x,a.y+1.95,a.z]),f=scr([a.x,a.y,a.z]);if(!h||!f)return null;return {hp:(f[1]-h[1])/vh,ok:inF(h)&&inF(f)&&vis([a.x,a.y+1,a.z],1.2),work:a.work}}).filter(c=>c);
  const good=chars.filter(c=>c.ok&&c.hp>=.07&&c.hp<=.16);
  let ground=0,tot=0;for(let r=.55;r<=.95;r+=.1)for(let c=.1;c<=.9;c+=.2){const d=screenRay(c*vw,r*vh),h=cast(e,d,160,0,false);tot++;if(h)ground++}
@@ -2733,7 +2736,8 @@ class TestImportOverExistingSave:
         j = json.dumps({"musliMineCraft": 4, "prog": {"v": 4, "stars": 1e12}, "ed": [], "bed": []})
         assert g.ev(f"musliMineCraft.importSave({json.dumps(j)}).then(()=>'ok',e=>String(e.message))") != "ok", "Expected absurd stars to be rejected"
         g.ev("window.__old=1")
-        j = json.dumps({"musliMineCraft": 4, "prog": {"v": 4, "stars": 3}, "ed": [[8385, [64 * 5 + 3, 99999999999, -4, 1.5, 64 * 12288 + 1]], [99999999, [1]]], "bed": []})
+        # 64 * 20480 + 1 is one cell past a 16 x 16 x 80 chunk column, so only 64 * 5 + 3 may survive
+        j = json.dumps({"musliMineCraft": 4, "prog": {"v": 4, "stars": 3}, "ed": [[8385, [64 * 5 + 3, 99999999999, -4, 1.5, 64 * 20480 + 1]], [99999999, [1]]], "bed": []})
         g.ev(f"musliMineCraft.importSave({json.dumps(j)})")
         g.wait("!window.__old&&typeof SV!=='undefined'&&SV.ready&&S.stars===3", "the filtered import to load", timeout=30000, observe="S.stars")
         n = g.ev("(async()=>{const q=indexedDB.open('musliMineCraft');return await new Promise(r=>{q.onsuccess=()=>{const t=q.result.transaction('c').objectStore('c').getAll();t.onsuccess=()=>r(t.result)}})})()")
@@ -2785,7 +2789,7 @@ class TestHostMessages:
         g.wait("!window.__old&&typeof SV!=='undefined'&&SV.ready&&S.stars===321", "the accepted import", timeout=30000, observe="[!!window.__old,S.stars]")
 
     def test_the_save_summary_is_never_posted_to_any_origin(self, game):
-        html = Path(GAME_URL.replace("file://", "")).read_text()
+        html = Path(url2pathname(urlparse(GAME_URL).path)).read_text(encoding="utf-8")
         assert not re.search(r"postMessage\([^)]*,\s*'\*'\s*\)", html), "Expected no postMessage with target origin '*'"
 
 
@@ -3009,6 +3013,7 @@ class TestOpenAirPrison:
         g = started
         _to_prison(g)
         _fill_hut(g)
+        g.ev("S.q|=4")  # the prison quest pays its own +2 stars; this test counts milestone stars only
         s0 = g.stars()
         g.ev("__prisonRaid()")
         g.ev("__prisonStep(.01)")
@@ -3530,6 +3535,24 @@ class TestConsoleWorldsLobby:
         assert g2.ev("document.querySelector('#jcode').value") == code, \
             f"Expected the link's code in the box, observed {g2.ev('document.querySelector(\"#jcode\").value')[:60]!r}"
         assert g2.ev("location.hash") == "", f"Expected the link to clear itself, observed {g2.ev('location.href')!r}"
+
+    def test_a_join_link_changed_in_a_running_page_opens_the_card_once(self, started):
+        """Pasting the link into an open tab only changes the hash, so the page must listen for that and open the card itself."""
+        g = started
+        invite = g.ev("""(async()=>{netShare();
+          for(let i=0;i<100&&!NET.invite;i++)await new Promise(r=>setTimeout(r,100));return NET.invite})()""")
+        link = g.ev("(c)=>netLink(c)", invite)
+        assert link.endswith("#join=" + invite), f"Test set-up: expected a join link, observed {link[:60]!r}"
+        was_open = g.ev("(u)=>{const had=!!curModal;location.hash=u.slice(u.indexOf('#'));return had}", link)
+        assert not was_open, "Test set-up: the join card was already open"
+        g.wait("(()=>{const t=document.querySelector('#jcode');return !!t&&t.offsetParent!==null&&t.value===a})()",
+               "the join card to open from the hash with the link's code already in the box", timeout=8000, arg=invite,
+               observe="[!!curModal,(document.querySelector('#jcode')||{}).value,location.hash]")
+        assert "Join a lobby" in g.modal_text(), f"Expected the join card, observed {g.modal_text()!r}"
+        assert g.ev("location.hash") == "", f"Expected the hash to clear itself, observed {g.ev('location.href')!r}"
+        g.close_modal("no")
+        g.page.wait_for_timeout(400)
+        assert not g.ev("curModal"), "The card must not come back after it was closed"
 
     def test_the_start_screen_lists_your_worlds_below_the_continue_button(self, loaded):
         """The worlds list stands under the big Continue button and a world row enters that world."""

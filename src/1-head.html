@@ -40,7 +40,19 @@ svg.i.s{fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke
 #prayerHud.urgent{color:#ffe1a1;background:#542c21}#prayerBar{width:100%;height:8px;accent-color:#63bb82}
 #map{position:absolute;left:calc(var(--sl) + 10px);top:calc(var(--st) + 8px);width:122px;height:100px;padding:4px;z-index:4}
 #map canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
-#liftControls{position:absolute;right:calc(var(--sr) + 10px);top:35%;display:grid;gap:5px}#liftControls[hidden]{display:none}#liftControls small{display:block;font-weight:400}
+#liftControls{position:absolute;right:calc(var(--sr) + 10px);top:32%;display:grid;gap:6px;padding:8px;border-radius:16px;background:linear-gradient(180deg,rgba(12,52,58,.93),rgba(6,30,35,.93));border:2px solid var(--gold);box-shadow:0 8px 22px rgba(0,0,0,.38);min-width:140px}#liftControls[hidden]{display:none}
+#liftControls .liftHead{font:800 10px/1.2 system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#ffe6ac;text-align:center;padding:1px 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#liftControls .liftStop{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:9px;padding:6px 11px 6px 6px;border-radius:12px;border:1px solid rgba(255,220,140,.34);background:linear-gradient(180deg,#1d5f66,#123c43);color:#fff7e4;font:600 13px/1.15 system-ui,sans-serif;text-align:left;cursor:pointer;min-height:46px;transition:transform .12s,background .12s,border-color .12s,box-shadow .12s}
+#liftControls .liftStop:hover:not(:disabled){background:linear-gradient(180deg,#297a84,#18525b);border-color:var(--gold);transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.28)}
+#liftControls .liftStop:active:not(:disabled){transform:translateY(1px)}
+#liftControls .liftStop:focus-visible{outline:3px solid #ffd479;outline-offset:2px}
+#liftControls .liftStop[disabled]{cursor:default;background:linear-gradient(180deg,#c1922f,#8d6a22);border-color:#ffe6ac;box-shadow:inset 0 0 0 2px rgba(255,232,176,.30)}
+#liftControls .fl{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.32);border:1px solid rgba(255,230,172,.55);font:800 12px/1 system-ui,sans-serif;color:#ffe9b6;letter-spacing:-.02em}
+#liftControls .lb{display:grid;gap:2px;min-width:0}
+#liftControls .lb b{font:700 13px/1.1 system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#liftControls .lb i{font:500 10.5px/1 system-ui,sans-serif;font-style:normal;color:#bfe9e3;text-transform:uppercase;letter-spacing:.08em}
+#liftControls .liftStop[disabled] .lb i{color:#fff0c8}
+@media (max-width:420px){#liftControls{min-width:0;max-width:134px;padding:6px;gap:4px}#liftControls .liftStop{grid-template-columns:26px minmax(0,1fr);gap:6px;min-height:40px;padding:4px 8px 4px 4px}#liftControls .fl{width:26px;height:26px;font-size:11px}#liftControls .lb b{font-size:12px}}
 #liftChip[hidden],#heliChip[hidden]{display:none}.liftFloors{display:grid;gap:8px;margin:14px auto;width:min(100%,300px)}
 .liftFloors button:disabled{opacity:.65;cursor:default}.lifting button:not(#liftChip){pointer-events:none}
 #map span{position:absolute;right:6px;bottom:6px;background:#302b21;color:#fff4d5;padding:2px 5px;font:bold 11px monospace}

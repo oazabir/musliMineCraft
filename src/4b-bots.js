@@ -366,8 +366,9 @@ function haramDraw(){
   const band=l.y0+5.4,gold=[.83,.64,.22],dark=[.5,.33,.1],foot=[.73,.71,.65],low=base-k.y+.09;
   part(k,0,low,3.52,3.63,.09,.18,foot);part(k,3.52,low,0,.18,.09,3.52,foot);part(k,-3.52,low,0,.18,.09,3.52,foot);
   part(k,0,band-k.y,-3.56,3.55,.12,.025,gold);part(k,0,band-k.y,3.56,3.55,.12,.025,gold);part(k,3.56,band-k.y,0,.025,.12,3.55,gold);part(k,-3.56,band-k.y,0,.025,.12,3.55,gold);
+  /* the Black Stone first, then the silver setting it is set into, then the gold door */
+  const stone={x:k.x+3.58,y:base+.48,z:k.z+3.53,yaw:0};part(stone,0,0,-.045,.17,.18,.035,[.008,.008,.008]);part(stone,0,0,0,.23,.24,.065,[.76,.76,.72]);
   const door={x:k.x+3.57,y:base+1.5,z:k.z,yaw:0};part(door,0,1.35,0,.035,.87,.58,dark);part(door,0,1.35,-.015,.04,.76,.47,gold);
-  const stone={x:k.x+3.58,y:base+.48,z:k.z+3.53,yaw:0};part(stone,0,0,0,.23,.24,.065,[.76,.76,.72]);part(stone,0,0,-.045,.17,.18,.035,[.008,.008,.008]);
   for(let i=-3;i<=3;i++){part(k,i,.0+band-k.y+.42,-3.585,.09,.045,.025,gold);part(k,i,.0+band-k.y+.42,3.585,.09,.045,.025,gold);part(k,3.585,.0+band-k.y+.42,i,.025,.045,.09,gold);part(k,-3.585,.0+band-k.y+.42,i,.025,.045,.09,gold)}
  }
  /* Tawaf circles counter-clockwise when viewed from above. */
@@ -542,13 +543,16 @@ function joinBuild(b){
   site:b.site,sx:b.site.x,sz:b.site.z,need:Math.min(3,left.length),mine:new Set()};
  joinMap.clear();S.tmp=[];
  for(const c of JB.cells){joinMap.set(gkey(c[0],c[1],c[2]),c[3]);if(!S.tmp.includes(c[3])&&!S.unlocked.includes(c[3]))S.tmp.push(c[3])}
+ const need=[...new Set(JB.cells.map(c=>c[3]))];for(const id of need)hotbarEnsure(id,need);
  rebuildGhost();buildHotbar();updateJoinChip();
  toast('Joined '+b.name+'. Fill the blue blueprint together!');
 }
 /* ends any join: clears the temporary block grant and makes sure the selected block is one the player really owns */
 function leaveBuild(msg){
+ /* the blocks the build lent stay in the hotbar, locked, so the player can see what it was */
+ for(const id of S.tmp)hotbarEnsure(id);
  JB=null;joinMap.clear();S.tmp=[];
- if(!S.unlocked.includes(S.sel)){const f=HOTBAR_IDS.find(id=>S.unlocked.includes(id));S.sel=f===undefined?B.SANDSTONE:f;queueSave()}
+ if(!S.unlocked.includes(S.sel)){const f=hotbar.find(id=>S.unlocked.includes(id))??HOTBAR_IDS.find(id=>S.unlocked.includes(id));S.sel=f===undefined?B.SANDSTONE:f;queueSave()}
  rebuildGhost();buildHotbar();updateJoinChip();
  if(msg)toast(msg);
 }

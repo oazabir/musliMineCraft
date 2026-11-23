@@ -5,13 +5,14 @@ const PORT_ROWS=[[1,.76,.32],[1.32,1.08,.35],[1.67,1.27,2.4],[4.07,1.08,.34],[4.
 let PORT=null;
 function portalList(){
  if(PORT)return PORT;
- const mk=(x,z,nx,nz,name,to,level)=>{
+ const mk=(x,z,nx,nz,name,to,level,exact)=>{
   if(Math.abs(nx)>=Math.abs(nz)){nx=Math.sign(nx);nz=0}else{nz=Math.sign(nz);nx=0}
-  const cx=Math.floor(x)+.5,cz=Math.floor(z)+.5;
+  /* the hall keeps its exact 4.76-block pitch; every other gate sits on a block center */
+  const cx=exact?x:Math.floor(x)+.5,cz=exact?z:Math.floor(z)+.5;
   const base=level??Math.max(WL+1,groundTop(Math.floor(x),Math.floor(z)));
   return{x:cx,z:cz,nx,nz,tx:-nz,tz:nx,base,cy:base+1+PR-.05,name,to,wallBacked:level!==undefined,act:0,kw:0}};
  const haram=lmOf('haram'),museum=museumLm();
- const hub=(i,name,to)=>{const s=(i-(GATE_HUB.count-1)/2)*GATE_HUB.step;return mk(GATE_HUB.x+GATE_HUB.tx*s,GATE_HUB.z+GATE_HUB.tz*s,GATE_HUB.nx,GATE_HUB.nz,name,to,GATE_HUB.y)};
+ const hub=(i,name,to)=>{const s=(i-(GATE_HUB.count-1)/2)*GATE_HUB.step;return mk(GATE_HUB.x+GATE_HUB.tx*s,GATE_HUB.z+GATE_HUB.tz*s,GATE_HUB.nx,GATE_HUB.nz,name,to,GATE_HUB.y,true)};
  /* Keep the original four pairs at their existing indices. */
  PORT=[hub(0,'Museum of Islamic Heritage',4),hub(1,'Grand Mosque',5),hub(2,'Open Air Prison',6),hub(3,'Masjid al-Haram and the Kaaba',7),
   mk(museum.x+20,museum.z+52,-20,-79,'the start',0),mk(950,1019,916-950,995-1019,'the start',1),
@@ -31,19 +32,23 @@ const MAP_PLACES=[{name:'Abu Dhabi spawn',region:'Abu Dhabi, UAE',x:START.x,z:ST
 /* the gate's marble pad (5 x 9, carved border) with the space above it cleared */
 function portalPad(x,z,m){for(const p of PORT){const dx=x+.5-p.x,dz=z+.5-p.z;if(Math.abs(dx*p.tx+dz*p.tz)<=2.6+m&&Math.abs(dx*p.nx+dz*p.nz)<=4.1+m)return p}return null}
 function genPortals(x0,z0){
- const hub=GATE_HUB,wallX=Math.floor(hub.x)-1,half=(hub.count-1)*hub.step/2+2;
+ const hub=GATE_HUB,wallX=Math.floor(hub.x)-1;
  for(const p of PORT){if(p.x+6<x0||p.x-6>x0+16||p.z+6<z0||p.z-6>z0+16)continue;
   for(let z=z0;z<z0+16;z++)for(let x=x0;x<x0+16;x++){const dx=x+.5-p.x,dz=z+.5-p.z,a=Math.abs(dx*p.tx+dz*p.tz),b=Math.abs(dx*p.nx+dz*p.nz);if(a>2.6||b>4.1||p.wallBacked&&x<wallX)continue;
    for(let y=Math.max(1,p.base-4);y<p.base;y++)put(x,y,z,B.LIME);
    put(x,p.base,z,a>1.6||b>3.1?B.LIMEP:B.MARBLE);
    for(let y=p.base+1;y<=p.base+8;y++)put(x,y,z,0);
   }}
- if(wallX>=x0&&wallX<x0+16){
-  for(let z=z0;z<z0+16;z++)if(Math.abs(z+.5-hub.z)<=half){
-   for(let y=hub.y+1;y<hub.y+8;y++)put(wallX,y,z,B.LIME);
-   put(wallX,hub.y+8,z,B.LIMEP);
-  }
- }
+}
+/* The hall's back wall is one drawn masonry panel, not a wall of blocks: it keeps the
+   hall open while the gates stay flush against it. Returns the panel geometry cursor. */
+function portalBackboard(i,o=0){
+ const p=PORT[i];if(!p||!p.wallBacked)return o;
+ const hub=GATE_HUB,half=(hub.count-1)*hub.step/2+2.6,x=Math.floor(hub.x)-.03,z=hub.z,y=hub.y;
+ const stone=[.86,.82,.76],trim=[.97,.94,.88];
+ o=pbox(o,x,y+4,z,0,0,1,0,1,0,1,0,0,half,3.94,.035,...stone,false);
+ o=pbox(o,x,y+.28,z,0,0,1,0,1,0,1,0,0,half,.28,.07,...trim,false);
+ return pbox(o,x,y+7.94,z,0,0,1,0,1,0,1,0,0,half+.12,.12,.09,...trim,false);
 }
 /* --- drawing: masonry, portal surface, and sparks --- */
 const PO=new Float32Array(252*240*PORT.length),PT=new Float32Array(42*624*PORT.length),PA=new Float32Array(42*40*PORT.length),PE=new Float32Array(42*6500);
@@ -231,7 +236,9 @@ function portalDraw(now){
  if(!(playing||glide))return;
  buildPortalEngraving();
  const t=now/1000,e=cam.e,fw=cam.fw,lim=(farFog+12)*(farFog+12),o=[0,0,0,0];
- for(const p of PORT){const dx=p.x-e[0],dz=p.z-e[2];if(dx*dx+dz*dz>lim||dx*fw[0]+(p.cy-e[1])*fw[1]+dz*fw[2]<-PR-2)continue;portalGeo(p,t,o)}
+ let hall=false;
+ for(const p of PORT){const dx=p.x-e[0],dz=p.z-e[2];if(dx*dx+dz*dz>lim||dx*fw[0]+(p.cy-e[1])*fw[1]+dz*fw[2]<-PR-2)continue;portalGeo(p,t,o);if(p.wallBacked)hall=true}
+ if(hall)o[0]=portalBackboard(0,o[0]);
  for(const board of nearbyPhotoBoards())o[0]=photoBoardFrame(board,o[0]);
  if(!o[0]&&!o[1]&&!o[2]&&!pTextN)return;
  if(!pBuf||!gl.isBuffer(pBuf[0])){pBuf=[gl.createBuffer(),gl.createBuffer(),gl.createBuffer(),gl.createBuffer()];pTextUploaded=false}

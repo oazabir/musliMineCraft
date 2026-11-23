@@ -162,7 +162,7 @@ function gzTick(dt){
   const iy=gzImpactY(b.x,b.z);if(b.y<=iy){gzBombs.splice(i,1);gzBoom(b.x,iy,b.z)}}
  for(let i=gzFx.length-1;i>=0;i--){const f=gzFx[i];f.t+=dt;if(f.t>=f.life){gzFx.splice(i,1);continue}if(f.t<0)continue;
   f.x+=f.vx*dt;f.y+=f.vy*dt;f.z+=f.vz*dt;if(f.k===0){f.vx*=.9;f.vz*=.9;f.vy-=6*dt}else if(f.k===1){f.vx*=.97;f.vz*=.97}else f.vy-=.4*dt}
- if(GZS.raid){GZS.raidT-=dt;GZS.waveT-=dt;if(GZS.waveT<=0&&GZS.raidT>0&&!gzPlanes.length&&!gzBombs.length){gzAddWave();GZS.waveT=14}if(GZS.raidT<=0){GZS.raid=false;GZS.ending=true}}
+ if(GZS.raid){GZS.raidT-=dt;GZS.waveT-=dt;if(GZS.waveT<=0&&GZS.raidT>0&&!gzPlanes.length&&!gzBombs.length){gzAddWave();GZS.waveT=14}if(GZS.raidT<=0){GZS.raid=false;GZS.ending=true;gzEndRaid()} /* score when the sirens stop, not when the last drone leaves */}
  if(GZS.ending&&!gzPlanes.length&&!gzBombs.length)gzEndRaid();
  gzHud();
 }

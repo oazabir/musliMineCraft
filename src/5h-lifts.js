@@ -129,18 +129,24 @@ function liftRestorePos(pos){
 }
 let liftHudCabin=null;
 function liftHud(){
- const b=$('liftChip'),n=liftNear(),c=LIFT_CABIN,text=LIFT_RIDE?`Going to ${LIFT_RIDE.to.name}`:c?'Exit elevator':n?(liftOpening(n.p)>.9?'Enter elevator':'Open elevator Ã‚Â· F'):'';
+ const b=$('liftChip'),n=liftNear(),c=LIFT_CABIN,text=LIFT_RIDE?`Going to ${LIFT_RIDE.to.name}`:c?'Exit elevator':n?(liftOpening(n.p)>.9?'Enter elevator':'Open elevator \u00b7 F'):'';
  b.hidden=!text;b.disabled=!!LIFT_RIDE;
  if(b.textContent!==text)b.textContent=text;
  const panel=$('liftControls');panel.hidden=!c;
  if(c===liftHudCabin)return;
  liftHudCabin=c;panel.replaceChildren();if(!c)return;
+ const head=document.createElement('div');head.className='liftHead';head.textContent=c.e.name;panel.appendChild(head);
  c.e.stops.forEach((stop,i)=>{
-  const button=document.createElement('button'),number=stop.name.match(/Levels? (.+)/)?.[1]||i+1;
-  button.className='btn alt sm';button.innerHTML=`<span>${stop.name.split(' Ã‚Â· ')[0]}</span><small>Floor ${number}</small>`;
-  button.disabled=stop===c.p;button.onclick=()=>liftStart(c.e,c.p,stop);panel.appendChild(button);
+  const button=document.createElement('button'),here=stop===c.p;
+  const floor=stop.name.match(/Levels? ([\d\u2013-]+)/)?.[1]||String(i+1),label=liftStopLabel(stop);
+  button.type='button';button.className='liftStop';
+  button.innerHTML=`<span class="fl">${floor}</span><span class="lb"><b>${label}</b><i>${here?'You are here':'Go to floor'}</i></span>`;
+  button.setAttribute('aria-label',stop.name);button.setAttribute('aria-current',here?'true':'false');
+  button.disabled=here;button.onclick=()=>liftStart(c.e,c.p,stop);panel.appendChild(button);
  });
 }
+/* "At the Top \u00b7 Level 148" reads "At the Top" on the button; the floor number sits in the badge. */
+function liftStopLabel(stop){const i=stop.name.indexOf(' \u00b7 ');return i<0?stop.name:stop.name.slice(0,i)}
 function liftDraw(){
  const metal=[.55,.60,.62],trim=[.27,.31,.33],dark=[.12,.15,.17];
  for(const e of LIFT_SITES)for(const p of e.stops){
