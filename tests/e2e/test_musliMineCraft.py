@@ -2503,6 +2503,7 @@ class TestTidyUpMore:
             i = _join(g)
             g.freeze_bots()
             need = g.ev("JB.need")
+            site = g.ev("[JB.sx,JB.sz]")
             g.ev("""(n)=>{let k=0;for(const c of JB.cells){if(k>=n)break;if(getAny(c[0],c[1],c[2])!==c[3]){setBlock(c[0],c[1],c[2],c[3],0);k++}}}""", need)
             _step_away_from_site(g)
             _finish_by_bot(g)
@@ -2511,7 +2512,10 @@ class TestTidyUpMore:
                     g.close_modal("ok")
                 continue
             g.close_modal("ok") if g.modal_open() else None
-            r = g.ev(f"""(()=>{{{GEN_JS}const b=bots[{i}],d=b.done[b.done.length-1];if(!d)return {{none:true}};
+            r = g.ev(f"""(()=>{{{GEN_JS}let b=bots[{i}],d=b.done[b.done.length-1];
+              /* the last finished build of this bot, or the one standing on the site we joined */
+              if(!d)for(const bb of bots){{const e=bb.done[bb.done.length-1];if(e&&Math.abs(e.x0-{site[0]})<40&&Math.abs(e.z0-{site[1]})<40){{b=bb;d=e;break}}}}
+              if(!d)return {{none:true}};
               const cells=structCells(d).map(c=>c.slice());let have=0;for(const c of cells)if(getAny(c[0],c[1],c[2])===c[3])have++;
               player.x=d.x0-30.5;player.z=d.z0+.5;player.y=Math.max(player.y,d.y);player.vy=0;
               let gone=false;for(let k=0;k<1500&&!gone;k++){{__stepBots(2);if(!b.done.includes(d)&&!b.ds&&b.st!==BS.TIDY)gone=true}}
