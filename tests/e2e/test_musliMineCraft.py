@@ -2020,7 +2020,12 @@ class TestSafeStart:
         g.wait("player.water", "the player to be in water", observe="[player.water,player.y]")
         bank = g.ev("(()=>{const o=[];safeSpot(player.x,player.z,player.y,spotTmp);return [spotTmp[0],spotTmp[2]]})()")
         g.ev("(b)=>{const dx=b[0]-player.x,dz=b[1]-player.z;player.yaw=Math.atan2(-dx,-dz);input.jy=1;input.jump=true}", bank)
-        g.wait("!player.water&&player.ground", "the player to climb out onto the bank", timeout=40000, observe="[player.x,player.y,player.z,player.water]")
+        # leaving the water and landing are two moments: the body is briefly dry and "grounded"
+        # mid-leap, so wait for the landing itself before checking what is under the feet
+        g.wait("playing&&player.ground&&!player.water&&(()=>{const b=getB(Math.floor(player.x),Math.floor(player.y-.2),Math.floor(player.z))"
+               ";return !!b&&b!==B.WATER&&b!==B.GLASS})()",
+               "the player to climb out and land on the bank", timeout=40000,
+               observe="[player.x,player.y,player.z,player.water,player.ground]")
         g.ev("input.jy=0;input.jump=false")
         _assert_standing(g, "joystick out of the lake")
 
