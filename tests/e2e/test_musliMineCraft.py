@@ -2879,16 +2879,25 @@ class TestMigrationAndFallback:
         assert g.ev(f"localStorage.getItem({json.dumps(key)})") == seed, "Expected the previous blob to stay when the world is too big to save"
 
     def test_late_indexeddb_results_after_the_timeout_are_ignored(self, game):
-        g = game(PHONE, init=["""(()=>{if(!localStorage.getItem('__delay'))return;const o=IDBFactory.prototype.open;IDBFactory.prototype.open=function(){const r=o.apply(this,arguments);let h=null;
-          Object.defineProperty(r,'onsuccess',{configurable:true,get(){return h},set(f){h=f;r.addEventListener('success',()=>setTimeout(()=>f.call(r),6500))}});return r}})()"""])
+        """The stored chunks are held back on the next start and released only after the page has given up on IndexedDB
+        by itself, so the ordering (timeout first, results second) does not depend on two timers racing."""
+        g = game(PHONE, init=["""(()=>{if(!localStorage.getItem('__delay'))return;const o=IDBFactory.prototype.open;window.__late=[];
+          IDBFactory.prototype.open=function(){const r=o.apply(this,arguments);let h=null;
+          Object.defineProperty(r,'onsuccess',{configurable:true,get(){return h},set(f){h=f;window.__late.push(()=>f.call(r))}});return r};
+          window.__releaseLate=()=>{const a=window.__late;window.__late=[];for(const f of a)f();return a.length}})()"""])
         g.start()
         g.ev("forceLoad(1400>>4,1400>>4,0);setBlock(1400,30,1400,B.GOLD,'player');saveNow(true)")
         g.wait("(async()=>(await __e2e.idbChunks())>=1)()", "stored chunk", timeout=20000, observe="1")
         g.ev("localStorage.setItem('__delay','1')")
         g.page.reload(wait_until="commit")
         g.ready()
-        g.page.wait_for_timeout(8500)
-        assert g.ev("[PERSIST.ok,edits.size]") == [False, 0], "Expected results that arrive after the timeout to be ignored"
+        assert g.ev("typeof window.__releaseLate") == "function", "Test set-up: the stored chunks were not held back on this start"
+        g.wait("SV.ready&&!PERSIST.ok", "the page to fall back after its own IndexedDB timeout", timeout=90000,
+               observe="[SV.ready,PERSIST.ok,SV.useLs]")
+        assert g.ev("window.__releaseLate()") >= 1, "Test set-up: there was no stored chunk result to release"
+        g.page.wait_for_timeout(500)
+        assert g.ev("[PERSIST.ok,edits.size,PERSIST.dirty.size]") == [False, 0, 0], \
+            "Expected results that arrive after the timeout to be ignored"
 
 
 class TestCapsAndFalls:
