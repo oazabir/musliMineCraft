@@ -3,9 +3,11 @@ const WORLDS_KEY='musliMineCraft_worlds_v1',ACTIVE_KEY='musliMineCraft_active_v1
 let WORLDS=[],WACT='';
 const CON={on:false,hist:[],hi:0};
 /* NET is a var so the guards in earlier parts (netGuest) are safe before this line has run */
-var NET={on:false,role:'',guest:false,me:'',peers:[],players:new Map(),lanes:new Map(),pending:null,invite:'',tick:0,q:[],sent:[],sim:false,seq:0,laneSeq:0,lane:0,entered:false};
+var NET={on:false,role:'',guest:false,me:'',peers:[],players:new Map(),lanes:new Map(),pending:null,invite:'',tick:0,q:[],sent:[],sim:false,seq:0,laneSeq:0,lane:0,entered:false,lost:0,ka:0};
 /* one lane is one invite: every friend answers its own, so a lobby can hold many players */
-const NET_MAX=8,NET_SEND=.07,NET_LANE_TTL=300000;
+const NET_MAX=8,NET_SEND=.07,NET_LANE_TTL=300000,NET_GRACE=15000,NET_STALE=45000;
+/* the guest's reconnection watchdog; a module let so it can be cleared from anywhere */
+let NET_LOST_T=0;
 /* an invite that arrived in a #join= link, waiting for the join card to show it */
 let NET_PRE='';
 function netGuest(){return !!(NET&&NET.guest)}
@@ -371,6 +373,7 @@ function netShare(){
  if(!NET.lanes)NET.lanes=new Map();
  if(NET.lanes.size>=NET_MAX){conLog('You already have '+NET.lanes.size+' invites waiting. A friend has to type /join first.','er');return}
  NET.role='host';NET.guest=false;NET.on=true;NET.me='h';
+ netKeepAlive(document.hidden&&NET.on);
  if(!NET.players)NET.players=new Map();
  const lane=netLaneNext();if(!lane){conLog('There are no invite slots left.','er');return}
  const pc=new RTCPeerConnection({iceServers:NET_STUN});
@@ -438,12 +441,13 @@ function netGuestJoin(text){
  if(NET.on&&NET.role==='host'){toast('Close your own lobby first with /endstream.');return}
  netClose();
  NET.role='guest';NET.guest=true;NET.on=true;NET.sim=false;NET.entered=false;NET.lane=d.lane||0;
+ netKeepAlive(document.hidden&&NET.on);
  NET.players=new Map();if(!NET.q)NET.q=[];
  const pc=new RTCPeerConnection({iceServers:NET_STUN});
  const p=netPeer(pc,null);
  NET.peers=[p];
  pc.ondatachannel=e=>{p.dc=e.channel;netGuestWire(p)};
- pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='failed'||s==='closed')netGuestLost()};
+ pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='failed'||s==='closed')netGuestLost('lost');else if(s==='connected')netLostBack()};
  pc.setRemoteDescription({type:'offer',sdp:d.sdp})
   .then(()=>pc.createAnswer())
   .then(a=>pc.setLocalDescription(a))
@@ -459,7 +463,7 @@ function netGuestWire(p){
  const dc=p.dc;
  dc.onopen=()=>{try{dc.send(JSON.stringify({t:'hi',n:'Friend'}))}catch(e){}};
  dc.onmessage=e=>netMsg(p,e.data);
- dc.onclose=()=>netGuestLost();
+ dc.onclose=()=>netGuestLost('lost');
  if(dc.readyState==='open')dc.onopen();
 }
 function netReplyCard(reply){
@@ -499,7 +503,17 @@ function netLeave(){
  toast('You left the lobby.');
  setTimeout(()=>location.reload(),500);
 }
+/* a hidden tab stops its frame loop, so the lobby would go quiet and a friend would look gone: keep the packets flowing */
+function netKeepAlive(on){
+ if(on&&NET.on){if(!NET.ka)NET.ka=setInterval(()=>{if(!NET.on){netKeepAlive(false);return}netTick(.25)},500)}
+ else if(NET.ka){clearInterval(NET.ka);NET.ka=0}
+}
+document.addEventListener('visibilitychange',()=>{
+ netKeepAlive(document.hidden&&NET.on);
+ if(!document.hidden&&NET.on)NET.tick=NET_SEND;
+});
 function netClose(){
+ netLostStop();netKeepAlive(false);
  if(NET.lanes){for(const l of NET.lanes.values()){try{l.p.close()}catch(e){}}NET.lanes.clear()}
  for(const p of NET.peers)p.close();
  NET.on=false;NET.role='';NET.guest=false;NET.peers=[];NET.pending=null;NET.invite='';NET.me='';NET.tick=0;NET.q=[];NET.entered=false;NET.lane=0;
@@ -515,12 +529,55 @@ function netDropPeer(p){
  p.close();
  if(NET.role==='host'&&NET.on)conLog('A friend left the lobby.');
 }
-function netGuestLost(){
+/* a dropped channel is not a cancelled game: sit it out for NET_GRACE and say so only when it stays down.
+   Only the host's own {t:'end'} (/endstream) means "cancelled". */
+function netGuestLost(why){
  if(!NET.on||NET.role!=='guest')return;
+ if(why==='end'){netGuestEnd();return}
+ if(NET.lost)return;
+ NET.lost=performance.now();
+ if(!NET_LOST_T)NET_LOST_T=setInterval(netLostCheck,700);
+ toast('Reconnecting to the host…');
+}
+function netLostStop(){
+ if(NET_LOST_T){clearInterval(NET_LOST_T);NET_LOST_T=0}
+ NET.lost=0;
+}
+/* the channel came back: carry on, and ask for the edits that were missed while it was down */
+function netLostBack(){
+ if(!NET.lost)return;
+ netLostStop();NET.tick=NET_SEND;
+ for(const p of NET.peers)p.send({t:'sync'});
+ toast('Connected to the host again');
+}
+function netLostCheck(){
+ if(!NET.on||NET.role!=='guest'){netLostStop();return}
+ for(const p of NET.peers){
+  const st=p.pc?p.pc.connectionState:'';
+  if(p.dc&&p.dc.readyState==='open'&&(!st||st==='connected')){netLostBack();return}
+ }
+ if(!NET.lost||document.hidden)return;
+ if(performance.now()-NET.lost<NET_GRACE)return;
+ netLostStop();
+ netGuestGone();
+}
+function netGuestEnd(){
+ if(!NET.on||NET.role!=='guest')return;
+ netLostStop();
  netClose();
  toast('The host has cancelled the game');
  if(curModal)closeModal();
  modal('<h2>The host has cancelled the game</h2><p>The host has cancelled this game. Nothing you built in your own world was touched. Go back to your own world to keep playing.</p><div class="row"><button class="btn" data-a="ok">Back to my world</button></div>',p=>{
+  p.querySelector('[data-a=ok]').onclick=()=>{closeModal();location.reload()};
+ });
+}
+function netGuestGone(){
+ if(!NET.on||NET.role!=='guest')return;
+ netClose();
+ toast('Lost the connection to the host');
+ if(curModal)closeModal();
+ modal('<h2>Lost the connection to the host</h2><p>The connection dropped, which a tab switch or a short network drop can cause. Nothing you built in your own world was touched. Ask the host for a fresh invite code to play together again, or go back to your own world.</p><div class="row"><button class="btn" data-a="again">Join again</button><button class="btn alt" data-a="ok">Back to my world</button></div>',p=>{
+  p.querySelector('[data-a=again]').onclick=()=>{closeModal();joinLobbyCard()};
   p.querySelector('[data-a=ok]').onclick=()=>{closeModal();location.reload()};
  });
 }
@@ -538,10 +595,13 @@ function netHostMsg(p,m){
   return;
  }
  if(m.t==='p'&&p.id){
-  const pl=NET.players.get(p.id);
-  if(pl){pl.tx=netNum(m.x);pl.ty=netNum(m.y);pl.tz=netNum(m.z);pl.tyaw=netNum(m.yaw);pl.ts=performance.now()}
+  let pl=NET.players.get(p.id);
+  /* a guest whose tab slept past NET_STALE was pruned; its next packet must bring the figure back */
+  if(!pl){pl={id:p.id,name:p.name||'Friend',x:netNum(m.x),y:netNum(m.y),z:netNum(m.z),yaw:netNum(m.yaw),k:NET.seq%6,ph:0,leg:0};NET.players.set(p.id,pl)}
+  pl.tx=netNum(m.x);pl.ty=netNum(m.y);pl.tz=netNum(m.z);pl.tyaw=netNum(m.yaw);pl.ts=performance.now();
   return;
  }
+ if(m.t==='sync'){netSendWorld(p);return}
  if(m.t==='b'&&Array.isArray(m.l)){
   for(const e of m.l)if(Array.isArray(e)){
    netApply(e[0],e[1],e[2],e[3]);
@@ -560,7 +620,7 @@ function netGuestMsg(m){
  if(m.t==='wl'&&Array.isArray(m.e)){netApplyList(m.e);return}
  if(m.t==='ps'&&Array.isArray(m.l)){netPlayers(m.l);return}
  if(m.t==='b'&&Array.isArray(m.l)){for(const e of m.l)if(Array.isArray(e))netApply(e[0],e[1],e[2],e[3]);return}
- if(m.t==='end'){netGuestLost()}
+ if(m.t==='end'){netGuestLost('end')}
 }
 /* a remote edit is applied like any other block, but it is never sent on again and never saved as the guest's own */
 function netApply(x,y,z,b){
@@ -619,7 +679,7 @@ function netTick(dt){
   for(const p of NET.peers)p.send({t:'b',l:q});
  }
  if(NET.players){
-  for(const[id,p]of NET.players)if(now-(p.ts||now)>15000)NET.players.delete(id);
+  for(const[id,p]of NET.players)if(now-(p.ts||now)>NET_STALE)NET.players.delete(id);
  }
  if(NET.role==='host'&&NET.lanes&&NET.lanes.size){
   for(const[lane,l]of NET.lanes)if(now-(l.ts||now)>NET_LANE_TTL){NET.lanes.delete(lane);try{l.p.close()}catch(e){}}
@@ -728,3 +788,4 @@ window.__netSim=role=>{
 window.__netFeed=m=>{const p=NET.peers[0]||{id:'g1',send(){}};netMsg(p,typeof m==='string'?m:JSON.stringify(m));return true};
 window.__netSent=()=>NET.sent.slice();
 window.__netTick=dt=>netTick(dt);
+window.__netLost=why=>{netGuestLost(why||'lost');return true};

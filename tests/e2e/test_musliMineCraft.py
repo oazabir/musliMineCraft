@@ -3850,3 +3850,49 @@ class TestConsoleWorldsLobby:
                "the guest to be told the host cancelled", timeout=15000,
                observe="document.getElementById('panel').textContent.slice(0,120)")
         assert a.ev("playing") and not a.ev("__net().on"), "Expected the host to keep playing alone"
+
+
+class TestLobbyResilience:
+    """The lobby must outlast a tab switch or a network blip instead of ending the game."""
+
+    def _guest(self, g):
+        g.ev("__netSim('guest')")
+        g.ev("__netFeed({t:'hi',i:'g1'})")
+        g.wait("__net().guest && playing", "the guest to stand in the host world", observe="__net()")
+        return g
+
+    def test_a_short_drop_is_retried_and_the_guest_keeps_playing(self, started):
+        """A blip on the data channel is not the host cancelling: the guest waits it out and carries on."""
+        g = self._guest(started)
+        g.ev("__netLost('lost')")
+        assert g.ev("__net().on") and g.ev("__net().guest"), f"Expected the lobby to stay open on a drop, observed {g.ev('__net()')}"
+        assert not g.ev("!!curModal"), "A dropped channel must not open a card while it can still come back"
+        assert g.ev("playing"), "Expected the guest to stay in the host world while reconnecting"
+        g.ev("NET.peers[0].dc={readyState:'open'}")
+        g.wait("!NET.lost", "the connection to come back", timeout=8000, observe="[NET.lost,__net().on]")
+        assert not g.ev("curModal") and g.ev("playing"), "Expected the guest to carry on after reconnecting"
+        assert g.ev("__netSent().some(m=>m.t==='sync')"), "Expected the guest to ask for the edits it missed"
+
+    def test_a_dead_connection_reports_the_connection_not_a_cancelled_game(self, started):
+        """When the channel stays down past the grace period the guest is told what happened, honestly."""
+        g = self._guest(started)
+        g.ev("__netLost('lost')")
+        g.ev("NET.lost=performance.now()-NET_GRACE-5")
+        g.modal_ready()
+        txt = g.modal_text()
+        assert "Lost the connection to the host" in txt, f"Expected the lost connection card, observed {txt[:120]!r}"
+        assert "cancelled" not in txt.lower(), f"Expected no cancelled wording for a dropped line, observed {txt[:160]!r}"
+        assert not g.ev("__net().on"), "Expected the lobby to close once the grace ran out"
+
+    def test_the_tab_keeps_the_lobby_alive_while_it_is_hidden(self, started):
+        """A hidden tab stops its frame loop, so a timer keeps the lobby's packets going to the host."""
+        g = started
+        g.ev("__netSim('host')")
+        g.ev("NET.sent=[]")
+        g.ev("Object.defineProperty(document,'hidden',{get:()=>true,configurable:true});document.dispatchEvent(new Event('visibilitychange'))")
+        g.wait("!!NET.ka", "the hidden tab to keep the lobby ticking", timeout=5000, observe="[!!NET.ka]")
+        n = g.ev("NET.sent.length")
+        g.wait(f"NET.sent.length>{n}", "the lobby to keep sending while the tab is hidden", timeout=5000, observe="NET.sent.length")
+        g.ev("Object.defineProperty(document,'hidden',{get:()=>false,configurable:true});document.dispatchEvent(new Event('visibilitychange'))")
+        assert not g.ev("NET.ka"), "Expected the hidden-tab timer to stop when the tab is shown again"
+        g.ev("netClose()")
