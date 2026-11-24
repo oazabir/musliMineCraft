@@ -565,6 +565,8 @@ function checkJoin(botDone){
  if(joinDone()>=JB.cells.length){
   const j=JB,earned=j.mine.size>=j.need;
   leaveBuild();j.bot.cele=3.5;j.bot.st=BS.CELE;
+  /* the player can lay the last block, so the builder has not recorded the site yet: do it here, or it is never tidied */
+  if(j.bot.site){j.bot.done.push({x0:j.bot.site.x0,z0:j.bot.site.z0,y:j.bot.site.y,tid:j.bot.site.tid});if(j.bot.done.length>6)j.bot.done.shift();j.bot.site=null;queueSave()}
   if(earned){
    S.stars+=4;S.skills.building++;sfx.done();confetti();updateHud();queueSave();
    modal(`<svg class="motif i"><use href="#star8"/></svg><h2>Teamwork!</h2><p>You and ${j.name} built ${j.tpl} together.</p><p>+4 stars. Building skill +1.</p><p>Working together makes big jobs easy.</p>
