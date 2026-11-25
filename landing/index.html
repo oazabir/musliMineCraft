@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>musliMineCraft — an Islamic-themed block world for children</title>
+<meta name="description" content="An Islamic-themed block world for children. Build mosques, gardens and domes with six builder friends, finish 7 maths missions, collect 26 museum treasures and shelter 24 families in the Open Air Prison. Free, offline, no ads.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23141c19'/%3E%3Crect x='3' y='3' width='4' height='4' fill='%236fbf4a'/%3E%3Crect x='9' y='3' width='4' height='4' fill='%23b8873c'/%3E%3Crect x='3' y='9' width='4' height='4' fill='%23e9d8b0'/%3E%3Crect x='9' y='9' width='4' height='4' fill='%23f6f0e2'/%3E%3C/svg%3E">
+<style>
+:root{
+  --paper:#f4eddf;
+  --paper2:#eae0cb;
+  --night:#0f1714;
+  --night2:#141e1a;
+  --ink:#161f1c;
+  --ink2:#4e5a54;
+  --ink3:#7c867f;
+  --cream:#f6f0e2;
+  --cream2:rgba(246,240,226,.66);
+  --rule:rgba(22,31,28,.15);
+  --rule-dark:rgba(246,240,226,.16);
+  --gold:#96702f;
+  --gold-l:#c79a4b;
+  --green:#3f6b4a;
+  --shell:1280px;
+  --pad:clamp(20px,4.2vw,64px);
+  --serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"Times New Roman",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+img,video{display:block;max-width:100%}
+.shot,.bface,.gframe{display:block}
+a{color:inherit}
+h1,h2,h3{margin:0;font-family:var(--serif);font-weight:600;line-height:1.04;letter-spacing:-.015em}
+p{margin:0}
+section[id],div[id]{scroll-margin-top:70px}
+:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+
+/* ---------- shared pieces ---------- */
+.shell{max-width:var(--shell);margin:0 auto;padding:clamp(56px,7.5vw,112px) var(--pad)}
+.sec{position:relative}
+.kicker{
+  display:flex;align-items:baseline;gap:10px;
+  font:600 10.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--gold);
+}
+.kicker i{font-style:normal;color:var(--ink3);letter-spacing:.1em}
+.sec-head{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:clamp(18px,4vw,64px);align-items:end;
+  padding-bottom:clamp(22px,3vw,38px);border-bottom:1px solid var(--rule);margin-bottom:clamp(24px,3.4vw,44px)}
+.sec-head h2{font-size:clamp(30px,4.4vw,54px);margin-top:14px;max-width:18ch}
+.stand{font-size:clamp(14.5px,1.15vw,16px);line-height:1.7;color:var(--ink2);max-width:52ch;padding-bottom:4px}
+.night .sec-head{border-color:var(--rule-dark)}
+.night .sec-head h2{color:var(--cream)}
+.night .kicker{color:var(--gold-l)}
+.night .kicker i,.night .stand{color:var(--cream2)}
+.night{background:var(--night);color:var(--cream)}
+.sand{background:var(--paper2)}
+
+.btn{
+  display:inline-flex;align-items:center;gap:12px;white-space:nowrap;cursor:pointer;
+  padding:15px 22px;border:1px solid var(--ink);border-radius:2px;background:var(--ink);color:var(--cream);
+  font:600 13px/1 var(--sans);letter-spacing:.03em;text-decoration:none;
+  transition:background .18s,border-color .18s,color .18s,transform .18s;
+}
+.btn:hover{background:#26332e;border-color:#26332e}
+.btn .arw{font-size:14px;line-height:1;transition:transform .18s}
+.btn:hover .arw{transform:translateX(3px)}
+.btn.cream{background:var(--cream);border-color:var(--cream);color:var(--ink)}
+.btn.cream:hover{background:#fff;border-color:#fff}
+.tlink{display:inline-flex;align-items:center;gap:8px;font:600 13px/1 var(--sans);letter-spacing:.02em;
+  text-decoration:none;padding:15px 2px;border-bottom:1px solid currentColor;color:inherit;opacity:.85}
+.tlink:hover{opacity:1}
+
+/* ---------- nav ---------- */
+.nav{
+  position:fixed;inset:0 0 auto;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:15px var(--pad);color:var(--cream);
+  transition:background .25s,color .25s,border-color .25s,padding .25s;
+  border-bottom:1px solid transparent;
+}
+.nav.stuck{background:rgba(244,237,223,.95);backdrop-filter:blur(12px);color:var(--ink);
+  border-color:var(--rule);padding-top:11px;padding-bottom:11px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;font-family:var(--serif);
+  font-size:19px;font-weight:600;letter-spacing:-.01em}
+.brand em{font-style:normal;color:var(--gold-l)}
+.nav.stuck .brand em{color:var(--gold)}
+.mark{width:19px;height:19px;flex:none;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px}
+.mark i{display:block;background:var(--green)}
+.mark i:nth-child(2){background:var(--gold-l)}
+.mark i:nth-child(3){background:var(--cream)}
+.mark i:nth-child(4){background:rgba(246,240,226,.45)}
+.nav.stuck .mark i{background:var(--green)}
+.nav.stuck .mark i:nth-child(2){background:var(--gold)}
+.nav.stuck .mark i:nth-child(3){background:var(--paper)}
+.nav.stuck .mark i:nth-child(4){background:var(--ink3)}
+.nav nav{display:flex;gap:clamp(14px,2.2vw,30px);font-size:13px;font-weight:500}
+.nav nav a{text-decoration:none;color:inherit;opacity:.78;padding:6px 0;transition:opacity .15s}
+.nav nav a:hover{opacity:1}
+.nav-cta{text-decoration:none;font:600 12px/1 var(--sans);letter-spacing:.04em;padding:11px 16px;
+  border:1px solid currentColor;border-radius:2px;transition:background .18s,color .18s,border-color .18s}
+.nav.stuck .nav-cta{background:var(--ink);border-color:var(--ink);color:var(--cream)}
+.nav-cta:hover{background:rgba(246,240,226,.14)}
+.nav.stuck .nav-cta:hover{background:#26332e}
+
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;
+  overflow:hidden;isolation:isolate;padding:clamp(96px,14vh,150px) var(--pad) 0;color:var(--cream)}
+.hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 55%;z-index:-2}
+.hero .scrim{position:absolute;inset:0;z-index:-1;background:
+  linear-gradient(90deg,rgba(8,16,14,.82) 0%,rgba(8,16,14,.55) 34%,rgba(8,16,14,.12) 62%,rgba(8,16,14,.3) 100%),
+  linear-gradient(180deg,rgba(8,16,14,.55) 0%,rgba(8,16,14,.1) 30%,rgba(8,16,14,.5) 68%,rgba(10,17,15,.92) 100%)}
+.hero-in{width:100%;max-width:var(--shell);margin:0 auto;padding-bottom:clamp(34px,6vh,64px)}
+.hero .kicker{color:var(--gold-l)}
+.hero h1{font-size:clamp(36px,6.6vw,82px);line-height:1.01;letter-spacing:-.025em;margin:20px 0 0;
+  max-width:22ch;text-wrap:balance;color:#fffdf7}
+.hero .lede{margin:22px 0 30px;max-width:52ch;font-size:clamp(15px,1.15vw,17px);line-height:1.7;color:rgba(246,240,226,.82)}
+.hero .acts{display:flex;flex-wrap:wrap;gap:18px 26px;align-items:center}
+.hero-facts{list-style:none;margin:0;padding:0;width:100%;max-width:var(--shell);margin:0 auto;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule-dark);
+  border-top:1px solid var(--rule-dark)}
+.hero-facts li{background:rgba(12,20,17,.34);padding:18px 0 20px;padding-right:16px;
+  font:500 11px/1.5 var(--mono);letter-spacing:.05em;color:rgba(246,240,226,.6);text-transform:uppercase}
+.hero-facts li:first-child{padding-left:0}
+.hero-facts b{display:block;font:600 16px/1.2 var(--serif);letter-spacing:0;text-transform:none;
+  color:var(--cream);margin-bottom:5px}
+
+/* ---------- places ---------- */
+.places{display:grid;grid-template-columns:repeat(12,1fr);gap:clamp(16px,2.4vw,34px)}
+.plate{margin:0}
+.plate .shot{display:block;overflow:hidden;background:#dfd4bd}
+.plate img{width:100%;height:100%;object-fit:cover}
+.plate figcaption{padding-top:14px}
+.plate .pt{display:block;font-family:var(--serif);font-size:clamp(18px,1.5vw,21px);line-height:1.2}
+.plate .pd{display:block;margin-top:6px;font-size:13.5px;line-height:1.6;color:var(--ink2);max-width:44ch}
+.plate .pn{display:block;font:600 9.5px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:7px}
+.pl-7{grid-column:span 7}
+.pl-5{grid-column:span 5}
+.pl-43 .shot{aspect-ratio:4/3}
+.pl-56 .shot{aspect-ratio:14/15}
+.pl-56 img{object-position:50% 20%}
+.pl-32 .shot{aspect-ratio:3/2}
+.pl-219 .shot{aspect-ratio:15/7}
+.pl-all{grid-column:1/-1}
+.pl-all .shot{aspect-ratio:2/1}
+
+
+/* ---------- missions ---------- */
+.mlist{list-style:none;margin:0;padding:0}
+.mlist li{display:grid;grid-template-columns:54px minmax(150px,232px) minmax(0,1fr) 84px;
+  align-items:baseline;gap:clamp(10px,2vw,28px);padding:16px 0;border-bottom:1px solid var(--rule)}
+.mlist .n{font:600 10.5px/1 var(--mono);letter-spacing:.12em;color:var(--ink3)}
+.mlist .mt{font-family:var(--serif);font-size:17.5px;line-height:1.25}
+.mlist .md{font-size:13.5px;line-height:1.55;color:var(--ink2)}
+.mlist .mx{font:600 9.5px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--gold);text-align:right}
+
+/* ---------- prison band ---------- */
+.band{padding-top:clamp(56px,7.5vw,108px)}
+.band .sec-head{border-color:var(--rule-dark);margin-bottom:clamp(22px,3vw,34px)}
+.filmstrip{margin:0;position:relative;border-top:1px solid var(--rule-dark);border-bottom:1px solid var(--rule-dark);background:#08110f}
+.filmstrip video{width:100%;aspect-ratio:16/9;max-height:78svh;object-fit:cover}
+.band-foot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:clamp(16px,3vw,44px);align-items:center;
+  padding-top:18px;padding-bottom:clamp(40px,5vw,64px)}
+.band-foot p{font-size:12.5px;line-height:1.65;color:var(--cream2);max-width:62ch}
+.facts{display:flex;flex-wrap:wrap;gap:0;list-style:none;margin:0;padding:0}
+.facts li{font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--cream2);padding:0 16px;border-left:1px solid var(--rule-dark)}
+.facts li:first-child{padding-left:0;border-left:0}
+.facts b{color:var(--cream)}
+
+/* ---------- museum ---------- */
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,72px);align-items:center}
+.plates2{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,1.6vw,18px);align-items:end}
+.plates2 figure{margin:0}
+.plates2 .shot{overflow:hidden;border:1px solid var(--rule);background:#efe5d1}
+.plates2 img{width:100%;height:100%;object-fit:contain}
+.plates2 .shot.a{aspect-ratio:3/4}
+.plates2 .shot.b{aspect-ratio:3/4;transform:translateY(-8%)}
+.plates2 figcaption{padding-top:10px;font:600 9.5px/1.5 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.split h2{font-size:clamp(30px,4.2vw,50px);margin:14px 0 0}
+.split .body{margin-top:18px;font-size:14.5px;line-height:1.7;color:var(--ink2);max-width:46ch}
+.specs{list-style:none;margin:26px 0 0;padding:0;border-top:1px solid var(--rule)}
+.specs li{display:flex;justify-content:space-between;gap:18px;padding:11px 0;border-bottom:1px solid var(--rule);
+  font-size:13px;color:var(--ink2)}
+.specs b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.atrium{margin:clamp(32px,4.5vw,56px) 0 0}
+.atrium .shot{overflow:hidden;border:1px solid var(--rule)}
+.atrium img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.atrium figcaption{display:flex;justify-content:space-between;gap:16px;padding-top:12px;
+  font:600 9.5px/1.5 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+
+/* ---------- builders ---------- */
+.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border-top:1px solid var(--rule)}
+.bcard{margin:0;background:var(--paper);padding:clamp(12px,1.6vw,20px)}
+.night .bgrid{background:var(--rule-dark);border-color:var(--rule-dark)}
+.night .bcard{background:var(--night)}
+.night .bcard h3{color:var(--cream)}
+.night .bcard p{color:var(--cream2)}
+.night .bcard .trade{color:var(--gold-l)}
+.bface{aspect-ratio:1;overflow:hidden;background:#0d1512}
+.bface video,.bface img{width:100%;height:100%;object-fit:cover;transform:scale(1.2)}
+.bcard figcaption{padding-top:14px}
+.bcard .trade{display:block;font:600 9.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:7px}
+.bcard h3{font-size:19px;font-weight:600}
+.bcard p{margin-top:6px;font-size:13px;line-height:1.55;color:var(--ink2)}
+
+/* ---------- gates ---------- */
+.gateshot{margin:0}
+.gateshot .shot{overflow:hidden;border:1px solid var(--rule);background:#dfd4bd}
+.gateshot img{width:100%;aspect-ratio:21/9;object-fit:cover}
+.gateshot figcaption{padding-top:12px;font:600 9.5px/1.5 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.gatelist{list-style:none;margin:clamp(24px,3vw,38px) 0 0;padding:0;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 clamp(22px,4vw,56px)}
+.gatelist li{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule);font-size:14px}
+.gatelist i{font:600 9.5px/1.9 var(--mono);color:var(--ink3);letter-spacing:.1em;font-style:normal;min-width:22px}
+
+/* ---------- gallery ---------- */
+.masonry{columns:4;column-gap:clamp(10px,1.4vw,18px)}
+.masonry figure{margin:0 0 clamp(10px,1.4vw,18px);break-inside:avoid}
+.masonry .gframe{overflow:hidden;background:#0a1210}
+.masonry img{width:100%;height:auto}
+.masonry figcaption{padding-top:9px;font:600 9px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:rgba(246,240,226,.42)}
+
+/* ---------- play ---------- */
+.screens{display:grid;grid-template-columns:.5625fr 1.3333fr 1.7778fr;gap:clamp(8px,1.2vw,16px);align-items:start}
+.clip{margin:0;min-width:0}
+.clip .scr{position:relative;overflow:hidden;border:1px solid var(--rule-dark);background:#06100e}
+.clip .scr video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .6s ease}
+.clip .scr video.on{opacity:1}
+.clip.phone .scr{aspect-ratio:9/16}
+.clip.tab .scr{aspect-ratio:4/3}
+.clip.lap .scr{aspect-ratio:16/9}
+.clip figcaption{padding-top:10px;font:600 9.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:rgba(246,240,226,.45)}
+.play-cta{display:flex;flex-wrap:wrap;gap:18px 28px;align-items:center;justify-content:space-between;
+  margin-top:clamp(30px,4vw,48px);padding-top:clamp(24px,3vw,34px);border-top:1px solid var(--rule-dark)}
+.play-cta p{font-size:12.5px;line-height:1.6;color:var(--cream2);max-width:56ch}
+
+/* ---------- footer ---------- */
+footer{background:var(--night2);border-top:1px solid var(--rule-dark);color:rgba(246,240,226,.6);
+  padding:clamp(40px,5vw,60px) var(--pad) clamp(46px,5vw,64px)}
+footer .inner{max-width:var(--shell);margin:0 auto;display:flex;flex-wrap:wrap;gap:28px;justify-content:space-between;align-items:flex-start}
+footer .brand{font-size:17px;color:var(--cream)}
+footer .brand em{color:var(--gold-l)}
+footer p{font-size:12.5px;line-height:1.75;max-width:52ch}
+footer a{color:rgba(246,240,226,.82);text-decoration:none;border-bottom:1px solid rgba(246,240,226,.28)}
+footer a:hover{color:var(--cream);border-color:var(--cream)}
+footer .sig{font:600 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:rgba(246,240,226,.34);
+  margin-top:16px;display:block}
+
+/* ---------- motion ---------- */
+@keyframes drift{from{transform:scale(1.005)}to{transform:scale(1.045)}}
+.pan{animation:drift 26s ease-in-out infinite alternate;will-change:transform;transform-origin:50% 50%}
+.rv{opacity:0;transform:translateY(16px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1)}
+.rv.in{opacity:1;transform:none}
+
+@media (max-width:1080px){
+  .masonry{columns:3}
+  .mlist li{grid-template-columns:44px minmax(140px,1fr) minmax(0,1.4fr);row-gap:4px}
+  .mlist .mx{grid-column:2/4;text-align:left}
+  .bgrid{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:900px){
+  .nav nav{display:none}
+  .sec-head{grid-template-columns:1fr;align-items:start}
+  .sec-head h2{max-width:24ch}
+  .split{grid-template-columns:1fr}
+  .places{grid-template-columns:1fr 1fr}
+  .pl-7,.pl-5{grid-column:span 2}
+  .pl-43 .shot,.pl-56 .shot,.pl-32 .shot,.pl-219 .shot,.pl-all .shot{aspect-ratio:16/10}
+  .plates2{margin-bottom:8px}
+  .hero-facts{grid-template-columns:1fr 1fr}
+  .hero-facts li{padding:14px 12px 16px;border-top:1px solid var(--rule-dark)}
+  .band-foot{grid-template-columns:1fr;align-items:start}
+  .screens{grid-template-columns:.62fr 1fr;grid-template-rows:auto auto}
+  .clip.lap{grid-column:2}
+  .gatelist{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .masonry{columns:2}
+  .bgrid{grid-template-columns:repeat(2,1fr)}
+  .gateshot img{aspect-ratio:16/9}
+}
+@media (max-width:620px){
+  .hero{padding-top:104px}
+  .hero h1{font-size:clamp(32px,8.6vw,46px)}
+  .hero .lede{font-size:15px}
+  .hero-facts{grid-template-columns:1fr 1fr}
+  .places{grid-template-columns:1fr}
+  .pl-7,.pl-5{grid-column:span 1}
+  .mlist li{grid-template-columns:34px 1fr;gap:2px 12px;padding:14px 0}
+  .mlist .md,.mlist .mx{grid-column:2}
+  .mlist .mx{text-align:left}
+  .bgrid{grid-template-columns:1fr 1fr;gap:1px}
+  .bcard{padding:10px}
+  .bcard h3{font-size:16px}
+  .bcard p{display:none}
+  .plates2 .shot.b{transform:none}
+  .screens{grid-template-columns:1fr;gap:16px}
+  .clip.phone{grid-column:1;grid-row:auto;width:62%;max-width:260px}
+  .clip.tab,.clip.lap{grid-column:1;grid-row:auto}
+  .facts li{padding:0 12px}
+  .play-cta{flex-direction:column;align-items:flex-start}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .rv{opacity:1;transform:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="brand" href="#top"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>musli<em>Mine</em>Craft</a>
+  <nav aria-label="Sections">
+    <a href="#world">World</a>
+    <a href="#missions">Missions</a>
+    <a href="#prison">Prison</a>
+    <a href="#museum">Museum</a>
+    <a href="#builders">Builders</a>
+  </nav>
+  <a class="nav-cta" href="musliMineCraft.html">Play free</a>
+</header>
+
+<section class="hero" id="top">
+  <video class="hero-video" src="assets/hero.mp4?v=13" poster="assets/hero-poster.jpg?v=13" autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
+  <div class="scrim"></div>
+
+  <div class="hero-in">
+    <p class="kicker">Educational voxel world · free · plays in a browser</p>
+    <h1>Build a mosque.</h1>
+    <p class="lede">Six builder friends, seven blueprints, one voxel world.</p>
+    <div class="acts">
+      <a class="btn cream" href="musliMineCraft.html">Play free<span class="arw" aria-hidden="true">→</span></a>
+      <a class="tlink" href="#world">Tour the world</a>
+    </div>
+  </div>
+
+  <ul class="hero-facts">
+    <li><b>2,048 × 2,048</b>blocks of open world</li>
+    <li><b>7</b>maths missions</li>
+    <li><b>10</b>stargate destinations</li>
+    <li><b>26</b>museum exhibits</li>
+  </ul>
+</section>
+
+<section class="sec" id="world">
+  <div class="shell">
+    <div class="sec-head rv">
+      <div>
+        <p class="kicker"><i>01</i>Inside the world</p>
+        <h2>Places to explore.</h2>
+      </div>
+      <p class="stand">You start on the shore. Signposts point to the lake, the mosque, the museum, the garden, the caravanserai and the prison, and ten stargates reach further still — from Masjid al-Haram and the Burj Khalifa to Petra and Hegra.</p>
+    </div>
+
+    <div class="places">
+      <figure class="plate pl-7 pl-43 rv">
+        <span class="shot"><img class="pan" src="assets/grand-mosque.jpg?v=18" alt="The Grand Mosque at musliMineCraft: minarets and a dome above a tiled courtyard" loading="lazy"></span>
+        <figcaption><span class="pn">Landmark</span><span class="pt">The Grand Mosque</span><span class="pd">Domes, minarets, arches and lanterns above a tiled courtyard. Every journey begins at its gate.</span></figcaption>
+      </figure>
+      <figure class="plate pl-5 pl-56 rv">
+        <span class="shot"><img class="pan" src="assets/museum-plate.jpg?v=1" alt="The Museum of Islamic Heritage from outside, with its lantern walkway and terraced garden" loading="lazy"></span>
+        <figcaption><span class="pn">Four floors</span><span class="pt">Museum of Islamic Heritage</span><span class="pd">Twenty-six exhibits, from astrolabes to water clocks. Stamp your passport at each one.</span></figcaption>
+      </figure>
+      <figure class="plate pl-5 pl-32 rv">
+        <span class="shot"><img class="pan" src="assets/prison-island.jpg?v=18" alt="The Open Air Prison: a low sandbar island ringed by water, with families on it" loading="lazy"></span>
+        <figcaption><span class="pn">East of spawn</span><span class="pt">Open Air Prison</span><span class="pd">A sandbar island, twenty-four people, one gate — and drones overhead.</span></figcaption>
+      </figure>
+      <figure class="plate pl-7 pl-219 rv">
+        <span class="shot"><img class="pan" src="assets/builder-bots-closeup.jpg?v=13" alt="A line-up of the six builder friends in the garden" loading="lazy"></span>
+        <figcaption><span class="pn">Six trades</span><span class="pt">Builder friends</span><span class="pd">Join one of the six and finish the structure they started.</span></figcaption>
+      </figure>
+      <figure class="plate pl-all rv">
+        <span class="shot"><img class="pan" src="assets/haram-plate.jpg?v=1" alt="The Kaaba in the game: a black cube with a gold band and gold door, ringed by the marble mataf and a crowd circling it" loading="lazy"></span>
+        <figcaption><span class="pn">Makkah · stargate 04</span><span class="pt">Masjid al-Haram and the Kaaba</span><span class="pd">The Kaaba and the mataf, with the crowd circling, as they stand in the game.</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="sec sand" id="missions">
+  <div class="shell">
+    <div class="sec-head rv">
+      <div>
+        <p class="kicker"><i>02</i>Learn by building</p>
+        <h2>Seven missions.</h2>
+      </div>
+      <p class="stand">Each mission floats a glowing blueprint in the world. Pick the right block, tap the highlighted cubes to fill it in, and the next set unlocks. The maths is the build.</p>
+    </div>
+
+    <ol class="mlist rv">
+      <li><span class="n">01</span><span class="mt">The Well</span><span class="md">Count around a square: a ring with three blocks on each side needs eight.</span><span class="mx">8 blocks</span></li>
+      <li><span class="n">02</span><span class="mt">Garden Wall</span><span class="md">Measure the edge, then fill it — area and perimeter in one wall.</span><span class="mx">18 blocks</span></li>
+      <li><span class="n">03</span><span class="mt">The Gate</span><span class="md">Build a mirror line so the left side matches the right: symmetry.</span><span class="mx">13 blocks</span></li>
+      <li><span class="n">04</span><span class="mt">Tiled Courtyard</span><span class="md">Tiles repeat in patterns. A five by five square holds twenty-five.</span><span class="mx">25 blocks</span></li>
+      <li><span class="n">05</span><span class="mt">The Minaret</span><span class="md">Volume is length × width × height. Try it on a tower.</span><span class="mx">33 blocks</span></li>
+      <li><span class="n">06</span><span class="mt">The Dome</span><span class="md">A dome can roof a wide room with no pillar in the middle.</span><span class="mx">49 blocks</span></li>
+      <li><span class="n">07</span><span class="mt">House of Wisdom</span><span class="md">Square numbers and careful counting — the last blueprint.</span><span class="mx">26 blocks</span></li>
+    </ol>
+  </div>
+</section>
+
+<section class="sec night band" id="prison">
+  <div class="shell" style="padding-bottom:0">
+    <div class="sec-head rv">
+      <div>
+        <p class="kicker"><i>03</i>Drone attack · Open Air Prison</p>
+        <h2>Shelter twenty-four.</h2>
+      </div>
+      <p class="stand">A solid roof two to eight blocks above a floor hides one person, so a bigger shelter saves more. Anyone caught in the open is knocked down and gets up again.</p>
+    </div>
+  </div>
+
+  <figure class="filmstrip rv">
+    <video src="assets/raid.mp4?v=13" poster="assets/raid-poster.jpg?v=13" muted loop playsinline preload="none" data-lazy aria-label="Drones bombing the Open Air Prison while families run for shelter"></video>
+  </figure>
+
+  <div class="shell band-foot">
+    <p>Five star tiers, no deaths to score, and a scoreboard that only counts the people you got under cover.</p>
+    <ul class="facts">
+      <li><b>24</b> people</li>
+      <li><b>5</b> star tiers</li>
+      <li><b>0</b> deaths</li>
+    </ul>
+  </div>
+</section>
+
+<section class="sec" id="museum">
+  <div class="shell">
+    <div class="split rv">
+      <div class="plates2">
+        <figure>
+          <span class="shot a"><img class="pan" src="assets/exhibit-card.jpg?v=13" alt="An exhibit card open on one of the museum's collections" loading="lazy"></span>
+          <figcaption>Exhibit · real photograph</figcaption>
+        </figure>
+        <figure>
+          <span class="shot b"><img class="pan" src="assets/passport.jpg?v=13" alt="The museum passport, listing all twenty-five exhibits with stamps" loading="lazy"></span>
+          <figcaption>Passport · 25 stamps</figcaption>
+        </figure>
+      </div>
+      <div>
+        <p class="kicker"><i>04</i>Museum of Islamic Heritage</p>
+        <h2>The museum.</h2>
+        <p class="body">Four floors of cases: astrolabes, clocks, calligraphy tools and water-raising machines. Fifteen exhibits can show a real museum photograph over the drawing — and offline, the drawing simply stays.</p>
+        <ul class="specs">
+          <li><span>Exhibits</span><b>26</b></li>
+          <li><span>Floors</span><b>4</b></li>
+          <li><span>Photographs</span><b>15</b></li>
+          <li><span>Credits</span><b>Met · Wellcome · Rijksmuseum</b></li>
+        </ul>
+      </div>
+    </div>
+
+    <figure class="atrium rv">
+      <span class="shot"><img class="pan" src="assets/museum-atrium.jpg?v=13" alt="Inside the museum: a tiled floor, four floors of balconies and exhibit cases" loading="lazy"></span>
+      <figcaption><span>The atrium</span><span>Four floors · 26 cases</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sec night" id="builders">
+  <div class="shell">
+    <div class="sec-head rv">
+      <div>
+        <p class="kicker"><i>05</i>Builder friends</p>
+        <h2>Six builder friends.</h2>
+      </div>
+      <p class="stand">They wander, build, celebrate and tidy up after themselves. Join one to finish the build together.</p>
+    </div>
+
+    <div class="bgrid rv">
+      <figure class="bcard"><span class="bface"><video class="spin" src="assets/builder-yusuf.mp4?v=17" poster="assets/builder-yusuf.jpg?v=17" muted loop playsinline preload="metadata" aria-label="Yusuf turning on the spot in front of the garden gate he builds"></video></span><figcaption><span class="trade">Arches &amp; gates</span><h3>Yusuf</h3><p>Pointed gateways, double arches and garden gates with lanterns.</p></figcaption></figure>
+      <figure class="bcard"><span class="bface"><video class="spin" src="assets/builder-maryam.mp4?v=17" poster="assets/builder-maryam.jpg?v=17" muted loop playsinline preload="metadata" aria-label="Maryam turning on the spot in front of the roofed well she builds"></video></span><figcaption><span class="trade">Wells &amp; fountains</span><h3>Maryam</h3><p>Roofed wells, drinking fountains and the courtyard water channel.</p></figcaption></figure>
+      <figure class="bcard"><span class="bface"><video class="spin" src="assets/builder-idris.mp4?v=17" poster="assets/builder-idris.jpg?v=17" muted loop playsinline preload="metadata" aria-label="Idris turning on the spot in front of the mud-brick house he builds"></video></span><figcaption><span class="trade">Houses</span><h3>Idris</h3><p>Mud-brick houses, blue door frames and roof gardens.</p></figcaption></figure>
+      <figure class="bcard"><span class="bface"><video class="spin" src="assets/builder-aisha.mp4?v=17" poster="assets/builder-aisha.jpg?v=17" muted loop playsinline preload="metadata" aria-label="Aisha turning on the spot in front of the flower garden she builds"></video></span><figcaption><span class="trade">Gardens</span><h3>Aisha</h3><p>Flower beds, fruit gardens, orange and pomegranate trees.</p></figcaption></figure>
+      <figure class="bcard"><span class="bface"><video class="spin" src="assets/builder-bilal.mp4?v=17" poster="assets/builder-bilal.jpg?v=17" muted loop playsinline preload="metadata" aria-label="Bilal turning on the spot in front of the palm-wood hut he builds"></video></span><figcaption><span class="trade">Palm &amp; timber</span><h3>Bilal</h3><p>Palm-wood huts and market stalls under striped awnings.</p></figcaption></figure>
+      <figure class="bcard"><span class="bface"><video class="spin" src="assets/builder-zaynab.mp4?v=17" poster="assets/builder-zaynab.jpg?v=17" muted loop playsinline preload="metadata" aria-label="Zaynab turning on the spot in front of the domed pavilion she builds"></video></span><figcaption><span class="trade">Domes &amp; pavilions</span><h3>Zaynab</h3><p>Domed pavilions, lantern towers and marble kiosks.</p></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="sec sand" id="gates">
+  <div class="shell">
+    <div class="sec-head rv">
+      <div>
+        <p class="kicker"><i>06</i>Stargates &amp; quests</p>
+        <h2>Ten stargates.</h2>
+      </div>
+      <p class="stand">One row beside spawn. Each gate is paired with a gate at its destination: walk into the shimmer, step out the other side.</p>
+    </div>
+
+    <figure class="gateshot rv">
+      <span class="shot"><img class="pan" src="assets/gates.jpg?v=13" alt="Stargates standing in a row against the landmark wall beside spawn" loading="lazy"></span>
+      <figcaption>One row beside spawn</figcaption>
+    </figure>
+
+    <ul class="gatelist rv">
+      <li><i>01</i>Museum</li>
+      <li><i>02</i>Grand Mosque</li>
+      <li><i>03</i>Open Air Prison</li>
+      <li><i>04</i>Masjid al-Haram</li>
+      <li><i>05</i>Burj Khalifa</li>
+      <li><i>06</i>Burj Al Arab</li>
+      <li><i>07</i>Museum of Islamic Art, Doha</li>
+      <li><i>08</i>The Treasury at Petra</li>
+      <li><i>09</i>Kuwait Towers</li>
+      <li><i>10</i>Hegra</li>
+    </ul>
+  </div>
+</section>
+
+<section class="sec night" aria-label="Screenshots from the game">
+  <div class="shell" style="padding-bottom:clamp(38px,5vw,62px)">
+    <div class="sec-head rv">
+      <div>
+        <p class="kicker"><i>07</i>Screenshots</p>
+        <h2>From inside the world.</h2>
+      </div>
+      <p class="stand">Captures from the game as it runs: the courtyard, the museum floors, the Kaaba at Masjid al-Haram and the row of gates at spawn.</p>
+    </div>
+
+    <div class="masonry">
+      <figure><span class="gframe"><img class="pan" src="assets/grand-mosque.jpg?v=18" alt="The Grand Mosque across its tiled courtyard" loading="lazy"></span><figcaption>Grand Mosque</figcaption></figure>
+      <figure><span class="gframe"><img class="pan" src="assets/museum-atrium.jpg?v=13" alt="The museum atrium and tiled floor" loading="lazy"></span><figcaption>Museum atrium</figcaption></figure>
+      <figure><span class="gframe"><img class="pan" src="assets/museum-outside.jpg?v=22" alt="The museum from outside, at dusk" loading="lazy"></span><figcaption>Museum exterior</figcaption></figure>
+      <figure><span class="gframe"><img class="pan" src="assets/free-build.jpg?v=13" alt="Free building with the block hotbar along the bottom" loading="lazy"></span><figcaption>Free building</figcaption></figure>
+      <figure><span class="gframe"><img class="pan" src="assets/gates.jpg?v=13" alt="The row of stargates at spawn" loading="lazy"></span><figcaption>Ten gates</figcaption></figure>
+      <figure><span class="gframe"><img class="pan" src="assets/quiz-chest.jpg?v=13" alt="A quiz chest opened to a question card" loading="lazy"></span><figcaption>Quiz chest</figcaption></figure>
+      <figure><span class="gframe"><img class="pan" src="assets/haram-kaaba.jpg?v=1" alt="The Kaaba at Masjid al-Haram, its gold band above the marble mataf, with the crowd circling" loading="lazy"></span><figcaption>Masjid al-Haram</figcaption></figure>
+      <figure><span class="gframe"><img class="pan" src="assets/builder-bots-closeup.jpg?v=13" alt="Builder friends at work" loading="lazy"></span><figcaption>Builders at work</figcaption></figure>
+      <figure><span class="gframe"><img class="pan" src="assets/hero-poster.jpg?v=13" alt="The world seen from the air" loading="lazy"></span><figcaption>The world from above</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="sec night play" id="play" style="border-top:1px solid var(--rule-dark)">
+  <div class="shell">
+    <div class="sec-head rv">
+      <div>
+        <p class="kicker"><i>08</i>Play free</p>
+        <h2>Plays in the browser.</h2>
+      </div>
+      <p class="stand">One offline HTML file — raw WebGL, no libraries. Touch on phones and tablets, mouse and keyboard on desktop, and adaptive quality so older devices keep up.</p>
+    </div>
+
+    <div class="screens rv">
+      <figure class="clip phone">
+        <div class="scr">
+          <video class="on" src="assets/screen-phone-a.mp4?v=21" poster="assets/screen-phone-a.jpg?v=21" autoplay muted loop playsinline preload="auto" aria-label="A phone showing the Grand Mosque, the stargates and the gardens"></video>
+          <video src="assets/screen-phone-b.mp4?v=21" poster="assets/screen-phone-b.jpg?v=21" muted loop playsinline preload="auto" aria-label="A phone showing the Kaaba and the crowd in the mataf"></video>
+          <video src="assets/screen-phone-c.mp4?v=21" poster="assets/screen-phone-c.jpg?v=21" muted loop playsinline preload="auto" aria-label="A phone showing the row of stargates by the lake"></video>
+        </div>
+        <figcaption>Phone</figcaption>
+      </figure>
+      <figure class="clip tab">
+        <div class="scr">
+          <video class="on" src="assets/screen-tab-a.mp4?v=21" poster="assets/screen-tab-a.jpg?v=21" autoplay muted loop playsinline preload="auto" aria-label="A tablet showing the Museum of Islamic Heritage and its reflecting pool"></video>
+          <video src="assets/screen-tab-b.mp4?v=21" poster="assets/screen-tab-b.jpg?v=21" muted loop playsinline preload="auto" aria-label="A tablet showing the Grand Mosque beyond the stargate wall"></video>
+        </div>
+        <figcaption>Tablet</figcaption>
+      </figure>
+      <figure class="clip lap">
+        <div class="scr">
+          <video class="on" src="assets/hero.mp4?v=13" poster="assets/hero-poster.jpg?v=13" autoplay muted loop playsinline preload="auto" aria-label="A desktop browser showing the world from the air"></video>
+          <video src="assets/raid.mp4?v=13" poster="assets/raid-poster.jpg?v=13" muted loop playsinline preload="auto" aria-label="A desktop browser showing the drone attack on the prison"></video>
+        </div>
+        <figcaption>Desktop</figcaption>
+      </figure>
+    </div>
+
+    <div class="play-cta rv">
+      <p>No ads, no chat, no tracking. Progress and every block you place stay saved on your own device.</p>
+      <a class="btn cream" href="musliMineCraft.html">Play free<span class="arw" aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="inner">
+    <div>
+      <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>musli<em>Mine</em>Craft</div>
+      <span class="sig">Ages 6+ · one HTML file</span>
+    </div>
+    <p>An educational, Islamic-themed block-building game for children. Copyright © 2026 Omar Al Zabir. Free to use, modify and share for education under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener">CC BY-NC-SA 4.0</a> — no commercial use.</p>
+    <p>The only network request the game can make is an optional museum photograph. Source on <a href="https://github.com/oazabir/musliMineCraft" rel="noopener">GitHub</a>.</p>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const nav = document.getElementById('nav');
+  const onScroll = () => nav.classList.toggle('stuck', window.scrollY > 24);
+  addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const items = document.querySelectorAll('.rv');
+  if (still || !('IntersectionObserver' in window)) {
+    items.forEach(el => el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }, { rootMargin: '0px 0px -8% 0px', threshold: .12 });
+    items.forEach(el => io.observe(el));
+  }
+
+  // some browsers hold autoplay until a gesture or a visibility change: nudge the hero
+  const hero = document.querySelector('.hero-video');
+  if (hero) {
+    const kick = () => hero.play().catch(() => {});
+    kick();
+    hero.addEventListener('canplay', kick, { once: true });
+    addEventListener('load', kick);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
+  }
+
+  // the raid clip only runs while it is on screen
+  const raid = document.querySelector('video[data-lazy]');
+  if (raid) {
+    if (!('IntersectionObserver' in window)) raid.play().catch(() => {});
+    else {
+      const vio = new IntersectionObserver((es) => {
+        for (const e of es) e.isIntersecting ? raid.play().catch(() => {}) : raid.pause();
+      }, { threshold: .25 });
+      vio.observe(raid);
+    }
+  }
+
+  // the screen clips: each plays to its end, then the next of the round fades in
+  const scrs = document.querySelectorAll('.play .scr');
+  const FADE = 560;
+  scrs.forEach(scr => {
+    const vids = [...scr.querySelectorAll('video')];
+    if (vids.length < 2) return;
+    vids.forEach(v => { v.loop = false; });
+    const bad = new Set();
+    let i = Math.max(0, vids.findIndex(v => v.classList.contains('on'))), busy = false;
+    const skip = j => {
+      busy = false;
+      if (bad.size < vids.length - 1) setTimeout(() => swap(j + 1), 60);
+    };
+    const swap = j => {
+      j = ((j % vids.length) + vids.length) % vids.length;
+      const from = vids[i], to = vids[j];
+      if (busy || !to || to === from) return;
+      busy = true;
+      let retry, settled = false;
+      const stop = () => {
+        settled = true;
+        to.removeEventListener('canplay', prepare);
+        to.removeEventListener('error', prepare);
+        clearTimeout(retry);
+      };
+      const commit = () => {
+        if (settled) return;
+        stop();
+        if (to.error) { bad.add(j); skip(j); return; }
+        if (to.currentTime > .02) { try { to.currentTime = 0; } catch (e) {} }
+        to.play().catch(() => {});
+        i = j;
+        to.classList.add('on');
+        from.classList.remove('on');
+        setTimeout(() => {
+          if (!from.classList.contains('on')) { from.pause(); try { from.currentTime = 0; } catch (e) {} }
+          busy = false;
+        }, FADE);
+      };
+      const prepare = () => {
+        if (settled) return;
+        to.removeEventListener('canplay', prepare);
+        to.removeEventListener('error', prepare);
+        if (to.error) { stop(); bad.add(j); skip(j); return; }
+        commit();
+      };
+      if (to.readyState >= 3) commit();
+      else {
+        to.preload = 'auto';
+        to.addEventListener('canplay', prepare);
+        to.addEventListener('error', prepare);
+        retry = setTimeout(() => { stop(); busy = false; setTimeout(() => swap(j), 1200); }, 7000);
+        try { to.load(); } catch (e) {}
+      }
+    };
+    vids.forEach((v, k) => {
+      // start the crossfade just before the end, so the outgoing clip never freezes mid-fade
+      const arm = () => {
+        if (k !== i || busy || !v.duration) return;
+        if (v.ended || v.duration - v.currentTime <= FADE / 1000 + .08) swap(i + 1);
+      };
+      v.addEventListener('timeupdate', arm);
+      v.addEventListener('ended', arm);
+    });
+  });
+  // ...and they only run while the band is on screen
+  const band = document.querySelector('.play .screens');
+  if (band && 'IntersectionObserver' in window) {
+    const bio = new IntersectionObserver((es) => {
+      for (const e of es) {
+        band.querySelectorAll('video').forEach(v => {
+          if (e.isIntersecting) { if (v.classList.contains('on')) v.play().catch(() => {}); }
+          else v.pause();
+        });
+      }
+    }, { threshold: .2 });
+    bio.observe(band);
+  }
+
+  // the six builder spins only run while their card is on screen
+  const spins = document.querySelectorAll('video.spin');
+  if (spins.length) {
+    if (!('IntersectionObserver' in window)) spins.forEach(v => v.play().catch(() => {}));
+    else {
+      const sio = new IntersectionObserver((es) => {
+        for (const e of es) e.isIntersecting ? e.target.play().catch(() => {}) : e.target.pause();
+      }, { threshold: .2 });
+      spins.forEach(v => sio.observe(v));
+    }
+  }
+})();
+</script>
+</body>
+</html>

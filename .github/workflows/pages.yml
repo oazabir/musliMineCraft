@@ -1,7 +1,8 @@
-# Publishes the game to GitHub Pages.
-# The page is built from src/ with ./build.sh on every run, so it never depends
-# on the committed dist/musliMineCraft.html being up to date.
-# Result: https://<owner>.github.io/<repo>/  (index.html is the game)
+# Publishes the site to GitHub Pages: landing/ is the front page, and the game
+# (built from src/ with ./build.sh on every run, so it never depends on the
+# committed dist/musliMineCraft.html being up to date) is musliMineCraft.html.
+# Result: https://<owner>.github.io/<repo>/          the landing page
+#         https://<owner>.github.io/<repo>/musliMineCraft.html   the game
 #
 # One-time setup: Settings > Pages > Build and deployment > Source: "GitHub Actions".
 name: pages
@@ -30,14 +31,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build the game
+      - name: Build the site
         run: |
           ./build.sh
           mkdir -p public
-          cp dist/musliMineCraft.html public/index.html
-          # Keep the file name from the README working too.
           cp dist/musliMineCraft.html public/musliMineCraft.html
+          mkdir -p public/assets
+          cp -R landing/assets/. public/assets/
+          cp landing/index.html public/index.html
           test -s public/index.html
+          test -s public/musliMineCraft.html
+          test -s public/assets/haram-plate.jpg
 
       - uses: actions/configure-pages@v5
 

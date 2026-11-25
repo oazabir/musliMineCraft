@@ -40,7 +40,7 @@ More are in `docs/screenshots/`: the museum atrium, builder close-up, swimming, 
 
 ## Quick start
 
-The built game is committed, so you do not need to build anything.
+The built game is committed, so you do not need to build anything. The live site is [oazabir.github.io/musliMineCraft](https://oazabir.github.io/musliMineCraft/): its front page is the marketing page in `landing/`, and **Play free** opens the game at [musliMineCraft.html](https://oazabir.github.io/musliMineCraft/musliMineCraft.html).
 
 - Open `dist/musliMineCraft.html` in a modern browser.
 - Or serve the folder and open the page:
@@ -149,9 +149,10 @@ The full suite takes about 15 to 20 minutes. Run one group with `pytest -k Bots`
 src/                  game source parts (HTML head, JS modules, HTML tail)
 build.sh              joins src/ into dist/musliMineCraft.html
 dist/musliMineCraft.html    the built, self-contained game (committed)
+landing/              the marketing front page served at the site root
 tests/e2e/            Playwright tests, pytest.ini, requirements, test README
 docs/screenshots/     screenshots used in this README
-.github/workflows/    GitHub Actions: build check and e2e tests
+.github/workflows/    GitHub Actions: build check, e2e tests and the Pages deploy
 ```
 
 ## Known limitations

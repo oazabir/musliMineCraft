@@ -2,14 +2,15 @@
 
 musliMineCraft: educational, Islamic-themed voxel block-building game for children (phones, tablets, desktop).
 One offline HTML file. Raw WebGL 1 + plain JS. No libraries, no bundler, no npm.
-Repo: github.com/oazabir/musliMineCraft. Live: https://oazabir.github.io/musliMineCraft/. Branch: `main`.
+Repo: github.com/oazabir/musliMineCraft. Live: https://oazabir.github.io/musliMineCraft/ (landing page) and https://oazabir.github.io/musliMineCraft/musliMineCraft.html (the game). Branch: `main`.
 Licence: CC BY-NC-SA 4.0 (no commercial use). Copyright Omar Al Zabir.
 
 ## Layout
 - `src/` source parts. `dist/musliMineCraft.html` is the built game (committed).
+- `landing/` the marketing front page (`index.html` + `assets/`), published as the site root. Its Play links point at `musliMineCraft.html`, the game next to it, so the game's own welcome screen still comes first.
 - `build.sh` joins parts in a fixed order (list is in the script). Needs only bash + awk.
 - `tests/e2e/` Playwright (Python, pytest) end-to-end suite. `docs/screenshots/` README images.
-- `.github/workflows/`: `e2e.yml` (dist-up-to-date check + full suite), `pages.yml` (build + deploy on push to `main`).
+- `.github/workflows/`: `e2e.yml` (dist-up-to-date check + full suite), `pages.yml` (build + deploy on push to `main`; `landing/` becomes the site root, the game becomes `musliMineCraft.html`).
 
 ## Architecture
 - All JS parts are concatenated into ONE script, one global scope, `'use strict'`. No modules, no imports.
