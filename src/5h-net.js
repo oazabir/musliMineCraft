@@ -5,7 +5,7 @@ const CON={on:false,hist:[],hi:0};
 /* NET is a var so the guards in earlier parts (netGuest) are safe before this line has run */
 var NET={on:false,role:'',guest:false,me:'',peers:[],players:new Map(),lanes:new Map(),pending:null,invite:'',tick:0,q:[],sent:[],sim:false,seq:0,laneSeq:0,lane:0,entered:false,lost:0,ka:0};
 /* one lane is one invite: every friend answers its own, so a lobby can hold many players */
-const NET_MAX=8,NET_SEND=.07,NET_LANE_TTL=300000,NET_GRACE=15000,NET_STALE=45000;
+const NET_MAX=8,NET_SEND=.07,NET_LANE_TTL=300000,NET_GRACE=15000,NET_STALE=45000,NET_CONNECT=12000;
 /* the guest's reconnection watchdog; a module let so it can be cleared from anywhere */
 let NET_LOST_T=0;
 /* an invite that arrived in a #join= link, waiting for the join card to show it */
@@ -382,7 +382,12 @@ function netShare(){
  NET.lanes.set(lane,{p:p,invite:'',ts:performance.now()});
  NET.pending=p;
  conLog('Making the invite code for friend '+(NET.peers.length+NET.lanes.size)+'…');
- pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='failed'||s==='closed')netDropPeer(p)};
+ pc.onconnectionstatechange=()=>{
+  if(!NET.on)return;
+  const s=pc.connectionState;if(s!=='failed'&&s!=='closed')return;
+  if(NET.peers.indexOf(p)<0)conLog('That friend could not connect. Type /share for a fresh invite.','er');
+  netDropPeer(p);
+ };
  p.dc.onopen=()=>{if(NET.pending===p)NET.pending=null;netHostPeerJoin(p)};
  p.dc.onmessage=e=>netMsg(p,e.data);
  p.dc.onclose=()=>netDropPeer(p);
@@ -425,13 +430,27 @@ function netSendWorld(p){
  p.send({t:'go'});
 }
 function netAccept(text){
- if(!NET.on||NET.role!=='host'||!NET.lanes||!NET.lanes.size){conLog('There is no invite waiting. Type /share first.','er');return}
+ if(!NET.on||NET.role!=='host'){conLog('No lobby is open yet. Type /share first.','er');return}
+ if(!String(text||'').trim()){conLog('Type /join and paste the reply code a friend sent you.','er');return}
  const d=netDec(text);
  if(!d||d.t!=='answer'||typeof d.sdp!=='string'||!d.sdp){conLog('That reply code did not work. Check that you copied all of it.','er');return}
- const l=NET.lanes.get(d.lane||0),p=l?l.p:null;
- if(!p||!p.pc){conLog('That reply code belongs to an invite that is already used or closed. Type /share for a fresh invite.','er');return}
+ const l=NET.lanes?NET.lanes.get(d.lane||0):null,p=l?l.p:null;
+ /* one invite brings one friend: a second friend answering the same code needs a lane of their own, so make it here */
+ if(!p||!p.pc||!netLaneHas(p)){
+  conLog('That reply answers an invite that a friend already used, so this friend needs a fresh one. Here it is:','er');
+  netShare();
+  return;
+ }
  p.pc.setRemoteDescription({type:'answer',sdp:d.sdp}).then(()=>{
   conLog('Connecting…');
+  const t0=performance.now();
+  const w=setInterval(()=>{
+   if(NET.peers.indexOf(p)>=0||!netLaneHas(p)){clearInterval(w);return}
+   if(performance.now()-t0<NET_CONNECT)return;
+   clearInterval(w);
+   netDropPeer(p);
+   conLog('That friend could not connect. Type /share and send the new invite code.','er');
+  },1000);
  }).catch(()=>conLog('That reply code does not fit this invite. Ask your friend for a fresh one after typing /share again.','er'));
 }
 function netGuestJoin(text){
@@ -446,6 +465,8 @@ function netGuestJoin(text){
  const pc=new RTCPeerConnection({iceServers:NET_STUN});
  const p=netPeer(pc,null);
  NET.peers=[p];
+ /* a code that never opens a connection must say so instead of leaving the friend waiting on the card */
+ setTimeout(()=>{if(NET.on&&NET.role==='guest'&&!NET.entered&&!NET.lost)netGuestLost('lost')},NET_CONNECT);
  pc.ondatachannel=e=>{p.dc=e.channel;netGuestWire(p)};
  pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='failed'||s==='closed')netGuestLost('lost');else if(s==='connected')netLostBack()};
  pc.setRemoteDescription({type:'offer',sdp:d.sdp})
@@ -526,8 +547,9 @@ function netDropPeer(p){
  const i=NET.peers.indexOf(p);
  if(i>=0)NET.peers.splice(i,1);
  if(p.id&&NET.players)NET.players.delete(p.id);
+ const wasIn=i>=0;
  p.close();
- if(NET.role==='host'&&NET.on)conLog('A friend left the lobby.');
+ if(wasIn&&NET.role==='host'&&NET.on)conLog('A friend left the lobby.');
 }
 /* a dropped channel is not a cancelled game: sit it out for NET_GRACE and say so only when it stays down.
    Only the host's own {t:'end'} (/endstream) means "cancelled". */
@@ -537,7 +559,7 @@ function netGuestLost(why){
  if(NET.lost)return;
  NET.lost=performance.now();
  if(!NET_LOST_T)NET_LOST_T=setInterval(netLostCheck,700);
- toast('Reconnecting to the host…');
+ toast(NET.entered?'Reconnecting to the host…':'Connecting to the host…');
 }
 function netLostStop(){
  if(NET_LOST_T){clearInterval(NET_LOST_T);NET_LOST_T=0}
@@ -573,10 +595,11 @@ function netGuestEnd(){
 }
 function netGuestGone(){
  if(!NET.on||NET.role!=='guest')return;
+ const never=!NET.entered;
  netClose();
- toast('Lost the connection to the host');
+ toast(never?'Could not connect to the host':'Lost the connection to the host');
  if(curModal)closeModal();
- modal('<h2>Lost the connection to the host</h2><p>The connection dropped, which a tab switch or a short network drop can cause. Nothing you built in your own world was touched. Ask the host for a fresh invite code to play together again, or go back to your own world.</p><div class="row"><button class="btn" data-a="again">Join again</button><button class="btn alt" data-a="ok">Back to my world</button></div>',p=>{
+ modal('<h2>'+(never?'Could not connect to the host':'Lost the connection to the host')+'</h2><p>'+(never?'The invite and reply codes did not open a connection to the host. Nothing you built in your own world was touched. Ask the host for a fresh invite code, or go back to your own world.':'The connection dropped, which a tab switch or a short network drop can cause. Nothing you built in your own world was touched. Ask the host for a fresh invite code to play together again, or go back to your own world.')+'</p><div class="row"><button class="btn" data-a="again">Join again</button><button class="btn alt" data-a="ok">Back to my world</button></div>',p=>{
   p.querySelector('[data-a=again]').onclick=()=>{closeModal();joinLobbyCard()};
   p.querySelector('[data-a=ok]').onclick=()=>{closeModal();location.reload()};
  });

@@ -3510,7 +3510,7 @@ class TestConsoleWorldsLobby:
         g.ev("__cmd('/share')")
         assert "Enter your world first" in g.ev("__con().text"), f"Observed {g.ev('__con().text')[-300:]!r}"
         g.ev("__cmd('/join MMC1.bm9wZQ')")
-        assert "no invite waiting" in g.ev("__con().text"), f"Observed {g.ev('__con().text')[-300:]!r}"
+        assert "No lobby is open yet" in g.ev("__con().text"), f"Observed {g.ev('__con().text')[-300:]!r}"
 
     def test_an_invite_code_is_short_and_carries_the_offer(self, desktop):
         """A host /share produces one short MM2 code that a guest can decode into a working offer."""
@@ -3697,7 +3697,9 @@ class TestConsoleWorldsLobby:
         assert stray.startswith("MM2."), f"Expected a reply code, observed {stray[:40]!r}"
         g.ev("(t)=>__cmd('/join '+t)", stray)
         txt = g.ev("__con().text")
-        assert "belongs to an invite" in txt, f"Expected the stray reply to be refused, observed {txt[-300:]!r}"
+        assert "already used" in txt, f"Expected the stray reply to be refused, observed {txt[-300:]!r}"
+        g.wait("__netCodes().some(c=>c.lane===2&&c.invite)", "a fresh invite for that friend",
+               timeout=20000, observe="__netCodes().map(c=>c.lane)")
         g.ev("__cmd('/endstream')")
 
     def test_a_guest_sees_the_host_blocks_and_the_cancelled_game(self, started):
@@ -3905,3 +3907,166 @@ class TestLobbyResilience:
         g.ev("Object.defineProperty(document,'hidden',{get:()=>false,configurable:true});document.dispatchEvent(new Event('visibilitychange'))")
         assert not g.ev("NET.ka"), "Expected the hidden-tab timer to stop when the tab is shown again"
         g.ev("netClose()")
+
+    HIDE = "Object.defineProperty(document,'hidden',{get:()=>true,configurable:true});document.dispatchEvent(new Event('visibilitychange'))"
+    SHOW = "Object.defineProperty(document,'hidden',{get:()=>false,configurable:true});document.dispatchEvent(new Event('visibilitychange'))"
+
+    def _three(self, game):
+        """A host and two guests, really connected over WebRTC in three browsers."""
+        a, b, c = game(PHONE), game(PHONE), game(PHONE)
+        for g in (a, b, c):
+            g.start()
+        codes = a.ev("""(async()=>{netShare();
+          for(let i=0;i<150&&!(__netCodes().length===1&&__netCodes()[0].invite);i++)await new Promise(r=>setTimeout(r,100));
+          netShare();
+          for(let i=0;i<150&&!(__netCodes().length===2&&__netCodes()[1].invite);i++)await new Promise(r=>setTimeout(r,100));
+          return __netCodes().map(c=>c.invite)})()""")
+        assert len(codes) == 2 and all(x.startswith("MM2.") for x in codes), \
+            f"Expected two invites, observed {[x[:20] for x in codes]}"
+        b.ev("(t)=>netGuestJoin(t)", codes[0])
+        c.ev("(t)=>netGuestJoin(t)", codes[1])
+        reply = """(async()=>{for(let i=0;i<150;i++){const t=document.getElementById('rcode');
+          if(t&&t.value)return t.value;await new Promise(r=>setTimeout(r,100))}return ''})()"""
+        rb, rc = b.ev(reply), c.ev(reply)
+        assert rb.startswith("MM2.") and rc.startswith("MM2."), f"Expected two replies, observed {rb[:20]!r} {rc[:20]!r}"
+        a.ev("(t)=>netAccept(t)", rb)
+        a.wait("__net().peers===1", "the first guest to connect", timeout=30000, observe="__net()")
+        a.ev("(t)=>netAccept(t)", rc)
+        a.wait("__net().peers===2", "the second guest to connect", timeout=30000, observe="__net()")
+        b.wait("__net().players.length===2", "the first guest to see both others", timeout=20000, observe="__net()")
+        c.wait("__net().players.length===2", "the second guest to see both others", timeout=20000, observe="__net()")
+        return a, b, c
+
+    def test_three_players_keep_playing_when_one_guest_hides_its_tab(self, game):
+        """In a lobby of three, a backgrounded guest keeps its place: it still talks to the host and still gets blocks."""
+        a, b, c = self._three(game)
+        b.ev(self.HIDE)
+        b.wait("!!NET.ka", "the hidden tab to keep the lobby ticking", timeout=5000, observe="[!!NET.ka]")
+        t0 = a.ev("performance.now()")
+        a.wait("[...NET.players.values()].length===2&&[...NET.players.values()].every(p=>p.ts>" + repr(t0) + ")",
+               "the host to keep hearing from the hidden guest", timeout=15000,
+               observe="[...NET.players.values()].map(p=>p.ts)")
+        assert a.ev("__net().peers") == 2, f"Expected two friends to stay connected while one tab is hidden, observed {a.ev('__net()')}"
+        c.ev("setBlock(1034,24,1036,B.GOLD,0)")
+        a.wait("getAny(1034,24,1036)===B.GOLD", "the host to get the visible guest's block", timeout=15000,
+               observe="getAny(1034,24,1036)")
+        b.wait("getAny(1034,24,1036)===B.GOLD", "the hidden guest to get the block too", timeout=15000,
+               observe="getAny(1034,24,1036)")
+        b.ev(self.SHOW)
+        assert not b.ev("NET.ka"), "Expected the hidden-tab timer to stop when the tab is shown again"
+        assert b.ev("__net().on") and b.ev("__net().guest") and b.ev("playing"), \
+            f"Expected the guest to still be in the host world, observed {b.ev('__net()')}"
+        assert not b.ev("!!curModal"), "A tab switch must not open a card"
+        assert b.ev("__net().players.length") == 2, f"Expected both other players after the tab came back, observed {b.ev('__net()')}"
+
+    def test_a_friend_answering_a_used_invite_gets_a_fresh_one(self, game):
+        """Two friends often get the same link. The second reply is refused, and the host is handed a lane for them at once."""
+        a, b, c = game(PHONE), game(PHONE), game(PHONE)
+        for g in (a, b, c):
+            g.start()
+        reply = """(async()=>{for(let i=0;i<150;i++){const t=document.getElementById('rcode');
+          if(t&&t.value)return t.value;await new Promise(r=>setTimeout(r,100))}return ''})()"""
+        inv = a.ev("""(async()=>{netShare();
+          for(let i=0;i<150&&!NET.invite;i++)await new Promise(r=>setTimeout(r,100));return NET.invite})()""")
+        b.ev("(t)=>netGuestJoin(t)", inv)
+        rb = b.ev(reply)
+        a.ev("(t)=>netAccept(t)", rb)
+        a.wait("__net().peers===1", "the first friend to connect", timeout=30000, observe="__net()")
+        b.wait("__net().players.length===1", "the first friend to see the host", timeout=20000, observe="__net()")
+        assert a.ev("__net().lanes") == 0, f"Expected the used invite to be closed, observed {a.ev('__net()')}"
+        a.ev("(t)=>__cmd('/join '+t)", rb)
+        a.wait("__netCodes().length===1&&__netCodes()[0].invite", "a fresh invite for the second friend",
+               timeout=20000, observe="__netCodes()")
+        txt = a.ev("__con().text")
+        assert "already used" in txt, f"Expected the used invite to be named, observed {txt[-300:]!r}"
+        inv2 = a.ev("__netCodes()[0].invite")
+        assert inv2.startswith("MM2.") and inv2 != inv, f"Expected a fresh invite, observed {inv2[:40]!r}"
+        c.ev("(t)=>netGuestJoin(t)", inv2)
+        rc = c.ev(reply)
+        assert rc.startswith("MM2."), f"Expected a reply, observed {rc[:40]!r}"
+        a.ev("(t)=>netAccept(t)", rc)
+        a.wait("__net().peers===2", "the third player to connect on the fresh invite", timeout=30000, observe="__net()")
+        c.wait("__net().players.length===2", "the third player to see both others", timeout=20000, observe="__net()")
+        b.wait("__net().players.length===2", "the first friend to see the third player", timeout=20000, observe="__net()")
+
+    def test_a_code_that_never_connects_says_so(self, started):
+        """A friend whose codes never opened a line is told that, not that the connection dropped."""
+        g = started
+        g.ev("__netSim('guest')")
+        assert not g.ev("NET.entered"), "Expected the simulated guest to not have entered a host world yet"
+        g.ev("__netLost('lost')")
+        g.ev("NET.lost=performance.now()-NET_GRACE-5")
+        g.modal_ready()
+        txt = g.modal_text()
+        assert "Could not connect to the host" in txt, f"Expected the failed-connect card, observed {txt[:160]!r}"
+        assert "cancelled" not in txt.lower(), f"Expected no cancelled wording, observed {txt[:160]!r}"
+
+    def test_a_dead_invite_is_reported_to_the_host(self, started):
+        """When an invite never comes back, the host is told instead of waiting on nothing."""
+        g = started
+        g.ev("__cmd('/share')")
+        g.wait("__netCodes().length===1&&__netCodes()[0].invite", "the invite", timeout=20000, observe="__netCodes()")
+        g.ev("""(()=>{const p=[...NET.lanes.values()][0].p;
+          Object.defineProperty(p.pc,'connectionState',{get:()=>'failed',configurable:true});
+          p.pc.dispatchEvent(new Event('connectionstatechange'))})()""")
+        g.wait("!__net().lanes", "the dead invite to be cleared", timeout=10000, observe="__net()")
+        txt = g.ev("__con().text")
+        assert "could not connect" in txt.lower(), f"Expected the host to be told the invite died, observed {txt[-300:]!r}"
+        assert g.ev("playing"), "Expected the host to keep playing alone"
+
+    def test_a_third_player_can_join_a_lobby_that_is_already_playing(self, game):
+        """The usual way a third friend arrives: the host shares a fresh invite while two are already in the world."""
+        a, b, c = game(PHONE), game(PHONE), game(PHONE)
+        for g in (a, b, c):
+            g.start()
+        reply = """(async()=>{for(let i=0;i<150;i++){const t=document.getElementById('rcode');
+          if(t&&t.value)return t.value;await new Promise(r=>setTimeout(r,100))}return ''})()"""
+        inv = a.ev("""(async()=>{netShare();
+          for(let i=0;i<150&&!NET.invite;i++)await new Promise(r=>setTimeout(r,100));return NET.invite})()""")
+        assert inv.startswith("MM2."), f"Expected a short invite, observed {inv[:40]!r}"
+        b.ev("(t)=>netGuestJoin(t)", inv)
+        rb = b.ev(reply)
+        assert rb.startswith("MM2."), f"Expected a reply, observed {rb[:40]!r}"
+        a.ev("(t)=>netAccept(t)", rb)
+        a.wait("__net().peers===1", "the first friend to connect", timeout=30000, observe="__net()")
+        b.wait("__net().players.length===1", "the first friend to see the host", timeout=20000, observe="__net()")
+        a.ev("setBlock(1030,24,1032,B.GOLD,0)")
+        b.wait("getAny(1030,24,1032)===B.GOLD", "the host's block in the first friend's world", timeout=15000,
+               observe="getAny(1030,24,1032)")
+        inv2 = a.ev("""(async()=>{NET.invite='';netShare();
+          for(let i=0;i<150&&!NET.invite;i++)await new Promise(r=>setTimeout(r,100));return NET.invite})()""")
+        assert inv2.startswith("MM2.") and inv2 != inv, f"Expected a fresh invite for the third player, observed {inv2[:40]!r}"
+        c.ev("(t)=>netGuestJoin(t)", inv2)
+        rc = c.ev(reply)
+        assert rc.startswith("MM2."), f"Expected a reply, observed {rc[:40]!r}"
+        a.ev("(t)=>netAccept(t)", rc)
+        a.wait("__net().peers===2", "the third player to connect", timeout=30000, observe="__net()")
+        c.wait("__net().players.length===2", "the third player to see both others", timeout=20000, observe="__net()")
+        b.wait("__net().players.length===2", "the first friend to see the third player", timeout=20000, observe="__net()")
+        c.wait("getAny(1030,24,1032)===B.GOLD", "the world built before it joined", timeout=20000,
+               observe="getAny(1030,24,1032)")
+        b.ev("setBlock(1032,24,1032,B.GOLD,0)")
+        c.wait("getAny(1032,24,1032)===B.GOLD", "a block from the other friend", timeout=20000,
+               observe="getAny(1032,24,1032)")
+        assert a.ev("playing") and a.ev("__net().peers") == 2, f"Expected the host to keep the lobby, observed {a.ev('__net()')}"
+
+    def test_three_players_survive_the_host_hiding_its_tab(self, game):
+        """When the host's tab goes away for a while, both guests keep the world and keep seeing it move."""
+        a, b, c = self._three(game)
+        a.ev(self.HIDE)
+        a.wait("!!NET.ka", "the hidden host to keep the lobby ticking", timeout=5000, observe="[!!NET.ka]")
+        t0 = b.ev("performance.now()")
+        b.wait("(NET.players.get('h')||{}).ts>" + repr(t0), "the guests to keep hearing from the hidden host",
+               timeout=15000, observe="(NET.players.get('h')||{}).ts")
+        assert a.ev("__net().peers") == 2, f"Expected both guests to stay connected, observed {a.ev('__net()')}"
+        b.ev("setBlock(1036,24,1038,B.GOLD,0)")
+        a.wait("getAny(1036,24,1038)===B.GOLD", "the hidden host to get a guest's block", timeout=15000,
+               observe="getAny(1036,24,1038)")
+        c.wait("getAny(1036,24,1038)===B.GOLD", "the other guest to get it too", timeout=15000,
+               observe="getAny(1036,24,1038)")
+        a.ev(self.SHOW)
+        assert not a.ev("NET.ka"), "Expected the hidden-tab timer to stop when the host tab is shown again"
+        for g, who in ((b, "the first guest"), (c, "the second guest")):
+            assert g.ev("__net().on") and g.ev("playing") and not g.ev("!!curModal"), \
+                f"Expected {who} to stay in the world, observed {g.ev('__net()')}"
+            assert g.ev("__net().players.length") == 2, f"Expected {who} to still see both others, observed {g.ev('__net()')}"
