@@ -7,7 +7,9 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # the full suite takes 55-70 min on a shared runner, and a run cut off at the cap
+    # prints no failure names, so leave room for the slower runners to finish the suite
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
