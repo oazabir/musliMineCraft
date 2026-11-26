@@ -2027,6 +2027,11 @@ class TestSafeStart:
                "the player to climb out and land on the bank", timeout=40000,
                observe="[player.x,player.y,player.z,player.water,player.ground]")
         g.ev("input.jy=0;input.jump=false")
+        # a held Jump bounces the player again the moment it lands, so the first grounded frame
+        # can already be mid-hop when the next round trip reads it: wait for the body to settle
+        g.wait("playing&&!player.hold&&!player.water&&player.ground&&player.vy===0",
+               "the player to stop hopping and settle on the bank", timeout=40000,
+               observe="[player.x,player.y,player.z,player.water,player.ground,player.vy]")
         _assert_standing(g, "joystick out of the lake")
 
 
