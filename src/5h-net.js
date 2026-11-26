@@ -3,7 +3,7 @@ const WORLDS_KEY='musliMineCraft_worlds_v1',ACTIVE_KEY='musliMineCraft_active_v1
 let WORLDS=[],WACT='';
 const CON={on:false,hist:[],hi:0};
 /* NET is a var so the guards in earlier parts (netGuest) are safe before this line has run */
-var NET={on:false,role:'',guest:false,me:'',peers:[],players:new Map(),lanes:new Map(),pending:null,invite:'',tick:0,q:[],sent:[],sim:false,seq:0,laneSeq:0,lane:0,entered:false,lost:0,ka:0};
+var NET={on:false,role:'',guest:false,me:'',peers:[],players:new Map(),lanes:new Map(),pending:null,invite:'',tick:0,q:[],sent:[],sim:false,seq:0,laneSeq:0,lane:0,entered:false,lost:0,ka:0,gen:0};
 /* one lane is one invite: every friend answers its own, so a lobby can hold many players */
 const NET_MAX=8,NET_SEND=.07,NET_LANE_TTL=300000,NET_GRACE=15000,NET_STALE=45000,NET_CONNECT=12000;
 /* the guest's reconnection watchdog; a module let so it can be cleared from anywhere */
@@ -460,13 +460,15 @@ function netGuestJoin(text){
  if(NET.on&&NET.role==='host'){toast('Close your own lobby first with /endstream.');return}
  netClose();
  NET.role='guest';NET.guest=true;NET.on=true;NET.sim=false;NET.entered=false;NET.lane=d.lane||0;
+ const gen=++NET.gen;
  netKeepAlive(document.hidden&&NET.on);
  NET.players=new Map();if(!NET.q)NET.q=[];
  const pc=new RTCPeerConnection({iceServers:NET_STUN});
  const p=netPeer(pc,null);
  NET.peers=[p];
- /* a code that never opens a connection must say so instead of leaving the friend waiting on the card */
- setTimeout(()=>{if(NET.on&&NET.role==='guest'&&!NET.entered&&!NET.lost)netGuestLost('lost')},NET_CONNECT);
+ /* a reply that never opens a connection must say so instead of leaving the friend on a card that does nothing;
+    gen keeps a second join with a better code from inheriting the first one's timer */
+ setTimeout(()=>{if(NET.gen===gen)netGuestStuck()},NET_CONNECT);
  pc.ondatachannel=e=>{p.dc=e.channel;netGuestWire(p)};
  pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='failed'||s==='closed')netGuestLost('lost');else if(s==='connected')netLostBack()};
  pc.setRemoteDescription({type:'offer',sdp:d.sdp})
@@ -479,6 +481,19 @@ function netGuestJoin(text){
    netReplyCard(reply);
   })})
   .catch(()=>{toast('That invite code did not work. Copy the whole code and try again.');netClose()});
+}
+/* one invite lets one friend in, so the host refuses a reply that answers an invite a friend already used.
+   Nothing can come back over a line that was never opened, so the friend is told here, on their own screen,
+   and the line is left up: an answer that arrives late still brings them into the world. */
+function netGuestStuck(){
+ if(!NET.on||NET.role!=='guest'||NET.entered)return;
+ conLog('Your reply has not opened a connection yet. One invite code lets one friend in, so ask the host to type /share again and send you the new invite code.','er');
+ toast('Still waiting for the host. Ask for a fresh invite code.');
+ if(curModal)closeModal();
+ modal('<h2>Still waiting for the host</h2><p>Your reply code has not opened a connection. One invite code lets one friend in, so if a friend answered the same invite before you, the host could not let you in. Ask the host to type <b>/share</b> again and send you the new invite code, then paste it here.</p><div class="row"><button class="btn" data-a="again">Paste a new code</button><button class="btn alt" data-a="no">Cancel</button></div>',p=>{
+  p.querySelector('[data-a=again]').onclick=()=>{closeModal();joinLobbyCard()};
+  p.querySelector('[data-a=no]').onclick=()=>{netClose();closeModal()};
+ });
 }
 function netGuestWire(p){
  const dc=p.dc;

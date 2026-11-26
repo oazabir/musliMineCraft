@@ -3960,7 +3960,8 @@ class TestLobbyResilience:
         assert b.ev("__net().players.length") == 2, f"Expected both other players after the tab came back, observed {b.ev('__net()')}"
 
     def test_a_friend_answering_a_used_invite_gets_a_fresh_one(self, game):
-        """Two friends often get the same link. The second reply is refused, and the host is handed a lane for them at once."""
+        """Two friends often get the same link. The second reply is refused, the host is handed a lane for them at once,
+        and the refused friend is told on their own screen instead of sitting on a reply card that does nothing."""
         a, b, c = game(PHONE), game(PHONE), game(PHONE)
         for g in (a, b, c):
             g.start()
@@ -3981,12 +3982,26 @@ class TestLobbyResilience:
         assert "already used" in txt, f"Expected the used invite to be named, observed {txt[-300:]!r}"
         inv2 = a.ev("__netCodes()[0].invite")
         assert inv2.startswith("MM2.") and inv2 != inv, f"Expected a fresh invite, observed {inv2[:40]!r}"
+        # the third friend answers that same invite, which the first friend already used, so the host refuses the reply
+        c.ev("(t)=>netGuestJoin(t)", inv)
+        rused = c.ev(reply)
+        assert rused.startswith("MM2."), f"Expected a reply, observed {rused[:40]!r}"
+        a.ev("(t)=>netAccept(t)", rused)
+        c.wait("!!curModal && /still waiting/i.test(document.getElementById('panel').textContent)",
+               "the refused friend to be told on their own screen", timeout=25000,
+               observe="[document.getElementById('panel').textContent.slice(0,160), __net().on, __net().role]")
+        told = c.modal_text()
+        assert "Send this to the host" not in told, f"Expected the stale reply card to be gone, observed {told[:200]!r}"
+        assert "one invite code lets one friend in" in told.lower(), \
+            f"Expected the friend to be told why the reply was refused, observed {told[:200]!r}"
+        assert "/share" in told.lower(), f"Expected the friend to be told what to ask for, observed {told[:200]!r}"
         c.ev("(t)=>netGuestJoin(t)", inv2)
         rc = c.ev(reply)
         assert rc.startswith("MM2."), f"Expected a reply, observed {rc[:40]!r}"
         a.ev("(t)=>netAccept(t)", rc)
         a.wait("__net().peers===2", "the third player to connect on the fresh invite", timeout=30000, observe="__net()")
         c.wait("__net().players.length===2", "the third player to see both others", timeout=20000, observe="__net()")
+        assert not c.ev("!!curModal"), f"Expected the card to close once the friend was in, observed {c.modal_text()[:160]!r}"
         b.wait("__net().players.length===2", "the first friend to see the third player", timeout=20000, observe="__net()")
 
     def test_a_code_that_never_connects_says_so(self, started):
