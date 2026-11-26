@@ -3992,6 +3992,8 @@ class TestLobbyResilience:
         rused = c.ev(reply)
         assert rused.startswith("MM2."), f"Expected a reply, observed {rused[:40]!r}"
         a.ev("(t)=>netAccept(t)", rused)
+        # the friend's nudge runs on the game clock, so the test moves that clock instead of sleeping
+        c.ev("__netTick(91)")
         c.wait("!!curModal && /still waiting/i.test(document.getElementById('panel').textContent)",
                "the refused friend to be told on their own screen", timeout=25000,
                observe="[document.getElementById('panel').textContent.slice(0,160), __net().on, __net().role]")
@@ -4000,6 +4002,8 @@ class TestLobbyResilience:
         assert "one invite code lets one friend in" in told.lower(), \
             f"Expected the friend to be told why the reply was refused, observed {told[:200]!r}"
         assert "/share" in told.lower(), f"Expected the friend to be told what to ask for, observed {told[:200]!r}"
+        kept = c.ev("(()=>{const t=document.getElementById('wcode');return t?t.value:''})()")
+        assert kept == rused, f"Expected the friend to keep the reply code, observed {kept[:40]!r}"
         c.ev("(t)=>netGuestJoin(t)", inv2)
         rc = c.ev(reply)
         assert rc.startswith("MM2."), f"Expected a reply, observed {rc[:40]!r}"
@@ -4020,6 +4024,37 @@ class TestLobbyResilience:
         txt = g.modal_text()
         assert "Could not connect to the host" in txt, f"Expected the failed-connect card, observed {txt[:160]!r}"
         assert "cancelled" not in txt.lower(), f"Expected no cancelled wording, observed {txt[:160]!r}"
+
+    def test_a_host_who_is_slow_to_paste_still_gets_the_friend_in(self, game):
+        """Relaying a long code through a chat app takes a minute. The friend must keep the same reply code, and the
+        line must still connect when the host finally pastes it, instead of a card that throws the reply away."""
+        a, b = game(PHONE), game(PHONE)
+        for g in (a, b):
+            g.start()
+        reply = """(async()=>{for(let i=0;i<150;i++){const t=document.getElementById('rcode');
+          if(t&&t.value)return t.value;await new Promise(r=>setTimeout(r,100))}return ''})()"""
+        shown = "(()=>{const t=document.getElementById('rcode')||document.getElementById('wcode');return t?t.value:''})()"
+        inv = a.ev("""(async()=>{netShare();
+          for(let i=0;i<150&&!NET.invite;i++)await new Promise(r=>setTimeout(r,100));return NET.invite})()""")
+        b.ev("(t)=>netGuestJoin(t)", inv)
+        rb = b.ev(reply)
+        assert rb.startswith("MM2."), f"Expected a reply, observed {rb[:40]!r}"
+        # 30 s of game time and the host is still typing: the reply card stays and keeps the code
+        b.ev("__netTick(30)")
+        assert "Send this to the host" in b.modal_text(), \
+            f"Expected the reply card to stay while the host is typing, observed {b.modal_text()[:200]!r}"
+        assert b.ev(shown) == rb, "Expected the reply card to keep the same code"
+        # the nudge arrives, but it keeps the reply instead of taking it away
+        b.ev("__netTick(61)")
+        b.wait("!!curModal && /still waiting/i.test(document.getElementById('panel').textContent)",
+               "the friend to be nudged after a long wait", timeout=15000,
+               observe="[document.getElementById('panel').textContent.slice(0,160), __net().entered]")
+        assert b.ev(shown) == rb, "Expected the waiting card to keep the reply code, so the host can still use it"
+        a.ev("(t)=>netAccept(t)", rb)
+        a.wait("__net().peers===1", "the host to take the reply the friend kept", timeout=30000, observe="__net()")
+        b.wait("__net().players.length===1", "the friend to reach the host world", timeout=20000, observe="__net()")
+        assert not b.ev("!!curModal"), \
+            f"Expected the card to close once the friend was in, observed {b.modal_text()[:160]!r}"
 
     def test_a_dead_invite_is_reported_to_the_host(self, started):
         """When an invite never comes back, the host is told instead of waiting on nothing."""
