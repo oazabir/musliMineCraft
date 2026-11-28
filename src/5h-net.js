@@ -324,8 +324,16 @@ function netPack(sdp,ans,lane){
  netStr(A,f.ufrag);netStr(A,f.pwd);
  for(const b of fb)netU8(A,b);
  const at=A.length;netU8(A,0);
- let n=0;
- for(const c of f.c){if(n>=10)break;if(netCandPack(A,c))n++}
+ let n=0,loc=0;
+ /* a code is capped at ten addresses, and a machine with virtual adapters gathers many local ones:
+    send the network (srflx/relay) addresses first so the cap can never throw away the only usable one.
+    The local ones are all names for the same machine, so four of them are enough to reach any same-Wi-Fi friend */
+ const rank=c=>/ typ (srflx|prflx|relay)/.test(c)?0:1;
+ for(const c of f.c.slice().sort((a,b)=>rank(a)-rank(b))){
+  if(n>=10||(rank(c)&&loc>=4))continue;
+  if(!netCandPack(A,c))continue;
+  n++;if(rank(c))loc++;
+ }
  if(!n)return '';
  A[at]=n;
  return 'MM2.'+netB64(A);
@@ -350,11 +358,19 @@ function netPeer(pc,dc){
   send(o){const ch=this.dc;try{if(ch&&ch.readyState==='open')ch.send(JSON.stringify(o));else if(NET.sim)NET.sent.push(o)}catch(e){}},
   close(){const ch=this.dc;try{if(ch)ch.close()}catch(e){}try{if(this.pc)this.pc.close()}catch(e){}}};
 }
+/* a phone can take a few seconds to learn its own network address, and a code sealed before that carries only
+   local addresses, which a host on another Wi-Fi can never reach: wait for a network address or the end of gathering */
+function netIceDone(pc){
+ if(pc.iceGatheringState==='complete')return true;
+ const s=pc.localDescription?pc.localDescription.sdp:'';
+ return /a=candidate:[^\n]* typ (srflx|prflx|relay)/.test(s);
+}
 function netIceWait(pc,cb){
  let done=false;const fin=()=>{if(done)return;done=true;cb()};
- if(pc.iceGatheringState==='complete'){setTimeout(fin,60);return}
+ if(netIceDone(pc)){setTimeout(fin,60);return}
+ try{pc.addEventListener('icecandidate',()=>{if(netIceDone(pc))fin()})}catch(e){}
  try{pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete')fin()})}catch(e){}
- setTimeout(fin,4000);
+ setTimeout(fin,8000);
 }
 function netLaneNext(){
  const lu=NET.lanes||new Map();
@@ -607,13 +623,24 @@ function netGuestEnd(){
   p.querySelector('[data-a=ok]').onclick=()=>{closeModal();location.reload()};
  });
 }
+/* what the line looked like when it failed: a bare "could not connect" cannot say whether the phone had no
+   network address of its own or the two browsers never reached each other */
+function netDiag(){
+ const p=NET.peers[0],pc=p&&p.pc,st=pc?pc.connectionState:'none';
+ let host=0,net=0;
+ try{
+  const sdp=pc&&pc.localDescription?pc.localDescription.sdp:'';
+  for(const ln of sdp.split(/\r?\n/))if(ln.indexOf('a=candidate:')===0)(/ typ (srflx|prflx|relay)/.test(ln)?net++:host++);
+ }catch(e){}
+ return 'Line '+st+', with '+host+' local and '+net+' network address'+(net===1?'':'es')+'.';
+}
 function netGuestGone(){
  if(!NET.on||NET.role!=='guest')return;
  const never=!NET.entered;
  netClose();
  toast(never?'Could not connect to the host':'Lost the connection to the host');
  if(curModal)closeModal();
- modal('<h2>'+(never?'Could not connect to the host':'Lost the connection to the host')+'</h2><p>'+(never?'The invite and reply codes did not open a connection to the host. Nothing you built in your own world was touched. Ask the host for a fresh invite code, or go back to your own world.':'The connection dropped, which a tab switch or a short network drop can cause. Nothing you built in your own world was touched. Ask the host for a fresh invite code to play together again, or go back to your own world.')+'</p><div class="row"><button class="btn" data-a="again">Join again</button><button class="btn alt" data-a="ok">Back to my world</button></div>',p=>{
+ modal('<h2>'+(never?'Could not connect to the host':'Lost the connection to the host')+'</h2><p>'+(never?'The invite and reply codes did not open a line to the host. Both devices have to be on the same Wi-Fi, and a firewall must let the browser in. Nothing you built in your own world was touched. Ask the host for a fresh invite code, or go back to your own world.':'The connection dropped, which a tab switch or a short network drop can cause. Nothing you built in your own world was touched. Ask the host for a fresh invite code to play together again, or go back to your own world.')+'</p><p><small>'+netDiag()+'</small></p><div class="row"><button class="btn" data-a="again">Join again</button><button class="btn alt" data-a="ok">Back to my world</button></div>',p=>{
   p.querySelector('[data-a=again]').onclick=()=>{closeModal();joinLobbyCard()};
   p.querySelector('[data-a=ok]').onclick=()=>{closeModal();location.reload()};
  });
@@ -828,4 +855,5 @@ window.__netSim=role=>{
 window.__netFeed=m=>{const p=NET.peers[0]||{id:'g1',send(){}};netMsg(p,typeof m==='string'?m:JSON.stringify(m));return true};
 window.__netSent=()=>NET.sent.slice();
 window.__netTick=dt=>netTick(dt);
+window.__netIce=()=>netDiag();
 window.__netLost=why=>{netGuestLost(why||'lost');return true};

@@ -4024,6 +4024,31 @@ class TestLobbyResilience:
         txt = g.modal_text()
         assert "Could not connect to the host" in txt, f"Expected the failed-connect card, observed {txt[:160]!r}"
         assert "cancelled" not in txt.lower(), f"Expected no cancelled wording, observed {txt[:160]!r}"
+        assert "same Wi-Fi" in txt, f"Expected the card to name the network the two devices must share, observed {txt[:200]!r}"
+        assert "Line none" in txt, f"Expected the card to report the state of the line, observed {txt[:240]!r}"
+
+    def test_a_phone_code_keeps_its_network_address_when_it_is_full_of_local_ones(self, started):
+        """A code carries at most ten addresses. A machine with virtual adapters gathers many local ones, so the
+        network address has to travel first and survive the cap, or a friend on another Wi-Fi can never reach it."""
+        g = started
+        fp = ":".join(["AB"] * 32)
+        sdp = ("v=0\r\no=- 1 1 IN IP4 0.0.0.0\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\n"
+               "m=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\nc=IN IP4 0.0.0.0\r\n"
+               "a=ice-ufrag:abcd\r\na=ice-pwd:abcdefghijklmnopqrstuvwx\r\n"
+               + "".join(f"a=candidate:{i + 1} 1 udp {1000 + i} 11111111-2222-3333-4444-{i:012d}.local 5000{i} typ host\r\n"
+                         for i in range(12))
+               + "a=candidate:90 1 udp 1677729535 185.238.223.67 19227 typ srflx raddr 0.0.0.0 rport 0\r\n"
+               + f"a=fingerprint:sha-256 {fp}\r\na=setup:actpass\r\na=mid:0\r\na=sctp-port:5000\r\n")
+        for kind in ("offer", "answer"):
+            code = g.ev("(o)=>__netCode(o)", {"sdp": sdp, "t": kind, "lane": 7})
+            assert code.startswith("MM2."), f"Expected a short {kind} code, observed {code[:40]!r}"
+            got = g.ev("(t)=>__netParse(t)", code)
+            assert got and got["t"] == kind and got["lane"] == 7, f"Expected a lane-7 {kind}, observed {got and (got['t'], got['lane'])}"
+            cands = [ln for ln in got["sdp"].split("\r\n") if ln.startswith("a=candidate:")]
+            assert len(cands) == 5, f"Expected the network address and four local ones in the {kind}, observed {len(cands)}"
+            assert cands[0].endswith(" typ srflx"), f"Expected the network address first in the {kind}, observed {cands[0]!r}"
+            assert any("185.238.223.67" in c for c in cands), f"Expected the network address to survive the cap in the {kind}, observed {cands}"
+            assert len(code) < 300, f"Expected a short code, observed {len(code)} characters"
 
     def test_a_host_who_is_slow_to_paste_still_gets_the_friend_in(self, game):
         """Relaying a long code through a chat app takes a minute. The friend must keep the same reply code, and the
